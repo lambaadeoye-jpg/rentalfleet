@@ -34,7 +34,11 @@ export default async function Home() {
     <>
       {/* NAV */}
       <div className="hero">
-        <img src="/images/hero-road-sunset.jpg" alt="" className="hero-bg-image" />
+        <img
+          src="/images/hero-road-sunset.jpg"
+          alt="Sedan on a highway at sunset — a rideshare and delivery-ready vehicle for gig drivers"
+          className="hero-bg-image"
+        />
         <div className="container">
           <nav className="nav-bar">
             <span className="nav-logo" style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -47,7 +51,9 @@ export default async function Home() {
           </nav>
 
           <div className="hero-content">
-            <div className="eyebrow">Greater Nashville's Work-Ready Vehicle Rentals</div>
+            <div className="eyebrow">
+              Gig, Rideshare &amp; Delivery Vehicle Rentals in Greater Nashville
+            </div>
             <h1>Get a car. Get to work. Get moving.</h1>
             <p className="hero-sub">
               Reliable, fuel-efficient vehicles for drivers who need a dependable way to work
@@ -150,11 +156,11 @@ export default async function Home() {
       {/* PLATFORMS */}
       <section className="section section-dark">
         <div className="container">
-          <h2 className="section-title">One car. More ways to work.</h2>
+          <h2 className="section-title">Built for Gig, Rideshare &amp; Delivery Drivers</h2>
           <p className="section-lede">
-            Our vehicles are intended for drivers working across major rideshare, delivery,
-            courier, and independent-driving platforms, subject to applicable platform,
-            vehicle, driver, insurance, and local requirements.
+            One car. More ways to work. Our vehicles are intended for drivers working across
+            major rideshare, delivery, courier, and independent-driving platforms, subject to
+            applicable platform, vehicle, driver, insurance, and local requirements.
           </p>
           <div className="platform-pill-row">
             {(platforms ?? []).map((p) => (
@@ -293,8 +299,31 @@ export default async function Home() {
             affordable transportation designed around the realities of working on the road.
           </p>
           <div className="platform-pill-row">
-            {["Nashville", "Murfreesboro", "Franklin", "Hendersonville", "Antioch", "Smyrna", "La Vergne", "Mt. Juliet", "Lebanon"].map(
-              (area) => (
+            {[
+              "Nashville",
+              "Murfreesboro",
+              "Franklin",
+              "Hendersonville",
+              "Antioch",
+              "Smyrna",
+              "La Vergne",
+              "Mt. Juliet",
+              "Lebanon",
+              "Brentwood",
+              "Hermitage",
+              "Donelson",
+              "Madison",
+              "Germantown",
+              "East Nashville",
+              "The Gulch",
+              "Green Hills",
+              "Belle Meade",
+              "Sylvan Park",
+              "12 South",
+              "Hillsboro Village",
+              "Goodlettsville",
+              "Nolensville",
+            ].map((area) => (
                 <span
                   key={area}
                   className="platform-pill"
@@ -354,6 +383,30 @@ export default async function Home() {
             <details className="faq-item">
               <summary>How do I get support during my rental?</summary>
               <p>Customer support is initiated through the customer portal.</p>
+            </details>
+            <details className="faq-item">
+              <summary>Can I use this rental for DoorDash, Uber Eats, or Instacart?</summary>
+              <p>
+                Yes. Our vehicles are intended for drivers working across major rideshare,
+                delivery, courier, and independent-driving platforms, subject to applicable
+                platform, vehicle, driver, insurance, and local requirements.
+              </p>
+            </details>
+            <details className="faq-item">
+              <summary>Do I need a specific vehicle for Instacart or Amazon Flex?</summary>
+              <p>
+                Vehicle requirements vary by platform. You select a category and we assign an
+                available vehicle within it — our team can help confirm what a given platform
+                currently requires as part of your application.
+              </p>
+            </details>
+            <details className="faq-item">
+              <summary>Can I drive for more than one platform with the same rental?</summary>
+              <p>
+                Yes — our vehicles aren&apos;t limited to a single platform. Many drivers run
+                rideshare, delivery, and courier apps on the same vehicle, subject to each
+                platform&apos;s own requirements.
+              </p>
             </details>
           </div>
         </div>

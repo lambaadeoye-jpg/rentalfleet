@@ -9,7 +9,7 @@ import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Get a car. Get to work. Get moving.",
+  title: "Gig Worker & Rideshare Car Rental | Get a Car. Get to Work. Get Moving.",
   description:
     "Reliable, fuel-efficient vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville.",
 };
