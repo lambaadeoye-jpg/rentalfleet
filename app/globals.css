@@ -364,3 +364,45 @@ label {
 .field {
   margin-bottom: 16px;
 }
+
+.nav-phone-link {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+@media (min-width: 640px) {
+  .nav-phone-link {
+    display: flex;
+  }
+}
+
+.mobile-call-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--teal);
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 0;
+  text-decoration: none;
+}
+@media (max-width: 640px) {
+  .mobile-call-bar {
+    display: flex;
+  }
+  /* keep the sticky bar from covering the last section's content */
+  .footer {
+    padding-bottom: 76px;
+  }
+}

@@ -14,9 +14,16 @@ import {
   ClipboardCheck,
   BadgeCheck,
   KeyRound,
+  Phone,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
+
+// PLACEHOLDER — replace with the real business line once it's live (ideally
+// the same number the Vapi/n8n voice agent answers, so "call us" and the
+// automated agent are the same door, not two different numbers).
+const PHONE_DISPLAY = "(615) 555-0100";
+const PHONE_TEL = "+16155550100";
 
 export default async function Home() {
   const supabase = createPublicClient();
@@ -45,9 +52,15 @@ export default async function Home() {
               <Car size={20} color="var(--teal)" />
               {brandName}
             </span>
-            <a href="#apply" className="button-secondary" style={{ padding: "10px 18px", fontSize: 14 }}>
-              Start My Application
-            </a>
+            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              <a href={`tel:${PHONE_TEL}`} className="nav-phone-link">
+                <Phone size={15} />
+                {PHONE_DISPLAY}
+              </a>
+              <a href="#apply" className="button-secondary" style={{ padding: "10px 18px", fontSize: 14 }}>
+                Start My Application
+              </a>
+            </div>
           </nav>
 
           <div className="hero-content">
@@ -78,6 +91,12 @@ export default async function Home() {
               <span>•</span>
               <span>Fast process</span>
             </div>
+            <p style={{ marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
+              Prefer to talk it through?{" "}
+              <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
+                Call {PHONE_DISPLAY}
+              </a>
+            </p>
           </div>
         </div>
       </div>
@@ -285,6 +304,11 @@ export default async function Home() {
           <h2 className="section-title">Let&apos;s find the right vehicle for your work.</h2>
           <p className="section-lede">
             No document uploads here — just the basics. We&apos;ll follow up with next steps.
+            Prefer to talk it through instead?{" "}
+            <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
+              Call {PHONE_DISPLAY}
+            </a>
+            .
           </p>
           <LeadForm categories={categories ?? []} platforms={platforms ?? []} />
         </div>
@@ -385,6 +409,13 @@ export default async function Home() {
               <p>Customer support is initiated through the customer portal.</p>
             </details>
             <details className="faq-item">
+              <summary>Can I apply or ask questions by phone instead of online?</summary>
+              <p>
+                Yes — call {PHONE_DISPLAY} and we can walk you through availability, pricing,
+                and the application process directly.
+              </p>
+            </details>
+            <details className="faq-item">
               <summary>Can I use this rental for DoorDash, Uber Eats, or Instacart?</summary>
               <p>
                 Yes. Our vehicles are intended for drivers working across major rideshare,
@@ -436,12 +467,26 @@ export default async function Home() {
 
       <footer className="footer">
         <div className="container">
-          <p style={{ margin: 0 }}>
+          <p style={{ margin: "0 0 8px" }}>
             {brandName} — Get a car. Get to work. Get moving. A car that works as hard as you
             do.
           </p>
+          <p style={{ margin: 0 }}>
+            <a href={`tel:${PHONE_TEL}`} style={{ color: "rgba(255,255,255,0.8)" }}>
+              {PHONE_DISPLAY}
+            </a>
+          </p>
         </div>
       </footer>
+
+      {/* Sticky mobile call bar — phone converts far better than forms in
+          this vertical, and mobile drives most traffic but converts worse
+          on forms specifically, so this is the highest-leverage single
+          placement for it. Hidden on desktop via CSS (.mobile-call-bar). */}
+      <a href={`tel:${PHONE_TEL}`} className="mobile-call-bar">
+        <Phone size={18} />
+        Call {PHONE_DISPLAY}
+      </a>
     </>
   );
 }

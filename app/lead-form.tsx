@@ -170,6 +170,9 @@ export default function LeadForm({
       <button type="submit" className="button-primary" disabled={loading} style={{ width: "100%" }}>
         {loading ? "Submitting..." : "Get Started"}
       </button>
+      <p className="muted-text" style={{ textAlign: "center", marginTop: 10, fontSize: 13 }}>
+        No spam. No obligation. We&apos;ll follow up shortly after you submit.
+      </p>
     </form>
   );
 }
