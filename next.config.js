@@ -18,6 +18,9 @@ const contentSecurityPolicy = `
   base-uri 'self';
   form-action 'self';
 `.replace(/\s{2,}/g, " ").trim();
+// next/font self-hosts Inter/Plus Jakarta Sans at build time (app/layout.tsx)
+// -- no runtime request to fonts.googleapis.com/gstatic.com, so no CSP
+// allowance needed for them.
 
 const securityHeaders = [
   { key: "Content-Security-Policy", value: contentSecurityPolicy },

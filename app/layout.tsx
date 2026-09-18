@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter/700.css";
+import "@fontsource/plus-jakarta-sans/600.css";
+import "@fontsource/plus-jakarta-sans/700.css";
+import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Fleet Rental OS",
-  description: "Keep Every Car Earning.",
+  title: "Get a car. Get to work. Get moving.",
+  description:
+    "Reliable, fuel-efficient vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville.",
 };
 
 export default function RootLayout({

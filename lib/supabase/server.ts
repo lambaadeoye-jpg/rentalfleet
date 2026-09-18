@@ -9,7 +9,7 @@ import { cookies } from "next/headers";
  */
 export async function createClient() {
   // Next.js 15+ made cookies() async — this function must be awaited at
-  // every call site now (app/page.tsx and app/dashboard/page.tsx do this).
+  // every call site now (app/page.tsx and app/staff/dashboard/page.tsx do this).
   const cookieStore = await cookies();
 
   return createServerClient(

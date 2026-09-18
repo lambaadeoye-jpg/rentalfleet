@@ -10,7 +10,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/staff/login");
   }
 
   // Everything below relies entirely on RLS (migrations 0014-0017) to scope

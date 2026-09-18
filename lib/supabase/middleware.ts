@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 /**
  * Refreshes the Supabase auth session on every request and redirects
  * unauthenticated users away from protected routes. This is what makes
- * /dashboard actually protected rather than just "protected in theory."
+ * /staff/dashboard actually protected rather than just "protected in theory."
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request: { headers: request.headers } });
@@ -33,10 +33,10 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtectedRoute = request.nextUrl.pathname.startsWith("/dashboard");
+  const isProtectedRoute = request.nextUrl.pathname.startsWith("/staff/dashboard");
 
   if (isProtectedRoute && !user) {
-    const redirectUrl = new URL("/login", request.url);
+    const redirectUrl = new URL("/staff/login", request.url);
     redirectUrl.searchParams.set("redirectedFrom", request.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
