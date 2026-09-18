@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { CheckCircle2 } from "lucide-react";
 import { submitLead } from "./actions";
 
 type VehicleCategory = { id: string; name: string; description: string | null };
@@ -18,6 +19,9 @@ export default function LeadForm({
   const [loading, setLoading] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
 
+  const otherPlatform = platforms.find((p) => p.code === "other");
+  const otherSelected = otherPlatform ? selectedPlatforms.includes(otherPlatform.id) : false;
+
   function togglePlatform(id: string) {
     setSelectedPlatforms((prev) =>
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
@@ -31,31 +35,39 @@ export default function LeadForm({
 
     const form = new FormData(e.currentTarget);
 
-    const result = await submitLead({
-      firstName: String(form.get("firstName") || ""),
-      lastName: String(form.get("lastName") || ""),
-      phone: String(form.get("phone") || ""),
-      email: String(form.get("email") || ""),
-      drivingFor: String(form.get("drivingFor") || ""),
-      preferredCategoryId: (form.get("preferredCategoryId") as string) || null,
-      pickupDate: (form.get("pickupDate") as string) || null,
-      rentalOption: (form.get("rentalOption") as "daily" | "weekly") || "weekly",
-      additionalInfo: String(form.get("additionalInfo") || ""),
-      gigPlatformIds: selectedPlatforms,
-    });
+    try {
+      const result = await submitLead({
+        firstName: String(form.get("firstName") || ""),
+        lastName: String(form.get("lastName") || ""),
+        phone: String(form.get("phone") || ""),
+        email: String(form.get("email") || ""),
+        otherPlatformDetail: String(form.get("otherPlatformDetail") || ""),
+        preferredCategoryId: (form.get("preferredCategoryId") as string) || null,
+        pickupDate: (form.get("pickupDate") as string) || null,
+        rentalOption: (form.get("rentalOption") as "daily" | "weekly") || "weekly",
+        additionalInfo: String(form.get("additionalInfo") || ""),
+        gigPlatformIds: selectedPlatforms,
+      });
 
-    setLoading(false);
-
-    if (!result.success) {
-      setError(result.error);
-      return;
+      if (!result.success) {
+        setError(result.error);
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      // Belt-and-suspenders: submitLead itself is try/caught server-side and
+      // should never throw, but a second guard here means this button can
+      // never get stuck on "Submitting..." forever no matter what fails.
+      setError("Something went wrong. Please try again in a moment.");
+    } finally {
+      setLoading(false);
     }
-    setSubmitted(true);
   }
 
   if (submitted) {
     return (
       <div className="card" style={{ textAlign: "center", padding: 48 }}>
+        <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
         <h3 style={{ fontSize: 22, marginBottom: 8 }}>Thanks — we've got your request.</h3>
         <p className="muted-text">
           We'll review your information and follow up with the next step.
@@ -94,12 +106,7 @@ export default function LeadForm({
       </div>
 
       <div className="field">
-        <label htmlFor="drivingFor">What are you driving for?</label>
-        <input id="drivingFor" name="drivingFor" placeholder="e.g. Uber, DoorDash, Amazon Flex..." />
-      </div>
-
-      <div className="field">
-        <label>Platforms (select all that apply)</label>
+        <label>What are you driving for? (select all that apply)</label>
         <div className="checkbox-grid">
           {platforms.map((p) => (
             <label key={p.id} className="checkbox-item">
@@ -112,6 +119,13 @@ export default function LeadForm({
             </label>
           ))}
         </div>
+        {otherSelected && (
+          <input
+            name="otherPlatformDetail"
+            placeholder="Tell us what you're driving for"
+            style={{ marginTop: 10 }}
+          />
+        )}
       </div>
 
       <div className="form-row">

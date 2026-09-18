@@ -1,5 +1,20 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import LeadForm from "./lead-form";
+import {
+  Gauge,
+  ShieldCheck,
+  Fuel,
+  Briefcase,
+  Zap,
+  LifeBuoy,
+  Wrench,
+  Layers,
+  Car,
+  FileText,
+  ClipboardCheck,
+  BadgeCheck,
+  KeyRound,
+} from "lucide-react";
 
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
 
@@ -22,7 +37,10 @@ export default async function Home() {
         <img src="/images/hero-road-sunset.jpg" alt="" className="hero-bg-image" />
         <div className="container">
           <nav className="nav-bar">
-            <span className="nav-logo">{brandName}</span>
+            <span className="nav-logo" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Car size={20} color="var(--teal)" />
+              {brandName}
+            </span>
             <a href="#apply" className="button-secondary" style={{ padding: "10px 18px", fontSize: 14 }}>
               Start My Application
             </a>
@@ -48,7 +66,7 @@ export default async function Home() {
             <div className="benefit-strip">
               <span>Unlimited mileage</span>
               <span>•</span>
-              <span>No traditional credit check</span>
+              <span>No credit check</span>
               <span>•</span>
               <span>Fuel-efficient vehicles</span>
               <span>•</span>
@@ -68,6 +86,7 @@ export default async function Home() {
           </p>
           <div className="grid-3">
             <div className="card benefit-card">
+              <Gauge size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
               <h3>Unlimited Mileage</h3>
               <p>
                 Drive without watching the odometer. Focus on routes, customers, shifts, and
@@ -75,7 +94,8 @@ export default async function Home() {
               </p>
             </div>
             <div className="card benefit-card">
-              <h3>No Traditional Credit Check</h3>
+              <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>No Credit Check</h3>
               <p>
                 We don&apos;t use a traditional credit check as part of our rental process.
                 Other eligibility, identity, driving, insurance, payment, and screening
@@ -83,10 +103,12 @@ export default async function Home() {
               </p>
             </div>
             <div className="card benefit-card">
+              <Fuel size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
               <h3>Fuel Efficiency</h3>
               <p>Choose economical vehicles designed to help keep fuel costs under control.</p>
             </div>
             <div className="card benefit-card">
+              <Briefcase size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
               <h3>Work-Ready Vehicles</h3>
               <p>
                 Vehicles are selected with the needs of rideshare, delivery, courier, and
@@ -94,8 +116,32 @@ export default async function Home() {
               </p>
             </div>
             <div className="card benefit-card">
+              <Zap size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
               <h3>Fast Process</h3>
               <p>Complete the required steps, get approved, make your rental payment, and get on the road.</p>
+            </div>
+            <div className="card benefit-card">
+              <LifeBuoy size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>24/7 Roadside Assistance</h3>
+              <p>Help is available around the clock if something goes wrong on the road.</p>
+            </div>
+            <div className="card benefit-card">
+              <Wrench size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>Regular Maintenance Covered</h3>
+              <p>Routine maintenance is handled for you, so your vehicle stays road-ready.</p>
+            </div>
+            <div className="card benefit-card">
+              <Layers size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>Multi-Platform Ready</h3>
+              <p>
+                Built for drivers working across major rideshare, delivery, courier, and
+                independent-driving platforms, subject to applicable requirements.
+              </p>
+            </div>
+            <div className="card benefit-card">
+              <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>Insurance Included</h3>
+              <p>Company liability coverage is included with every rental.</p>
             </div>
           </div>
         </div>
@@ -188,6 +234,7 @@ export default async function Home() {
           <h2 className="section-title">From application to road — without unnecessary delays.</h2>
           <div className="steps-row" style={{ marginTop: 32 }}>
             <div>
+              <FileText size={20} color="var(--teal)" style={{ marginBottom: 6 }} />
               <div className="step-number">01</div>
               <h3 style={{ fontSize: 16, margin: "8px 0" }}>Apply</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
@@ -195,6 +242,7 @@ export default async function Home() {
               </p>
             </div>
             <div>
+              <ClipboardCheck size={20} color="var(--teal)" style={{ marginBottom: 6 }} />
               <div className="step-number">02</div>
               <h3 style={{ fontSize: 16, margin: "8px 0" }}>Complete Requirements</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
@@ -202,6 +250,7 @@ export default async function Home() {
               </p>
             </div>
             <div>
+              <BadgeCheck size={20} color="var(--teal)" style={{ marginBottom: 6 }} />
               <div className="step-number">03</div>
               <h3 style={{ fontSize: 16, margin: "8px 0" }}>Get Approved</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
@@ -209,6 +258,7 @@ export default async function Home() {
               </p>
             </div>
             <div>
+              <KeyRound size={20} color="var(--teal)" style={{ marginBottom: 6 }} />
               <div className="step-number">04</div>
               <h3 style={{ fontSize: 16, margin: "8px 0" }}>Pay &amp; Pick Up</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
