@@ -33,7 +33,12 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtectedRoute = request.nextUrl.pathname.startsWith("/staff/dashboard");
+  // Protects the entire /staff/* area except the login page itself --
+  // previously only /staff/dashboard was listed, which meant any new
+  // staff route (leads, applications, etc.) would be unprotected by
+  // default unless someone remembered to add it here individually.
+  const isProtectedRoute =
+    request.nextUrl.pathname.startsWith("/staff/") && request.nextUrl.pathname !== "/staff/login";
 
   if (isProtectedRoute && !user) {
     const redirectUrl = new URL("/staff/login", request.url);
