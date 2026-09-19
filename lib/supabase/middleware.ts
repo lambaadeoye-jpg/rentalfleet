@@ -37,11 +37,23 @@ export async function updateSession(request: NextRequest) {
   // previously only /staff/dashboard was listed, which meant any new
   // staff route (leads, applications, etc.) would be unprotected by
   // default unless someone remembered to add it here individually.
-  const isProtectedRoute =
+  const isProtectedStaffRoute =
     request.nextUrl.pathname.startsWith("/staff/") && request.nextUrl.pathname !== "/staff/login";
 
-  if (isProtectedRoute && !user) {
+  if (isProtectedStaffRoute && !user) {
     const redirectUrl = new URL("/staff/login", request.url);
+    redirectUrl.searchParams.set("redirectedFrom", request.nextUrl.pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Same pattern for the customer portal -- everything under /portal
+  // except the login page requires a session.
+  const isProtectedPortalRoute =
+    (request.nextUrl.pathname === "/portal" || request.nextUrl.pathname.startsWith("/portal/")) &&
+    request.nextUrl.pathname !== "/portal/login";
+
+  if (isProtectedPortalRoute && !user) {
+    const redirectUrl = new URL("/portal/login", request.url);
     redirectUrl.searchParams.set("redirectedFrom", request.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
