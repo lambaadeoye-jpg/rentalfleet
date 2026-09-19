@@ -122,13 +122,18 @@ export async function startRental(
   if (rentalError || !rental) return { success: false, error: "Couldn't create the rental. Please try again." };
 
   // Walk the locked rental state machine one hop at a time -- each is
-  // independently validated by the database (migration 0018/0029).
+  // independently validated by the database (migration 0018/0029), and the
+  // final hop to 'active' also requires verified renter insurance on file
+  // (migration 0030).
   for (const status of ["approved", "scheduled", "active"] as const) {
     const { error } = await supabase.from("rental").update({ status }).eq("id", rental.id);
     if (error) {
-      const msg = error.message?.toLowerCase().includes("permission")
-        ? "You don't have permission to activate a rental."
-        : `Couldn't move the rental to "${status}". ${error.message}`;
+      let msg = `Couldn't move the rental to "${status}". ${error.message}`;
+      if (error.message?.toLowerCase().includes("permission")) {
+        msg = "You don't have permission to activate a rental.";
+      } else if (error.message?.toLowerCase().includes("renter insurance is not verified")) {
+        msg = "This customer's insurance isn't verified as active yet. Check Insurance before starting the rental.";
+      }
       return { success: false, error: msg };
     }
   }
