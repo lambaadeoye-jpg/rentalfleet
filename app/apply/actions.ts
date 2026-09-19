@@ -25,7 +25,13 @@ export async function sendMagicLink(email: string): Promise<{ success: boolean; 
     },
   });
 
-  if (error) return { success: false, error: "Couldn't send the link. Please try again." };
+  if (error) {
+    // Surface the real Supabase error rather than a generic message -- this
+    // is an Auth API error describing our own configuration (e.g. rate
+    // limits, SMTP not set up), not private user data, so it's safe and
+    // actually necessary to show while diagnosing the real cause.
+    return { success: false, error: error.message };
+  }
   return { success: true };
 }
 
