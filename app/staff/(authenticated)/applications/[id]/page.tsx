@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getSignedDocumentUrl } from "../actions";
+import { getAvailableVehicles } from "../rental-actions";
 import DecisionForm from "./decision-form";
+import StartRentalForm from "./start-rental-form";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +47,7 @@ export default async function ApplicationDetailPage({
   const customer = application.customer as any;
   const customerId = application.customer_id;
 
-  const [{ data: driver }, { data: platformLinks }, { data: insurance }, { data: documents }] = await Promise.all([
+  const [{ data: driver }, { data: platformLinks }, { data: insurance }, { data: documents }, { data: existingRental }] = await Promise.all([
     supabase
       .from("authorized_driver")
       .select("license_state, license_number_ref, status")
@@ -68,7 +70,13 @@ export default async function ApplicationDetailPage({
       .select("id, document_type, storage_key, created_at")
       .eq("customer_id", customerId)
       .order("created_at", { ascending: false }),
+    supabase.from("rental").select("id").eq("customer_id", customerId).limit(1).maybeSingle(),
   ]);
+
+  const canStartRental =
+    (application.status === "approved" || application.status === "conditionally_approved") && !existingRental;
+
+  const availableVehicles = canStartRental ? await getAvailableVehicles() : [];
 
   const platforms = (platformLinks ?? []).map((p) => (p.gig_platform as any)?.name).filter(Boolean);
 
@@ -163,6 +171,12 @@ export default async function ApplicationDetailPage({
                 Decided {new Date(application.decision_at).toLocaleString()}
               </p>
             )}
+            {existingRental && (
+              <p className="muted-text" style={{ fontSize: 13, marginTop: 8 }}>
+                A rental already exists for this customer.
+              </p>
+            )}
+            {canStartRental && <StartRentalForm applicationId={application.id} vehicles={availableVehicles} />}
           </div>
         ) : (
           <DecisionForm applicationId={application.id} />
