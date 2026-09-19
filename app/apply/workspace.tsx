@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone } from "lucide-react";
+import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone, Mail, X } from "lucide-react";
 import DocumentUpload from "./document-upload";
 import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/site-config";
 import {
@@ -11,6 +11,7 @@ import {
   saveWorkStep,
   saveInsuranceStep,
   submitApplication,
+  linkEmailForResume,
 } from "./actions";
 
 type GigPlatform = { id: string; code: string; name: string };
@@ -37,6 +38,26 @@ export default function Workspace({
   );
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(data.applicationStatus !== "draft");
+
+  // Optional, non-blocking: lets an applicant who started anonymously add
+  // an email later so they CAN resume on another device if they want to --
+  // never required to start or continue on the same device/browser.
+  const [showEmailBanner, setShowEmailBanner] = useState(!data.email);
+  const [resumeEmail, setResumeEmail] = useState("");
+  const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  async function handleSaveEmail() {
+    setEmailStatus("sending");
+    setEmailError(null);
+    const result = await linkEmailForResume(resumeEmail);
+    if (!result.success) {
+      setEmailStatus("error");
+      setEmailError(result.error ?? "Couldn't save that. Please try again.");
+      return;
+    }
+    setEmailStatus("sent");
+  }
 
   // Local copies so each step can edit before saving, without re-fetching.
   const [firstName, setFirstName] = useState(data.firstName);
@@ -106,6 +127,53 @@ export default function Workspace({
         <p className="muted-text" style={{ marginBottom: 24, fontSize: 13, fontWeight: 600 }}>
           Step {stepIndex + 1} of {STEPS.length}
         </p>
+      )}
+
+      {showEmailBanner && !submitted && (
+        <div className="card" style={{ marginBottom: 24, background: "var(--cloud)", border: "1px solid var(--border)" }}>
+          {emailStatus === "sent" ? (
+            <p style={{ fontSize: 14, margin: 0 }}>
+              Check your email to confirm — once you do, you can resume from any device.
+            </p>
+          ) : (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700 }}>
+                  <Mail size={16} color="var(--teal)" />
+                  Want to continue from another device later?
+                </div>
+                <button
+                  onClick={() => setShowEmailBanner(false)}
+                  aria-label="Dismiss"
+                  style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}
+                >
+                  <X size={16} color="var(--text-secondary)" />
+                </button>
+              </div>
+              <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>
+                Totally optional — your progress is already saved on this device either way.
+              </p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={resumeEmail}
+                  onChange={(e) => setResumeEmail(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  onClick={handleSaveEmail}
+                  disabled={emailStatus === "sending"}
+                  className="button-primary"
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  {emailStatus === "sending" ? "Saving..." : "Save"}
+                </button>
+              </div>
+              {emailError && <p className="error-text" style={{ marginTop: 6, fontSize: 13 }}>{emailError}</p>}
+            </>
+          )}
+        </div>
       )}
 
       {/* Progress steps */}

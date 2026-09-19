@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
-import SignInForm from "./sign-in-form";
+import AnonymousEntry from "./anonymous-entry";
 import Workspace from "./workspace";
 import { getOrCreateApplication } from "./actions";
 
@@ -12,8 +12,13 @@ export default async function ApplyPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // No session at all -> start one anonymously, silently. This is the fix
+  // for the friction flagged in review: previously EVERY first-time
+  // visitor had to leave the page, open email, and click a link before
+  // they could type a single character. Now that only happens for someone
+  // explicitly resuming on a new device (see /apply/resume).
   if (!user) {
-    return <SignInForm />;
+    return <AnonymousEntry />;
   }
 
   const result = await getOrCreateApplication();

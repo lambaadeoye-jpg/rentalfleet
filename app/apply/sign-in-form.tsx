@@ -40,10 +40,10 @@ export default function SignInForm() {
     <div style={{ maxWidth: 420, margin: "80px auto", padding: "0 24px" }}>
       <form onSubmit={handleSubmit} className="card">
         <Mail size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
-        <h1 style={{ fontSize: 20, marginBottom: 4 }}>Let&apos;s get you on the road.</h1>
+        <h1 style={{ fontSize: 20, marginBottom: 4 }}>Continue on a new device?</h1>
         <p className="muted-text" style={{ marginBottom: 20 }}>
-          Enter your email and we&apos;ll send a secure link to start or continue your
-          application — no password needed.
+          If you added your email while applying, enter it below and we&apos;ll send a secure
+          link to pick up where you left off — no password needed.
         </p>
         <label htmlFor="email" style={{ display: "block", marginBottom: 16 }}>
           <span style={{ fontSize: 13, fontWeight: 600 }}>Email</span>

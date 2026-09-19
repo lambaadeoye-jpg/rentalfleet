@@ -4,11 +4,55 @@ import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 
 // ---------------------------------------------------------------------------
-// AUTH: magic link sign-in for applicants. Per V2.1 §6: "a secure low-friction
-// mechanism... such as magic link or OTP. Avoid unnecessarily forcing the
-// applicant to create a traditional account/password." SMS OTP comes later
-// alongside the Vapi/phone build; magic-link email works with zero extra
-// infrastructure today.
+// AUTH: anonymous-first entry. Starting the application no longer requires
+// email/link/code up front -- that was real, measured friction sitting at
+// the very front door of the flow (contact/verification fields belong at
+// the END of a form, not the start -- asking for them first is one of the
+// most common causes of early-funnel abandonment). An anonymous Supabase
+// session lets someone start filling out the application immediately, with
+// phone (already required in the Personal step) as the real fallback
+// contact method. Email becomes optional, offered later as a way to resume
+// on a different device -- not a gate on starting at all.
+// ---------------------------------------------------------------------------
+export async function beginAnonymousSession(): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInAnonymously();
+
+  if (error) {
+    // Most likely cause: "Allow anonymous sign-ins" isn't enabled yet for
+    // this Supabase project (Authentication -> Sign In / Providers). Same
+    // category of one-time dashboard setup as the SMTP/redirect URL config.
+    return { success: false, error: error.message };
+  }
+  return { success: true };
+}
+
+// Links an email to the CURRENT session (anonymous or otherwise) so the
+// applicant can resume from a different device later via magic link.
+// Optional, called from within the Workspace -- never blocks starting.
+export async function linkEmailForResume(email: string): Promise<{ success: boolean; error?: string }> {
+  const trimmed = email.trim();
+  if (!trimmed) return { success: false, error: "Enter an email address." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser(
+    { email: trimmed },
+    {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback?next=/apply`,
+    }
+  );
+
+  if (error) return { success: false, error: error.message };
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// AUTH: magic link sign-in for applicants RESUMING on a new device/browser
+// where no session persists. Per V2.1 §6: "a secure low-friction
+// mechanism... such as magic link or OTP." SMS OTP comes later alongside
+// the Vapi/phone build; magic-link email works with zero extra
+// infrastructure today. No longer the default first screen -- see
+// beginAnonymousSession() above for why.
 // ---------------------------------------------------------------------------
 export async function sendMagicLink(email: string): Promise<{ success: boolean; error?: string }> {
   const trimmed = email.trim();
