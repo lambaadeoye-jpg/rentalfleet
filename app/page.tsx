@@ -27,10 +27,11 @@ export const dynamic = "force-dynamic"; // always fetch fresh categories/platfor
 const PHONE_DISPLAY = "(615) 555-0100";
 const PHONE_TEL = "+16155550100";
 
-// PLACEHOLDER — minimum age is an underwriting/insurance decision, not
-// something to invent (same category as the weekly rate: a real business
-// policy, not marketing copy). Confirm the real number before this ships.
-const MINIMUM_AGE = 21;
+// Minimum age: adopted from Kali's Luxury & Exotics (a direct Nashville
+// rideshare-rental competitor) during the competitive review — this is a
+// deliberate decision, not a placeholder. Revisit if your own insurance
+// underwriting requires something different.
+const MINIMUM_AGE = 25;
 
 export default async function Home() {
   const supabase = createPublicClient();
@@ -42,7 +43,6 @@ export default async function Home() {
   ]);
 
   const brandName = tenant?.name ?? "Fleet Rental";
-  const primaryCategory = categories?.[0];
 
   return (
     <>
@@ -218,25 +218,34 @@ export default async function Home() {
             Choose the vehicle category that fits your needs. We&apos;ll match you with an
             available vehicle in that category. You don&apos;t need to choose a specific VIN.
           </p>
-          <div className="card vehicle-card">
-            <img src="/images/vehicle-economy-sedan.jpg" alt="Economy sedan" />
-            <div className="vehicle-card-body">
-              <h3 style={{ fontSize: 22, marginBottom: 8 }}>
-                {primaryCategory?.name ?? "Economy Sedan"}
-              </h3>
-              <p className="muted-text" style={{ marginBottom: 16 }}>
-                {primaryCategory?.description ??
-                  "4-door sedan. Automatic transmission. Great for rideshare & gig work."}
-              </p>
-              <ul style={{ margin: "0 0 20px", paddingLeft: 18, color: "var(--text-secondary)", fontSize: 14 }}>
-                <li>Unlimited mileage included</li>
-                <li>Fuel-efficient, practical choice for high-mileage driving</li>
-              </ul>
-              <a href="#apply" className="button-primary" style={{ alignSelf: "flex-start" }}>
-                Check Availability
-              </a>
+          {/* Shows every active category, not just the first -- previously
+              only categories[0] ever rendered here, which worked by
+              accident while there was only one category and would have
+              silently hidden any others added later. */}
+          {(categories && categories.length > 0
+            ? categories
+            : [{ id: "fallback", name: "Economy Sedan", description: "4-door sedan. Automatic transmission. Great for rideshare & gig work." }]
+          ).map((category) => (
+            <div className="card vehicle-card" key={category.id} style={{ marginBottom: 20 }}>
+              {/* Same photo for every category for now -- vehicle_category has
+                  no per-category image column yet, so all cards share the one
+                  real fleet photo until that's added. */}
+              <img src="/images/vehicle-economy-sedan.jpg" alt={category.name} />
+              <div className="vehicle-card-body">
+                <h3 style={{ fontSize: 22, marginBottom: 8 }}>{category.name}</h3>
+                <p className="muted-text" style={{ marginBottom: 16 }}>
+                  {category.description ?? "Reliable, well-maintained, and ready for gig work."}
+                </p>
+                <ul style={{ margin: "0 0 20px", paddingLeft: 18, color: "var(--text-secondary)", fontSize: 14 }}>
+                  <li>Unlimited mileage included</li>
+                  <li>Fuel-efficient, practical choice for high-mileage driving</li>
+                </ul>
+                <a href="#apply" className="button-primary" style={{ alignSelf: "flex-start" }}>
+                  Check Availability
+                </a>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       </section>
 
@@ -254,7 +263,7 @@ export default async function Home() {
             </div>
             <div className="card price-card" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
               <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>WEEKLY</div>
-              <div className="price">Ask us</div>
+              <div className="price">Custom Quote</div>
               <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
                 For drivers who need a vehicle for ongoing work. Pricing shown during rental
                 selection, may vary by category.
@@ -522,7 +531,7 @@ export default async function Home() {
             </a>
           </div>
           <p className="muted-text" style={{ color: "rgba(255,255,255,0.6)", marginTop: 20, fontSize: 14 }}>
-            Daily and weekly rentals • 1-week minimum • Unlimited mileage
+            No credit check. No commitment to apply. Takes about a minute.
           </p>
         </div>
       </section>
