@@ -6,7 +6,12 @@ import { getOrCreateApplication } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export default async function ApplyPage() {
+export default async function ApplyPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string }>;
+}) {
+  const { email: emailFromLead } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -39,5 +44,5 @@ export default async function ApplyPage() {
     .select("id, code, name")
     .order("sort_order");
 
-  return <Workspace data={result.data} platforms={platforms ?? []} />;
+  return <Workspace data={result.data} platforms={platforms ?? []} initialEmail={emailFromLead} />;
 }

@@ -29,9 +29,11 @@ type StepKey = (typeof STEPS)[number]["key"];
 export default function Workspace({
   data,
   platforms,
+  initialEmail,
 }: {
   data: ApplicationData;
   platforms: GigPlatform[];
+  initialEmail?: string;
 }) {
   const [step, setStep] = useState<StepKey>(
     data.applicationStatus === "submitted" || data.applicationStatus === "screening" ? "review" : "personal"
@@ -42,8 +44,11 @@ export default function Workspace({
   // Optional, non-blocking: lets an applicant who started anonymously add
   // an email later so they CAN resume on another device if they want to --
   // never required to start or continue on the same device/browser.
+  // Pre-filled (not auto-submitted) when they arrived via the lead form's
+  // "Continue to Full Application" bridge -- they already typed this once,
+  // no reason to make them type it again, just confirm.
   const [showEmailBanner, setShowEmailBanner] = useState(!data.email);
-  const [resumeEmail, setResumeEmail] = useState("");
+  const [resumeEmail, setResumeEmail] = useState(initialEmail ?? "");
   const [emailStatus, setEmailStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState<string | null>(null);
 
@@ -140,7 +145,7 @@ export default function Workspace({
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700 }}>
                   <Mail size={16} color="var(--teal)" />
-                  Want to continue from another device later?
+                  {initialEmail ? "Use this email to enable resuming later?" : "Want to continue from another device later?"}
                 </div>
                 <button
                   onClick={() => setShowEmailBanner(false)}
@@ -151,7 +156,9 @@ export default function Workspace({
                 </button>
               </div>
               <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>
-                Totally optional — your progress is already saved on this device either way.
+                {initialEmail
+                  ? "We saved this from your request — confirm to enable resume, or change it below."
+                  : "Totally optional — your progress is already saved on this device either way."}
               </p>
               <div style={{ display: "flex", gap: 8 }}>
                 <input

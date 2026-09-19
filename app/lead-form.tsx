@@ -15,6 +15,7 @@ export default function LeadForm({
   platforms: GigPlatform[];
 }) {
   const [submitted, setSubmitted] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -34,13 +35,14 @@ export default function LeadForm({
     setLoading(true);
 
     const form = new FormData(e.currentTarget);
+    const emailValue = String(form.get("email") || "");
 
     try {
       const result = await submitLead({
         firstName: String(form.get("firstName") || ""),
         lastName: String(form.get("lastName") || ""),
         phone: String(form.get("phone") || ""),
-        email: String(form.get("email") || ""),
+        email: emailValue,
         otherPlatformDetail: String(form.get("otherPlatformDetail") || ""),
         preferredCategoryId: (form.get("preferredCategoryId") as string) || null,
         pickupDate: (form.get("pickupDate") as string) || null,
@@ -53,6 +55,7 @@ export default function LeadForm({
         setError(result.error);
         return;
       }
+      setSubmittedEmail(emailValue);
       setSubmitted(true);
     } catch {
       // Belt-and-suspenders: submitLead itself is try/caught server-side and
@@ -76,7 +79,11 @@ export default function LeadForm({
             no path forward for someone ready to go further immediately;
             they'd just see this message with nowhere else to go. */}
         <p style={{ fontSize: 14, marginBottom: 12 }}>Already know you're ready?</p>
-        <a href="/apply" className="button-primary" style={{ display: "inline-flex" }}>
+        <a
+          href={submittedEmail ? `/apply?email=${encodeURIComponent(submittedEmail)}` : "/apply"}
+          className="button-primary"
+          style={{ display: "inline-flex" }}
+        >
           Continue to Full Application
         </a>
       </div>
