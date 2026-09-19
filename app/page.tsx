@@ -1,5 +1,6 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import LeadForm from "./lead-form";
+import { PHONE_DISPLAY, PHONE_TEL, MINIMUM_AGE } from "@/lib/site-config";
 import {
   Gauge,
   ShieldCheck,
@@ -20,18 +21,6 @@ import {
 } from "lucide-react";
 
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
-
-// PLACEHOLDER — replace with the real business line once it's live (ideally
-// the same number the Vapi/n8n voice agent answers, so "call us" and the
-// automated agent are the same door, not two different numbers).
-const PHONE_DISPLAY = "(615) 555-0100";
-const PHONE_TEL = "+16155550100";
-
-// Minimum age: adopted from Kali's Luxury & Exotics (a direct Nashville
-// rideshare-rental competitor) during the competitive review — this is a
-// deliberate decision, not a placeholder. Revisit if your own insurance
-// underwriting requires something different.
-const MINIMUM_AGE = 25;
 
 export default async function Home() {
   const supabase = createPublicClient();

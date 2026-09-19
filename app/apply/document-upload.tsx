@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, CheckCircle2 } from "lucide-react";
+import { Upload, CheckCircle2, Lock } from "lucide-react";
 import { uploadApplicantDocument } from "./actions";
 
 export default function DocumentUpload({
@@ -72,6 +72,14 @@ export default function DocumentUpload({
         />
       </div>
       {error && <p className="error-text" style={{ marginTop: 6 }}>{error}</p>}
+      {/* Trust signal at the exact point of highest hesitation -- handing
+          over an ID document. This is an accurate claim, not just
+          reassuring copy: uploads go into a private, access-controlled
+          bucket scoped to this applicant only (migration 0026). */}
+      <p className="muted-text" style={{ fontSize: 12, marginTop: 6, display: "flex", alignItems: "center", gap: 4 }}>
+        <Lock size={11} />
+        Stored securely — visible only to you and our team, used only to verify your application.
+      </p>
     </div>
   );
 }
