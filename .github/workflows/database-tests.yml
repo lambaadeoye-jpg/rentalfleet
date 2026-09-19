@@ -1,0 +1,42 @@
+name: Database Tests
+
+# Runs the real, executable CI test suite (supabase/tests/*.sql) against
+# the live Supabase project on every push/PR to main. Not a throwaway CI
+# container: migrations depend on Supabase-specific schemas (auth.*,
+# storage.*) that don't exist in a vanilla Postgres image, and spinning up
+# the full local Supabase stack (Docker-in-Docker, supabase CLI) adds real
+# CI complexity for a 3-vehicle pilot that doesn't need it yet. Both test
+# files wrap themselves in a transaction that rolls back at the end -- safe
+# to run against the real project repeatedly, which is exactly how they
+# were built and verified all along this build.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install postgresql-client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Run domain integrity tests
+        env:
+          PGCONNECT_TIMEOUT: 15
+        run: |
+          psql "${{ secrets.SUPABASE_DB_URL }}" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/domain_integrity_test.sql
+
+      - name: Run RLS tenant isolation tests
+        env:
+          PGCONNECT_TIMEOUT: 15
+        run: |
+          psql "${{ secrets.SUPABASE_DB_URL }}" \
+            -v ON_ERROR_STOP=1 \
+            -f supabase/tests/rls_tenant_isolation_test.sql
