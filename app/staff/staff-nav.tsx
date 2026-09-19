@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: "/staff/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/staff/leads", label: "Leads", icon: Users },
   { href: "/staff/applications", label: "Applications", icon: ClipboardList },
+  { href: "/staff/fleet", label: "Fleet", icon: Car },
 ] as const;
 
 export default function StaffNav({
