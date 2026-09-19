@@ -35,6 +35,32 @@ export default async function Home() {
 
   return (
     <>
+      {/* AutoRental structured data (schema.org) -- tells search engines
+          unambiguously "this is a car rental business," independent of how
+          the visible copy reads. Deliberately omits a street address: no
+          real one has been established yet, and inventing one would be the
+          same mistake as guessing the weekly rate or deposit policy. Add
+          "address" here once a real pickup location exists. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "AutoRental",
+            name: brandName,
+            description:
+              "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent-driving work throughout Greater Nashville.",
+            url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleet-rental-os.netlify.app",
+            telephone: PHONE_TEL,
+            areaServed: {
+              "@type": "City",
+              name: "Nashville",
+              containedInPlace: { "@type": "State", name: "Tennessee" },
+            },
+          }),
+        }}
+      />
+
       {/* NAV */}
       <div className="hero">
         <img
@@ -69,7 +95,7 @@ export default async function Home() {
             </div>
             <h1>Get a car. Get to work. Get moving.</h1>
             <p className="hero-sub">
-              Reliable, fuel-efficient vehicles for drivers who need a dependable way to work
+              Weekly and daily vehicle rentals for drivers who need a dependable way to work
               and earn. Drive rideshare, deliver food and packages, run Amazon Flex routes,
               provide medical courier services, and more — with a vehicle built to keep you
               moving.

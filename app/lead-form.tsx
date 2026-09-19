@@ -69,9 +69,16 @@ export default function LeadForm({
       <div className="card" style={{ textAlign: "center", padding: 48 }}>
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
         <h3 style={{ fontSize: 22, marginBottom: 8 }}>Thanks — we've got your request.</h3>
-        <p className="muted-text">
+        <p className="muted-text" style={{ marginBottom: 20 }}>
           We'll review your information and follow up with the next step.
         </p>
+        {/* Bridge to the real Application Workspace -- previously there was
+            no path forward for someone ready to go further immediately;
+            they'd just see this message with nowhere else to go. */}
+        <p style={{ fontSize: 14, marginBottom: 12 }}>Already know you're ready?</p>
+        <a href="/apply" className="button-primary" style={{ display: "inline-flex" }}>
+          Continue to Full Application
+        </a>
       </div>
     );
   }
