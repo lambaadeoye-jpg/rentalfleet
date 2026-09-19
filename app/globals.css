@@ -406,3 +406,19 @@ label {
     padding-bottom: 76px;
   }
 }
+
+.nav-jump-link {
+  display: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.nav-jump-link:hover {
+  color: white;
+}
+@media (min-width: 860px) {
+  .nav-jump-link {
+    display: inline-block;
+  }
+}

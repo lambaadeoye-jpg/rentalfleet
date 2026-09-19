@@ -15,6 +15,8 @@ import {
   BadgeCheck,
   KeyRound,
   Phone,
+  IdCard,
+  UserCheck,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
@@ -24,6 +26,11 @@ export const dynamic = "force-dynamic"; // always fetch fresh categories/platfor
 // automated agent are the same door, not two different numbers).
 const PHONE_DISPLAY = "(615) 555-0100";
 const PHONE_TEL = "+16155550100";
+
+// PLACEHOLDER — minimum age is an underwriting/insurance decision, not
+// something to invent (same category as the weekly rate: a real business
+// policy, not marketing copy). Confirm the real number before this ships.
+const MINIMUM_AGE = 21;
 
 export default async function Home() {
   const supabase = createPublicClient();
@@ -53,6 +60,10 @@ export default async function Home() {
               {brandName}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              <a href="#fleet" className="nav-jump-link">Fleet</a>
+              <a href="#how-it-works" className="nav-jump-link">How It Works</a>
+              <a href="#pricing" className="nav-jump-link">Pricing</a>
+              <a href="#faq" className="nav-jump-link">FAQ</a>
               <a href={`tel:${PHONE_TEL}`} className="nav-phone-link">
                 <Phone size={15} />
                 {PHONE_DISPLAY}
@@ -165,8 +176,12 @@ export default async function Home() {
             </div>
             <div className="card benefit-card">
               <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Insurance Included</h3>
-              <p>Company liability coverage is included with every rental.</p>
+              <h3>Insurance, Sorted Simply</h3>
+              <p>
+                Already have coverage? Bring it. Need help getting set up? Ask us about
+                insurance options for qualified renters — either way, we&apos;ll make sure
+                you&apos;re covered before you drive.
+              </p>
             </div>
           </div>
         </div>
@@ -196,7 +211,7 @@ export default async function Home() {
       </section>
 
       {/* VEHICLE / FUEL EFFICIENCY */}
-      <section className="section">
+      <section className="section" id="fleet">
         <div className="container">
           <h2 className="section-title">Find the vehicle that fits your work.</h2>
           <p className="section-lede">
@@ -226,7 +241,7 @@ export default async function Home() {
       </section>
 
       {/* PRICING */}
-      <section className="section section-dark">
+      <section className="section section-dark" id="pricing">
         <div className="container">
           <h2 className="section-title">Simple rental options for working drivers.</h2>
           <div className="price-grid">
@@ -254,7 +269,7 @@ export default async function Home() {
       </section>
 
       {/* FAST PROCESS */}
-      <section className="section">
+      <section className="section" id="how-it-works">
         <div className="container">
           <h2 className="section-title">From application to road — without unnecessary delays.</h2>
           <div className="steps-row" style={{ marginTop: 32 }}>
@@ -295,6 +310,41 @@ export default async function Home() {
             Many customers can move through the process in less than 24 hours when required
             information, documentation, and approvals are completed promptly.
           </p>
+        </div>
+      </section>
+
+      {/* WHAT YOU NEED */}
+      <section className="section" style={{ background: "var(--white)" }}>
+        <div className="container">
+          <h2 className="section-title">What you need to get started.</h2>
+          <p className="section-lede">
+            A few simple requirements — nothing more than that.
+          </p>
+          <div className="grid-3">
+            <div className="card benefit-card">
+              <UserCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>{MINIMUM_AGE}+ Years Old</h3>
+              <p>Minimum age requirement for all rentals.</p>
+            </div>
+            <div className="card benefit-card">
+              <IdCard size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>Valid Driver&apos;s License</h3>
+              <p>A current, non-expired license with valid ID.</p>
+            </div>
+            <div className="card benefit-card">
+              <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>Insurance Coverage</h3>
+              <p>Bring your own, or ask us about options for qualified renters.</p>
+            </div>
+            <div className="card benefit-card">
+              <BadgeCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
+              <h3>No Credit Check</h3>
+              <p>
+                We don&apos;t use a traditional credit check as part of our rental process.
+                Other eligibility requirements may apply.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -362,7 +412,7 @@ export default async function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="section" style={{ background: "var(--white)" }}>
+      <section className="section" id="faq" style={{ background: "var(--white)" }}>
         <div className="container" style={{ maxWidth: 720 }}>
           <h2 className="section-title">Frequently asked questions</h2>
           <div style={{ marginTop: 24 }}>
@@ -382,8 +432,20 @@ export default async function Home() {
               </p>
             </details>
             <details className="faq-item">
+              <summary>Do I need my own insurance?</summary>
+              <p>
+                You&apos;re welcome to bring your own coverage, or ask us about insurance
+                options for qualified renters — either way, you&apos;ll be covered before you
+                drive.
+              </p>
+            </details>
+            <details className="faq-item">
               <summary>Is mileage limited?</summary>
               <p>Unlimited mileage is included.</p>
+            </details>
+            <details className="faq-item">
+              <summary>What&apos;s the minimum age to rent?</summary>
+              <p>You must be at least {MINIMUM_AGE} years old with a valid driver&apos;s license.</p>
             </details>
             <details className="faq-item">
               <summary>Do you run a credit check?</summary>
