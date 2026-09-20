@@ -100,6 +100,7 @@ export type ApplicationData = {
   postalCode: string;
   licenseState: string;
   licenseNumberRef: string;
+  licenseExpiry: string;
   gigPlatformIds: string[];
   insuranceProvider: string;
   insurancePolicyReference: string;
@@ -199,7 +200,7 @@ export async function getOrCreateApplication(): Promise<
 
   const { data: driver } = await supabase
     .from("authorized_driver")
-    .select("license_state, license_number_ref")
+    .select("license_state, license_number_ref, license_expiry")
     .eq("customer_id", customerId)
     .limit(1)
     .maybeSingle();
@@ -233,6 +234,7 @@ export async function getOrCreateApplication(): Promise<
       postalCode: "",
       licenseState: driver?.license_state ?? "",
       licenseNumberRef: driver?.license_number_ref ?? "",
+      licenseExpiry: driver?.license_expiry ?? "",
       gigPlatformIds: (platforms ?? []).map((p) => p.gig_platform_id),
       insuranceProvider: insurance?.provider ?? "",
       insurancePolicyReference: insurance?.policy_reference ?? "",
@@ -289,7 +291,7 @@ export async function savePersonalStep(
 // ---------------------------------------------------------------------------
 export async function saveLicenseStep(
   customerId: string,
-  fields: { licenseState: string; licenseNumberRef: string }
+  fields: { licenseState: string; licenseNumberRef: string; licenseExpiry: string }
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
@@ -309,7 +311,11 @@ export async function saveLicenseStep(
   if (existing) {
     const { error } = await supabase
       .from("authorized_driver")
-      .update({ license_state: fields.licenseState, license_number_ref: fields.licenseNumberRef })
+      .update({
+        license_state: fields.licenseState,
+        license_number_ref: fields.licenseNumberRef,
+        license_expiry: fields.licenseExpiry || null,
+      })
       .eq("id", existing.id);
     if (error) return { success: false, error: "Couldn't save. Please try again." };
   } else {
@@ -320,6 +326,7 @@ export async function saveLicenseStep(
       last_name: customer?.last_name || "",
       license_state: fields.licenseState,
       license_number_ref: fields.licenseNumberRef,
+      license_expiry: fields.licenseExpiry || null,
       status: "pending",
     });
     if (error) return { success: false, error: "Couldn't save. Please try again." };

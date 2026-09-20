@@ -163,6 +163,27 @@ export async function startRental(
 
   await supabase.from("customer").update({ status: "active" }).eq("id", application.customer_id);
 
+  // Creates the recurring payment schedule the Upcoming Payment Reminder
+  // workflow reads from -- but only if a real weekly rate actually exists.
+  // policy_version.rules.weekly_rate_usd is deliberately left unset until
+  // the business decides the real number (same "don't invent it" rule
+  // applied to quotedAmount above); payment_schedule.amount is NOT NULL,
+  // so writing a fabricated number into a real financial record would be
+  // worse than just not creating the schedule yet. "Anchored to the
+  // rental start date" per the locked recurring-billing rule -- first
+  // payment due exactly 7 days after pickup, not the calendar week.
+  const weeklyRate = (policy?.rules as any)?.weekly_rate_usd;
+  if (weeklyRate) {
+    await supabase.from("payment_schedule").insert({
+      tenant_id: application.tenant_id,
+      rental_id: rental.id,
+      cadence: "weekly",
+      next_due_at: returnAt.toISOString(),
+      amount: weeklyRate,
+      status: "active",
+    });
+  }
+
   revalidatePath(`/staff/applications/${applicationId}`);
   revalidatePath("/staff/fleet");
   return { success: true };

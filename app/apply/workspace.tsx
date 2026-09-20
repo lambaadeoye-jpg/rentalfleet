@@ -70,6 +70,7 @@ export default function Workspace({
   const [phone, setPhone] = useState(data.phone);
   const [licenseState, setLicenseState] = useState(data.licenseState);
   const [licenseNumberRef, setLicenseNumberRef] = useState(data.licenseNumberRef);
+  const [licenseExpiry, setLicenseExpiry] = useState(data.licenseExpiry);
   const [gigPlatformIds, setGigPlatformIds] = useState<string[]>(data.gigPlatformIds);
   const [insuranceProvider, setInsuranceProvider] = useState(data.insuranceProvider);
   const [insurancePolicyReference, setInsurancePolicyReference] = useState(data.insurancePolicyReference);
@@ -92,7 +93,7 @@ export default function Workspace({
     if (step === "personal") {
       result = await savePersonalStep(data.customerId, { firstName, lastName, phone });
     } else if (step === "license") {
-      result = await saveLicenseStep(data.customerId, { licenseState, licenseNumberRef });
+      result = await saveLicenseStep(data.customerId, { licenseState, licenseNumberRef, licenseExpiry });
     } else if (step === "work") {
       result = await saveWorkStep(data.customerId, gigPlatformIds);
     } else if (step === "insurance") {
@@ -263,6 +264,14 @@ export default function Workspace({
                 <input value={licenseNumberRef} onChange={(e) => setLicenseNumberRef(e.target.value)} />
               </label>
             </div>
+            <label className="field">
+              <span style={{ fontSize: 13, fontWeight: 600 }}>License expiration date</span>
+              <input
+                type="date"
+                value={licenseExpiry}
+                onChange={(e) => setLicenseExpiry(e.target.value)}
+              />
+            </label>
             <DocumentUpload customerId={data.customerId} documentType="drivers_license" label="Upload driver's license" />
             <DocumentUpload
               customerId={data.customerId}
@@ -334,7 +343,10 @@ export default function Workspace({
                   <li>
                     {firstName} {lastName} — {phone}
                   </li>
-                  <li>License: {licenseState} {licenseNumberRef || "(not yet provided)"}</li>
+                  <li>
+                    License: {licenseState} {licenseNumberRef || "(not yet provided)"}
+                    {licenseExpiry && ` — expires ${licenseExpiry}`}
+                  </li>
                   <li>
                     Platforms:{" "}
                     {platforms
