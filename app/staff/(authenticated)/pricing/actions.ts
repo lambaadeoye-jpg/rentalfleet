@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { logAuditEvent } from "@/lib/audit-log";
 
 export type PricingRules = {
   mileage_policy: string;
@@ -40,6 +41,13 @@ export async function getPricingRules(): Promise<PricingRules | null> {
 export async function updatePricingRules(rules: PricingRules): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
+  const { data: existing } = await supabase
+    .from("policy_version")
+    .select("id, tenant_id, rules")
+    .eq("policy_type", "pricing_and_mileage")
+    .eq("immutable", false)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("policy_version")
     .update({ rules })
@@ -51,6 +59,18 @@ export async function updatePricingRules(rules: PricingRules): Promise<{ success
       return { success: false, error: "You don't have permission to change pricing." };
     }
     return { success: false, error: "Couldn't save. Please try again." };
+  }
+
+  if (existing) {
+    void logAuditEvent({
+      tenantId: existing.tenant_id,
+      action: "pricing_updated",
+      entityType: "policy_version",
+      entityId: existing.id,
+      beforeData: existing.rules as Record<string, unknown>,
+      afterData: rules,
+      source: "staff_portal",
+    });
   }
 
   revalidatePath("/staff/pricing");

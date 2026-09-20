@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
+import { logAuditEvent } from "@/lib/audit-log";
 
 export type AvailableVehicle = {
   id: string;
@@ -269,6 +270,21 @@ export async function confirmPickup(
   const segment = (rental.rental_segment as any)?.[0];
   if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
 
+  // Real gap closed here: previously nothing required a payment/deposit
+  // to be collected before pickup could be confirmed. Requiring at least
+  // one recorded payment (any amount, any method) -- there's no dedicated
+  // "collect deposit" action separate from recordPayment() yet, so this
+  // is the honest, buildable version of that check with what actually
+  // exists today.
+  const { count: paymentCount } = await supabase
+    .from("payment")
+    .select("id", { count: "exact", head: true })
+    .eq("rental_id", rentalId);
+
+  if (!paymentCount || paymentCount === 0) {
+    return { success: false, error: "Record a payment/deposit before confirming pickup." };
+  }
+
   const now = new Date().toISOString();
 
   const { error: rentalUpdateError } = await supabase
@@ -327,6 +343,15 @@ export async function confirmPickup(
     facebookAdUrl: settingsMap.facebook_ad_url ?? null,
   });
 
+  void logAuditEvent({
+    tenantId: rental.tenant_id,
+    action: "rental_pickup_confirmed",
+    entityType: "rental",
+    entityId: rentalId,
+    afterData: { startMileage, vehicleId: segment.vehicle_id },
+    source: "staff_portal",
+  });
+
   return { success: true };
 }
 
@@ -344,7 +369,7 @@ export async function confirmDropoff(
 
   const { data: rental } = await supabase
     .from("rental")
-    .select("id, status, rental_segment(id, vehicle_id)")
+    .select("id, tenant_id, status, rental_segment(id, vehicle_id)")
     .eq("id", rentalId)
     .single();
 
@@ -385,6 +410,16 @@ export async function confirmDropoff(
   }
 
   revalidatePath("/staff/fleet");
+
+  void logAuditEvent({
+    tenantId: rental.tenant_id,
+    action: "rental_dropoff_confirmed",
+    entityType: "rental",
+    entityId: rentalId,
+    afterData: { endMileage, vehicleId: segment.vehicle_id },
+    source: "staff_portal",
+  });
+
   return { success: true };
 }
 
@@ -402,15 +437,19 @@ export async function recordPayment(
   const { data: rental } = await supabase.from("rental").select("id, tenant_id, customer_id").eq("id", rentalId).single();
   if (!rental) return { success: false, error: "Rental not found." };
 
-  const { error } = await supabase.from("payment").insert({
-    tenant_id: rental.tenant_id,
-    rental_id: rental.id,
-    customer_id: rental.customer_id,
-    method_type: methodType,
-    amount,
-    status: "paid",
-    paid_at: new Date().toISOString(),
-  });
+  const { data: payment, error } = await supabase
+    .from("payment")
+    .insert({
+      tenant_id: rental.tenant_id,
+      rental_id: rental.id,
+      customer_id: rental.customer_id,
+      method_type: methodType,
+      amount,
+      status: "paid",
+      paid_at: new Date().toISOString(),
+    })
+    .select("id")
+    .single();
 
   if (error) {
     const msg = error.message?.toLowerCase().includes("permission")
@@ -420,5 +459,17 @@ export async function recordPayment(
   }
 
   revalidatePath("/staff/fleet");
+
+  if (payment) {
+    void logAuditEvent({
+      tenantId: rental.tenant_id,
+      action: "payment_recorded",
+      entityType: "payment",
+      entityId: payment.id,
+      afterData: { amount, methodType, rentalId },
+      source: "staff_portal",
+    });
+  }
+
   return { success: true };
 }

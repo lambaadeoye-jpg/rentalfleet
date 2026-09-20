@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { DECISION_OUTCOMES } from "./constants";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
+import { logAuditEvent } from "@/lib/audit-log";
 
 export async function decideApplication(
   applicationId: string,
@@ -39,7 +40,7 @@ export async function decideApplication(
   // best-effort; the decision is the real, already-saved outcome.
   const { data: application } = await supabase
     .from("application")
-    .select("customer_id, customer:customer_id(first_name, last_name, phone, email)")
+    .select("tenant_id, customer_id, customer:customer_id(first_name, last_name, phone, email)")
     .eq("id", applicationId)
     .maybeSingle();
 
@@ -56,6 +57,17 @@ export async function decideApplication(
     customerPhone: customer?.phone ?? null,
     customerEmail: customer?.email ?? null,
   });
+
+  if (application?.tenant_id) {
+    void logAuditEvent({
+      tenantId: application.tenant_id,
+      action: "application_decision",
+      entityType: "application",
+      entityId: applicationId,
+      afterData: { decision, reason: reason.trim() || null },
+      source: "staff_portal",
+    });
+  }
 
   revalidatePath("/staff/applications");
   revalidatePath(`/staff/applications/${applicationId}`);
