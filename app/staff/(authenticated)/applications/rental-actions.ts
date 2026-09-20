@@ -22,27 +22,22 @@ export async function getAvailableVehicles(): Promise<AvailableVehicle[]> {
   return data ?? [];
 }
 
-// Converts an approved application into a real rental: booking -> rental
-// (walked through its locked state machine to active) -> vehicle
-// assignment -> vehicle walked to rented -> customer promoted from
-// 'applicant' to 'active'. This is the connective tissue that was
-// completely missing -- without it, an approved applicant had no path to
-// ever becoming a real, active renter.
-//
-// Deliberately collapses "reserve" and "hand over the keys" into one staff
-// action, since no separate pickup/inspection UI exists yet -- a more
-// complete system would split these. Flagged here, not silently assumed.
-//
-// Every write below is independently enforced at the database level
-// (assign_vehicle, manage_fleet, and the new start_rental permission from
-// migration 0028, plus state-machine validity from 0018/0029) -- this
-// function doesn't duplicate those checks, it just does the writes and
-// surfaces whatever the database actually decides.
-export async function startRental(
+// ---------------------------------------------------------------------------
+// OFFICE: schedule a rental for an approved application. Ends at
+// 'scheduled' -- deliberately does NOT hand over the vehicle. That's a
+// separate action (confirmPickup, below) for a reason: the person
+// physically handing over keys may be a different, more junior person
+// than whoever manages applications and fleet status. This function needs
+// assign_vehicle (picking which car) and the vehicle available->reserved
+// transition needs manage_fleet -- both office-level permissions.
+// Deliberately does NOT touch customer.status or fire the review webhook;
+// both happen at actual pickup, not at scheduling.
+// ---------------------------------------------------------------------------
+export async function scheduleRental(
   applicationId: string,
   vehicleId: string,
   rentalOption: "daily" | "weekly"
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; rentalId?: string }> {
   const supabase = await createClient();
 
   const { data: application } = await supabase
@@ -53,7 +48,7 @@ export async function startRental(
 
   if (!application) return { success: false, error: "Application not found." };
   if (application.status !== "approved" && application.status !== "conditionally_approved") {
-    return { success: false, error: "Only approved applications can start a rental." };
+    return { success: false, error: "Only approved applications can be scheduled for a rental." };
   }
 
   const { data: vehicle } = await supabase
@@ -72,17 +67,9 @@ export async function startRental(
     .eq("code", "direct")
     .maybeSingle();
 
-  // Fetch the live pricing policy FIRST -- both daily and weekly pricing
-  // now read from here instead of being hardcoded, so an admin editing
-  // rates via the new pricing settings UI actually takes effect. Daily
-  // pricing is seeded as already-approved (a genuinely locked V2.1 rule,
-  // not a TBD number); weekly and late fees start unapproved until a real
-  // admin sets them -- checked via explicit boolean flags now, not a
-  // truthy-value guess. This fixes a real bug: the previous version
-  // checked `if (weeklyRate)` alone, which would have silently used the
-  // seeded DRAFT $400 placeholder the moment anyone chose weekly, despite
-  // it being explicitly marked "not yet approved" in a status string nothing
-  // actually enforced.
+  // Reads pricing from the admin-editable policy (migration 0038) instead
+  // of hardcoding it -- an admin changing rates on /staff/pricing actually
+  // takes effect here.
   const { data: policy } = await supabase
     .from("policy_version")
     .select("rules")
@@ -100,8 +87,8 @@ export async function startRental(
     quotedAmount = dailyRules.first_tier_total_usd + Math.max(0, extraDays) * dailyRules.per_day_after_usd;
   }
 
-  const pickupAt = new Date();
-  const returnAt = new Date(pickupAt.getTime() + days * 24 * 60 * 60 * 1000);
+  const plannedPickupAt = new Date();
+  const plannedReturnAt = new Date(plannedPickupAt.getTime() + days * 24 * 60 * 60 * 1000);
 
   const { data: booking, error: bookingError } = await supabase
     .from("booking")
@@ -110,8 +97,8 @@ export async function startRental(
       customer_id: application.customer_id,
       category_id: vehicle.category_id,
       channel_id: channel?.id ?? null,
-      pickup_at: pickupAt.toISOString(),
-      return_at: returnAt.toISOString(),
+      pickup_at: plannedPickupAt.toISOString(),
+      return_at: plannedReturnAt.toISOString(),
       status: "confirmed",
       quoted_amount: quotedAmount,
     })
@@ -127,8 +114,7 @@ export async function startRental(
       customer_id: application.customer_id,
       booking_id: booking.id,
       status: "pending",
-      start_at: pickupAt.toISOString(),
-      expected_return_at: returnAt.toISOString(),
+      expected_return_at: plannedReturnAt.toISOString(),
       governing_policy_snapshot: policy?.rules ?? {},
     })
     .select("id")
@@ -136,19 +122,12 @@ export async function startRental(
 
   if (rentalError || !rental) return { success: false, error: "Couldn't create the rental. Please try again." };
 
-  // Walk the locked rental state machine one hop at a time -- each is
-  // independently validated by the database (migration 0018/0029), and the
-  // final hop to 'active' also requires verified renter insurance on file
-  // (migration 0030).
-  for (const status of ["approved", "scheduled", "active"] as const) {
+  for (const status of ["approved", "scheduled"] as const) {
     const { error } = await supabase.from("rental").update({ status }).eq("id", rental.id);
     if (error) {
-      let msg = `Couldn't move the rental to "${status}". ${error.message}`;
-      if (error.message?.toLowerCase().includes("permission")) {
-        msg = "You don't have permission to activate a rental.";
-      } else if (error.message?.toLowerCase().includes("renter insurance is not verified")) {
-        msg = "This customer's insurance isn't verified as active yet. Check Insurance before starting the rental.";
-      }
+      const msg = error.message?.toLowerCase().includes("permission")
+        ? "You don't have permission to schedule a rental."
+        : `Couldn't move the rental to "${status}".`;
       return { success: false, error: msg };
     }
   }
@@ -157,7 +136,7 @@ export async function startRental(
     tenant_id: application.tenant_id,
     rental_id: rental.id,
     vehicle_id: vehicleId,
-    starts_at: pickupAt.toISOString(),
+    starts_at: plannedPickupAt.toISOString(),
   });
   if (segmentError) {
     const msg = segmentError.message?.toLowerCase().includes("permission")
@@ -166,58 +145,280 @@ export async function startRental(
     return { success: false, error: msg };
   }
 
-  for (const status of ["reserved", "rented"] as const) {
-    const { error } = await supabase.from("vehicle").update({ status }).eq("id", vehicleId);
-    if (error) {
-      const msg = error.message?.toLowerCase().includes("permission")
-        ? "You don't have permission to update vehicle status."
-        : `Couldn't move the vehicle to "${status}".`;
-      return { success: false, error: msg };
-    }
+  const { error: vehicleError } = await supabase.from("vehicle").update({ status: "reserved" }).eq("id", vehicleId);
+  if (vehicleError) {
+    const msg = vehicleError.message?.toLowerCase().includes("permission")
+      ? "You don't have permission to update vehicle status."
+      : "Couldn't reserve the vehicle.";
+    return { success: false, error: msg };
   }
 
-  await supabase.from("customer").update({ status: "active" }).eq("id", application.customer_id);
-
-  // Creates the recurring payment schedule the Upcoming Payment Reminder
-  // workflow reads from -- but only if the weekly rate is explicitly
-  // approved, not merely present. Fixed a real bug here: the seeded policy
-  // already had weekly_rate_usd: 400 as an unapproved draft placeholder,
-  // and the old `if (weeklyRate)` check would have silently used it the
-  // moment anyone chose a weekly rental, ignoring the "not yet approved"
-  // marker entirely. Now checks the explicit weekly_approved boolean an
-  // admin sets via the pricing settings UI. "Anchored to the rental start
-  // date" per the locked recurring-billing rule -- first payment due
-  // exactly 7 days after pickup, not the calendar week.
+  // Weekly payment schedule only created when explicitly approved (0038)
+  // -- fixed a real bug where an unapproved draft rate would have been
+  // silently used otherwise.
   if (rules.weekly_approved && rules.weekly_rate_usd) {
     await supabase.from("payment_schedule").insert({
       tenant_id: application.tenant_id,
       rental_id: rental.id,
       cadence: "weekly",
-      next_due_at: returnAt.toISOString(),
+      next_due_at: plannedReturnAt.toISOString(),
       amount: rules.weekly_rate_usd,
       status: "active",
     });
   }
 
   revalidatePath(`/staff/applications/${applicationId}`);
+  return { success: true, rentalId: rental.id };
+}
+
+export type ActiveRentalInfo = {
+  id: string;
+  status: string;
+  customerId: string;
+  customerFirstName: string;
+  customerPhone: string;
+  customerEmail: string;
+  vehicleId: string;
+  vehicleLabel: string;
+  hasLicenseDocument: boolean;
+  insuranceVerified: boolean;
+  agreementAcknowledgedAt: string | null;
+  pickupChecklistCompletedAt: string | null;
+  dropoffChecklistCompletedAt: string | null;
+};
+
+// Real, data-backed checklist state for a scheduled/active rental -- used
+// by the pickup/dropoff panel. Three checks are genuinely backed by real
+// data (license document exists, insurance verification status, vehicle
+// status); agreement acknowledgment is an honest lightweight placeholder,
+// not a real e-signature (none exists yet).
+export async function getRentalForChecklist(rentalId: string): Promise<ActiveRentalInfo | null> {
+  const supabase = await createClient();
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select(
+      "id, status, customer_id, agreement_acknowledged_at, pickup_checklist_completed_at, dropoff_checklist_completed_at, customer:customer_id(first_name, phone, email), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))"
+    )
+    .eq("id", rentalId)
+    .maybeSingle();
+
+  if (!rental) return null;
+
+  const customer = rental.customer as any;
+  const segment = (rental.rental_segment as any)?.[0];
+  const vehicle = segment?.vehicle;
+
+  const [{ count: docCount }, { data: insurance }] = await Promise.all([
+    supabase
+      .from("customer_document")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", rental.customer_id)
+      .eq("document_type", "drivers_license"),
+    supabase
+      .from("insurance_policy")
+      .select("verification_status")
+      .eq("customer_id", rental.customer_id)
+      .eq("policy_type", "renter")
+      .maybeSingle(),
+  ]);
+
+  return {
+    id: rental.id,
+    status: rental.status,
+    customerId: rental.customer_id,
+    customerFirstName: customer?.first_name ?? "",
+    customerPhone: customer?.phone ?? "",
+    customerEmail: customer?.email ?? "",
+    vehicleId: segment?.vehicle_id ?? "",
+    vehicleLabel: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : "",
+    hasLicenseDocument: (docCount ?? 0) > 0,
+    insuranceVerified: insurance?.verification_status === "verified_active" || insurance?.verification_status === "expiring_soon",
+    agreementAcknowledgedAt: rental.agreement_acknowledged_at,
+    pickupChecklistCompletedAt: rental.pickup_checklist_completed_at,
+    dropoffChecklistCompletedAt: rental.dropoff_checklist_completed_at,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// FIELD: confirm actual physical pickup. This is the moment start_mileage
+// gets recorded, the agreement gets acknowledged, and the rental actually
+// becomes active. Requires start_rental (the existing transition gate) --
+// granted to both admin and the new field_staff role (migration 0037).
+// ---------------------------------------------------------------------------
+export async function confirmPickup(
+  rentalId: string,
+  startMileage: number,
+  agreementAcknowledged: boolean
+): Promise<{ success: boolean; error?: string }> {
+  if (!agreementAcknowledged) {
+    return { success: false, error: "Confirm the agreement was walked through before completing pickup." };
+  }
+
+  const supabase = await createClient();
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, tenant_id, customer_id, status, rental_segment(id, vehicle_id)")
+    .eq("id", rentalId)
+    .single();
+
+  if (!rental) return { success: false, error: "Rental not found." };
+  if (rental.status !== "scheduled") return { success: false, error: "This rental isn't in scheduled status." };
+
+  const segment = (rental.rental_segment as any)?.[0];
+  if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
+
+  const now = new Date().toISOString();
+
+  const { error: rentalUpdateError } = await supabase
+    .from("rental")
+    .update({
+      status: "active",
+      start_at: now,
+      agreement_acknowledged_at: now,
+      pickup_checklist_completed_at: now,
+    })
+    .eq("id", rentalId);
+
+  if (rentalUpdateError) {
+    const msg = rentalUpdateError.message?.toLowerCase().includes("permission")
+      ? "You don't have permission to confirm pickup."
+      : rentalUpdateError.message?.toLowerCase().includes("renter insurance is not verified")
+        ? "This customer's insurance isn't verified as active yet."
+        : "Couldn't confirm pickup. Please try again.";
+    return { success: false, error: msg };
+  }
+
+  await supabase.from("rental_segment").update({ start_mileage: startMileage }).eq("id", segment.id);
+
+  const { error: vehicleError } = await supabase
+    .from("vehicle")
+    .update({ status: "rented" })
+    .eq("id", segment.vehicle_id);
+  if (vehicleError) {
+    const msg = vehicleError.message?.toLowerCase().includes("permission")
+      ? "You don't have permission to mark the vehicle rented."
+      : "Couldn't update the vehicle.";
+    return { success: false, error: msg };
+  }
+
+  await supabase.from("customer").update({ status: "active" }).eq("id", rental.customer_id);
+
   revalidatePath("/staff/fleet");
 
-  // Fire-and-forget, same pattern as submitLead()/decideApplication() --
-  // never blocks or fails the rental start itself if n8n is down/slow.
-  // Fetched separately from the writes above so a failure here can't
-  // affect anything already committed.
-  const { data: customer } = await supabase
-    .from("customer")
-    .select("first_name, phone, email")
-    .eq("id", application.customer_id)
-    .maybeSingle();
+  // Fire-and-forget the review-request webhook, now carrying the current
+  // Google review link + Facebook ad URL from tenant_setting instead of
+  // requiring anyone to edit the n8n workflow directly when a new ad
+  // campaign starts.
+  const [{ data: customer }, { data: settings }] = await Promise.all([
+    supabase.from("customer").select("first_name, phone, email").eq("id", rental.customer_id).maybeSingle(),
+    supabase.from("tenant_setting").select("key, value").in("key", ["google_review_url", "facebook_ad_url"]),
+  ]);
+
+  const settingsMap = Object.fromEntries((settings ?? []).map((s) => [s.key, s.value]));
 
   void fireN8nWebhook(N8N_WEBHOOK_PATHS.pickupReviewRequest, {
     rentalId: rental.id,
     customerFirstName: customer?.first_name ?? null,
     customerPhone: customer?.phone ?? null,
     customerEmail: customer?.email ?? null,
+    googleReviewUrl: settingsMap.google_review_url ?? null,
+    facebookAdUrl: settingsMap.facebook_ad_url ?? null,
   });
 
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// FIELD: confirm dropoff/return. Walks the already-seeded return path
+// (active -> return_pending -> returned -> closed) in one action, records
+// actual_return_at and end_mileage, frees the vehicle back to available.
+// Requires confirm_dropoff.
+// ---------------------------------------------------------------------------
+export async function confirmDropoff(
+  rentalId: string,
+  endMileage: number
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, status, rental_segment(id, vehicle_id)")
+    .eq("id", rentalId)
+    .single();
+
+  if (!rental) return { success: false, error: "Rental not found." };
+  if (rental.status !== "active") return { success: false, error: "This rental isn't currently active." };
+
+  const segment = (rental.rental_segment as any)?.[0];
+  if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
+
+  const now = new Date().toISOString();
+
+  for (const status of ["return_pending", "returned", "closed"] as const) {
+    const { error } = await supabase.from("rental").update({ status }).eq("id", rentalId);
+    if (error) {
+      const msg = error.message?.toLowerCase().includes("permission")
+        ? "You don't have permission to confirm dropoff."
+        : `Couldn't move the rental to "${status}".`;
+      return { success: false, error: msg };
+    }
+  }
+
+  await supabase
+    .from("rental")
+    .update({ actual_return_at: now, dropoff_checklist_completed_at: now })
+    .eq("id", rentalId);
+
+  await supabase.from("rental_segment").update({ end_mileage: endMileage, ends_at: now }).eq("id", segment.id);
+
+  const { error: vehicleError } = await supabase
+    .from("vehicle")
+    .update({ status: "available" })
+    .eq("id", segment.vehicle_id);
+  if (vehicleError) {
+    const msg = vehicleError.message?.toLowerCase().includes("permission")
+      ? "You don't have permission to free up the vehicle."
+      : "Couldn't update the vehicle.";
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/staff/fleet");
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Manual payment recording. Requires collect_payment (migration 0037) --
+// previously payment had no permission gate at all.
+// ---------------------------------------------------------------------------
+export async function recordPayment(
+  rentalId: string,
+  amount: number,
+  methodType: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const { data: rental } = await supabase.from("rental").select("id, tenant_id, customer_id").eq("id", rentalId).single();
+  if (!rental) return { success: false, error: "Rental not found." };
+
+  const { error } = await supabase.from("payment").insert({
+    tenant_id: rental.tenant_id,
+    rental_id: rental.id,
+    customer_id: rental.customer_id,
+    method_type: methodType,
+    amount,
+    status: "paid",
+    paid_at: new Date().toISOString(),
+  });
+
+  if (error) {
+    const msg = error.message?.toLowerCase().includes("permission")
+      ? "You don't have permission to record a payment."
+      : "Couldn't record that payment. Please try again.";
+    return { success: false, error: msg };
+  }
+
+  revalidatePath("/staff/fleet");
   return { success: true };
 }

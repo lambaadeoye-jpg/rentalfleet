@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { startRental, type AvailableVehicle } from "../rental-actions";
+import { scheduleRental, type AvailableVehicle } from "../rental-actions";
 
 export default function StartRentalForm({
   applicationId,
@@ -17,7 +17,7 @@ export default function StartRentalForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleStart() {
+  async function handleSchedule() {
     if (!vehicleId) {
       setError("Select a vehicle first.");
       return;
@@ -25,12 +25,12 @@ export default function StartRentalForm({
     setError(null);
     setLoading(true);
 
-    const result = await startRental(applicationId, vehicleId, rentalOption);
+    const result = await scheduleRental(applicationId, vehicleId, rentalOption);
 
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't start the rental. Please try again.");
+      setError(result.error ?? "Couldn't schedule the rental. Please try again.");
       return;
     }
 
@@ -53,7 +53,7 @@ export default function StartRentalForm({
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <h3 style={{ fontSize: 16, marginBottom: 12 }}>Start Rental</h3>
+      <h3 style={{ fontSize: 16, marginBottom: 12 }}>Schedule Rental</h3>
 
       <label className="field">
         <span style={{ fontSize: 13, fontWeight: 600 }}>Vehicle</span>
@@ -77,13 +77,14 @@ export default function StartRentalForm({
 
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
 
-      <button onClick={handleStart} disabled={loading} className="button-primary">
-        {loading ? "Starting..." : "Start Rental"}
+      <button onClick={handleSchedule} disabled={loading} className="button-primary">
+        {loading ? "Scheduling..." : "Schedule Rental"}
       </button>
 
       <p className="muted-text" style={{ fontSize: 12, marginTop: 10 }}>
-        This creates the booking and rental, assigns the vehicle, and marks it rented --
-        enforced by the database, not just this screen.
+        Reserves the vehicle and creates the rental record. The vehicle isn&apos;t handed over
+        yet -- that happens separately in Fleet, when whoever&apos;s doing the physical pickup
+        confirms it.
       </p>
     </div>
   );
