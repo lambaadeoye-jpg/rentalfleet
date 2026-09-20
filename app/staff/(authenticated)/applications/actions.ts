@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { DECISION_OUTCOMES } from "./constants";
+import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 
 export async function decideApplication(
   applicationId: string,
@@ -31,6 +32,30 @@ export async function decideApplication(
     }
     return { success: false, error: "Couldn't save that decision. Please try again." };
   }
+
+  // Fetch contact info for the notification separately from the update
+  // above -- if THIS fails for any reason, the decision itself (already
+  // committed) is never rolled back or affected. Notification is
+  // best-effort; the decision is the real, already-saved outcome.
+  const { data: application } = await supabase
+    .from("application")
+    .select("customer_id, customer:customer_id(first_name, last_name, phone, email)")
+    .eq("id", applicationId)
+    .maybeSingle();
+
+  const customer = application?.customer as
+    | { first_name: string | null; last_name: string | null; phone: string | null; email: string | null }
+    | undefined;
+
+  void fireN8nWebhook(N8N_WEBHOOK_PATHS.applicationDecision, {
+    applicationId,
+    decision,
+    reason: reason.trim() || null,
+    customerFirstName: customer?.first_name ?? null,
+    customerLastName: customer?.last_name ?? null,
+    customerPhone: customer?.phone ?? null,
+    customerEmail: customer?.email ?? null,
+  });
 
   revalidatePath("/staff/applications");
   revalidatePath(`/staff/applications/${applicationId}`);

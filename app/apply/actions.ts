@@ -243,6 +243,28 @@ export async function getOrCreateApplication(): Promise<
 // ---------------------------------------------------------------------------
 // STEP 1: Personal
 // ---------------------------------------------------------------------------
+// Bumps the applicant's most recent application.updated_at whenever a real
+// step is saved -- the actual step data lives on OTHER tables (customer,
+// authorized_driver, platform_eligibility, insurance_policy), none of
+// which touch application itself, so without this there'd be no accurate
+// signal of "last real activity" for the abandonment-recovery workflow to
+// check. Best-effort and silent: a failure here must never block the
+// step save itself, which has already succeeded by the time this runs.
+async function touchApplication(customerId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data: application } = await supabase
+    .from("application")
+    .select("id")
+    .eq("customer_id", customerId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (application) {
+    await supabase.from("application").update({ updated_at: new Date().toISOString() }).eq("id", application.id);
+  }
+}
+
 export async function savePersonalStep(
   customerId: string,
   fields: { firstName: string; lastName: string; phone: string }
@@ -258,6 +280,7 @@ export async function savePersonalStep(
     .eq("id", customerId);
 
   if (error) return { success: false, error: "Couldn't save. Please try again." };
+  await touchApplication(customerId);
   return { success: true };
 }
 
@@ -302,6 +325,7 @@ export async function saveLicenseStep(
     if (error) return { success: false, error: "Couldn't save. Please try again." };
   }
 
+  await touchApplication(customerId);
   return { success: true };
 }
 
@@ -381,6 +405,7 @@ export async function saveWorkStep(
     if (error) return { success: false, error: "Couldn't save. Please try again." };
   }
 
+  await touchApplication(customerId);
   return { success: true };
 }
 
@@ -425,6 +450,7 @@ export async function saveInsuranceStep(
     if (error) return { success: false, error: "Couldn't save. Please try again." };
   }
 
+  await touchApplication(customerId);
   return { success: true };
 }
 

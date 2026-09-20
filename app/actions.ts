@@ -2,6 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { createPublicClient } from "@/lib/supabase/public";
+import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 
 export type SubmitLeadResult =
   | { success: true }
@@ -93,6 +94,19 @@ export async function submitLead(formData: {
       // Best-effort: the lead itself already landed even if this fails.
       await supabase.from("lead_gig_platform").insert(rows);
     }
+
+    // Fire-and-forget -- see lib/n8n-webhook.ts. Never awaited in a way
+    // that could delay or fail the response to the person submitting the
+    // form; a slow or down n8n instance must never make lead submission
+    // itself feel broken.
+    void fireN8nWebhook(N8N_WEBHOOK_PATHS.newLead, {
+      leadId,
+      firstName,
+      lastName,
+      phone,
+      email: formData.email.trim() || null,
+      platformIds: formData.gigPlatformIds,
+    });
 
     return { success: true };
   } catch {
