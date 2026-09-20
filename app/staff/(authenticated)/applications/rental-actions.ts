@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 
 export type AvailableVehicle = {
   id: string;
@@ -186,5 +187,23 @@ export async function startRental(
 
   revalidatePath(`/staff/applications/${applicationId}`);
   revalidatePath("/staff/fleet");
+
+  // Fire-and-forget, same pattern as submitLead()/decideApplication() --
+  // never blocks or fails the rental start itself if n8n is down/slow.
+  // Fetched separately from the writes above so a failure here can't
+  // affect anything already committed.
+  const { data: customer } = await supabase
+    .from("customer")
+    .select("first_name, phone, email")
+    .eq("id", application.customer_id)
+    .maybeSingle();
+
+  void fireN8nWebhook(N8N_WEBHOOK_PATHS.pickupReviewRequest, {
+    rentalId: rental.id,
+    customerFirstName: customer?.first_name ?? null,
+    customerPhone: customer?.phone ?? null,
+    customerEmail: customer?.email ?? null,
+  });
+
   return { success: true };
 }
