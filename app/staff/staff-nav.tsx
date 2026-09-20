@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign } from "lucide-react";
 import SignOutButton from "./(authenticated)/dashboard/sign-out-button";
 
 const NAV_ITEMS = [
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/staff/fleet", label: "Fleet", icon: Car },
   { href: "/staff/insurance", label: "Insurance", icon: ShieldCheck },
   { href: "/staff/team", label: "Team", icon: UserCog },
+  { href: "/staff/pricing", label: "Pricing", icon: DollarSign },
 ] as const;
 
 export default function StaffNav({

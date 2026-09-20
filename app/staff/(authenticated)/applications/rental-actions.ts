@@ -72,12 +72,33 @@ export async function startRental(
     .eq("code", "direct")
     .maybeSingle();
 
-  // Daily pricing is a locked, calculable formula (V2.1 §10): $220 for the
-  // first 3 days, $74/day after, 7-day minimum. Weekly pricing is
-  // deliberately NOT invented here -- same "don't guess the number" rule
-  // applied to a backend calculation, not just marketing copy.
+  // Fetch the live pricing policy FIRST -- both daily and weekly pricing
+  // now read from here instead of being hardcoded, so an admin editing
+  // rates via the new pricing settings UI actually takes effect. Daily
+  // pricing is seeded as already-approved (a genuinely locked V2.1 rule,
+  // not a TBD number); weekly and late fees start unapproved until a real
+  // admin sets them -- checked via explicit boolean flags now, not a
+  // truthy-value guess. This fixes a real bug: the previous version
+  // checked `if (weeklyRate)` alone, which would have silently used the
+  // seeded DRAFT $400 placeholder the moment anyone chose weekly, despite
+  // it being explicitly marked "not yet approved" in a status string nothing
+  // actually enforced.
+  const { data: policy } = await supabase
+    .from("policy_version")
+    .select("rules")
+    .eq("tenant_id", application.tenant_id)
+    .eq("policy_type", "pricing_and_mileage")
+    .maybeSingle();
+
+  const rules = (policy?.rules as any) ?? {};
+  const dailyRules = rules.daily;
   const days = 7;
-  const quotedAmount = rentalOption === "daily" ? 220 + 4 * 74 : null;
+
+  let quotedAmount: number | null = null;
+  if (rentalOption === "daily" && dailyRules?.approved) {
+    const extraDays = days - dailyRules.first_tier_days;
+    quotedAmount = dailyRules.first_tier_total_usd + Math.max(0, extraDays) * dailyRules.per_day_after_usd;
+  }
 
   const pickupAt = new Date();
   const returnAt = new Date(pickupAt.getTime() + days * 24 * 60 * 60 * 1000);
@@ -98,13 +119,6 @@ export async function startRental(
     .single();
 
   if (bookingError || !booking) return { success: false, error: "Couldn't create the booking. Please try again." };
-
-  const { data: policy } = await supabase
-    .from("policy_version")
-    .select("rules")
-    .eq("tenant_id", application.tenant_id)
-    .eq("policy_type", "pricing_and_mileage")
-    .maybeSingle();
 
   const { data: rental, error: rentalError } = await supabase
     .from("rental")
@@ -165,22 +179,22 @@ export async function startRental(
   await supabase.from("customer").update({ status: "active" }).eq("id", application.customer_id);
 
   // Creates the recurring payment schedule the Upcoming Payment Reminder
-  // workflow reads from -- but only if a real weekly rate actually exists.
-  // policy_version.rules.weekly_rate_usd is deliberately left unset until
-  // the business decides the real number (same "don't invent it" rule
-  // applied to quotedAmount above); payment_schedule.amount is NOT NULL,
-  // so writing a fabricated number into a real financial record would be
-  // worse than just not creating the schedule yet. "Anchored to the
-  // rental start date" per the locked recurring-billing rule -- first
-  // payment due exactly 7 days after pickup, not the calendar week.
-  const weeklyRate = (policy?.rules as any)?.weekly_rate_usd;
-  if (weeklyRate) {
+  // workflow reads from -- but only if the weekly rate is explicitly
+  // approved, not merely present. Fixed a real bug here: the seeded policy
+  // already had weekly_rate_usd: 400 as an unapproved draft placeholder,
+  // and the old `if (weeklyRate)` check would have silently used it the
+  // moment anyone chose a weekly rental, ignoring the "not yet approved"
+  // marker entirely. Now checks the explicit weekly_approved boolean an
+  // admin sets via the pricing settings UI. "Anchored to the rental start
+  // date" per the locked recurring-billing rule -- first payment due
+  // exactly 7 days after pickup, not the calendar week.
+  if (rules.weekly_approved && rules.weekly_rate_usd) {
     await supabase.from("payment_schedule").insert({
       tenant_id: application.tenant_id,
       rental_id: rental.id,
       cadence: "weekly",
       next_due_at: returnAt.toISOString(),
-      amount: weeklyRate,
+      amount: rules.weekly_rate_usd,
       status: "active",
     });
   }
