@@ -22,6 +22,30 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   const tenant = (membership?.tenant as any) ?? null;
   const role = (membership?.role as any) ?? null;
 
+  // Real gap closed here: staff previously only learned about things
+  // needing attention via SMS/email from n8n -- nothing surfaced in the
+  // UI itself. These are the same counts the Dashboard already computes,
+  // just now visible from anywhere in the nav, not only after navigating
+  // to Dashboard specifically.
+  const [{ count: newLeadsCount }, { count: pendingApplicationsCount }, { count: expiringInsuranceCount }, { count: readyForPickupCount }] =
+    await Promise.all([
+      supabase.from("lead").select("*", { count: "exact", head: true }).eq("stage", "new"),
+      supabase.from("application").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+      supabase
+        .from("insurance_policy")
+        .select("*", { count: "exact", head: true })
+        .eq("policy_type", "renter")
+        .in("verification_status", ["pending", "document_received", "expiring_soon", "review_required"]),
+      supabase.from("rental").select("*", { count: "exact", head: true }).eq("status", "scheduled"),
+    ]);
+
+  const badgeCounts: Record<string, number> = {
+    "/staff/leads": newLeadsCount ?? 0,
+    "/staff/applications": pendingApplicationsCount ?? 0,
+    "/staff/insurance": expiringInsuranceCount ?? 0,
+    "/staff/pickups": readyForPickupCount ?? 0,
+  };
+
   // Field staff get a genuinely different, mobile-first layout -- not the
   // desktop-oriented sidebar. They're standing next to a car on their
   // phone, not sitting at a desk managing leads and applications; a
@@ -53,7 +77,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
-      <StaffNav tenantName={tenant?.name ?? "Staff Portal"} userEmail={user.email ?? ""} roleName={role?.name} />
+      <StaffNav tenantName={tenant?.name ?? "Staff Portal"} userEmail={user.email ?? ""} roleName={role?.name} badgeCounts={badgeCounts} />
       <main style={{ flex: 1, background: "var(--cloud)", minHeight: "100vh" }}>{children}</main>
     </div>
   );

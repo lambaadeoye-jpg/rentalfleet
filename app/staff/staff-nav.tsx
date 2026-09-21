@@ -23,10 +23,12 @@ export default function StaffNav({
   tenantName,
   userEmail,
   roleName,
+  badgeCounts = {},
 }: {
   tenantName: string;
   userEmail: string;
   roleName?: string;
+  badgeCounts?: Record<string, number>;
 }) {
   const pathname = usePathname();
 
@@ -51,6 +53,7 @@ export default function StaffNav({
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const badgeCount = badgeCounts[item.href] ?? 0;
           return (
             <Link
               key={item.href}
@@ -70,7 +73,23 @@ export default function StaffNav({
               }}
             >
               <Icon size={17} />
-              {item.label}
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {badgeCount > 0 && (
+                <span
+                  style={{
+                    background: "var(--warning, #f59e0b)",
+                    color: "#1a1a1a",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    borderRadius: 10,
+                    padding: "1px 7px",
+                    minWidth: 18,
+                    textAlign: "center",
+                  }}
+                >
+                  {badgeCount}
+                </span>
+              )}
             </Link>
           );
         })}
