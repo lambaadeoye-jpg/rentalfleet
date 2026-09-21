@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
+import { calculateDailyRentalPrice } from "@/lib/pricing";
 
 export type AvailableVehicle = {
   id: string;
@@ -82,11 +83,7 @@ export async function scheduleRental(
   const dailyRules = rules.daily;
   const days = 7;
 
-  let quotedAmount: number | null = null;
-  if (rentalOption === "daily" && dailyRules?.approved) {
-    const extraDays = days - dailyRules.first_tier_days;
-    quotedAmount = dailyRules.first_tier_total_usd + Math.max(0, extraDays) * dailyRules.per_day_after_usd;
-  }
+  const quotedAmount = rentalOption === "daily" ? calculateDailyRentalPrice(days, dailyRules) : null;
 
   const plannedPickupAt = new Date();
   const plannedReturnAt = new Date(plannedPickupAt.getTime() + days * 24 * 60 * 60 * 1000);

@@ -1,0 +1,43 @@
+name: App Tests
+
+# Runs the Next.js application-level test suite (Vitest) on every push/PR
+# to main -- separate from Database Tests (database-tests.yml) on
+# purpose: different failure domain, no live database connection needed
+# here at all, so keeping them as separate jobs makes it immediately
+# clear from the Actions tab which layer broke.
+#
+# Scoped deliberately narrow: most server actions in this codebase are
+# thin wrappers around Supabase calls whose actual correctness
+# (permissions, state machines, financial write paths) is already
+# verified live against the real database throughout this build's
+# history. This suite targets pure, DB-free calculation logic that has
+# no live-DB coverage of its own -- starting with the daily rental
+# pricing formula, which is independently checkable against the written
+# V2.1 spec's own worked example ($516 for a 7-day rental), not just
+# internally self-consistent.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Run app test suite
+        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck
