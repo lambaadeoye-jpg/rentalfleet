@@ -70,7 +70,7 @@ export default async function ApplicationDetailPage({
       .select("id, document_type, storage_key, created_at")
       .eq("customer_id", customerId)
       .order("created_at", { ascending: false }),
-    supabase.from("rental").select("id").eq("customer_id", customerId).limit(1).maybeSingle(),
+    supabase.from("rental").select("id, status").eq("customer_id", customerId).limit(1).maybeSingle(),
   ]);
 
   const canStartRental =
@@ -172,9 +172,19 @@ export default async function ApplicationDetailPage({
               </p>
             )}
             {existingRental && (
-              <p className="muted-text" style={{ fontSize: 13, marginTop: 8 }}>
-                A rental already exists for this customer.
-              </p>
+              <div style={{ marginTop: 8 }}>
+                <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>
+                  A rental already exists for this customer —{" "}
+                  <span style={{ textTransform: "capitalize" }}>{existingRental.status}</span>.
+                </p>
+                <a
+                  href={existingRental.status === "scheduled" ? "/staff/pickups" : `/staff/customers/${customerId}`}
+                  className="button-secondary"
+                  style={{ color: "var(--text)", borderColor: "var(--border)", display: "inline-block" }}
+                >
+                  {existingRental.status === "scheduled" ? "Go to Pickups & Dropoffs" : "View Customer 360"}
+                </a>
+              </div>
             )}
             {canStartRental && <StartRentalForm applicationId={application.id} vehicles={availableVehicles} />}
           </div>
