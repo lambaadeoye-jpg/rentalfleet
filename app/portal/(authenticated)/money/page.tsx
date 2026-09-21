@@ -58,6 +58,14 @@ export default async function PortalMoneyPage() {
           <p className="muted-text" style={{ fontSize: 14 }}>No payments yet.</p>
         )}
       </div>
+
+      <a
+        href="/portal/referrals"
+        className="card"
+        style={{ display: "block", textAlign: "center", color: "var(--teal)", fontWeight: 700, fontSize: 14, textDecoration: "none" }}
+      >
+        Refer a driver, earn credit toward your rent →
+      </a>
     </div>
   );
 }

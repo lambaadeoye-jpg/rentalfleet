@@ -20,6 +20,13 @@ export type PricingRules = {
     amount_usd: number | null;
     approved: boolean;
   };
+  referral: {
+    bonus_usd: number | null;
+    approved: boolean;
+    cap_type: "unlimited" | "per_period";
+    cap_amount_usd: number | null;
+    cap_period_days: number | null;
+  };
 };
 
 export async function getPricingRules(): Promise<PricingRules | null> {

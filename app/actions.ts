@@ -34,6 +34,7 @@ export async function submitLead(formData: {
   rentalOption: "daily" | "weekly";
   additionalInfo: string;
   gigPlatformIds: string[];
+  referralCode?: string;
 }): Promise<SubmitLeadResult> {
   try {
     const firstName = formData.firstName.trim();
@@ -93,6 +94,18 @@ export async function submitLead(formData: {
       }));
       // Best-effort: the lead itself already landed even if this fails.
       await supabase.from("lead_gig_platform").insert(rows);
+    }
+
+    if (formData.referralCode?.trim()) {
+      // Best-effort, same discipline as the gig-platform insert above --
+      // a bad/expired code must never fail lead submission itself. The
+      // RPC itself is a safe no-op for an invalid code (never throws),
+      // this catch is just an extra layer in case of a network issue.
+      try {
+        await supabase.rpc("link_referral", { p_referral_code: formData.referralCode.trim(), p_lead_id: leadId });
+      } catch {
+        // Swallowed deliberately -- see comment above.
+      }
     }
 
     // Fire-and-forget -- see lib/n8n-webhook.ts. Never awaited in a way

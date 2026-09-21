@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { submitLead } from "./actions";
 
@@ -19,6 +20,8 @@ export default function LeadForm({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const searchParams = useSearchParams();
+  const referralCode = searchParams.get("ref") ?? undefined;
 
   const otherPlatform = platforms.find((p) => p.code === "other");
   const otherSelected = otherPlatform ? selectedPlatforms.includes(otherPlatform.id) : false;
@@ -49,6 +52,7 @@ export default function LeadForm({
         rentalOption: (form.get("rentalOption") as "daily" | "weekly") || "weekly",
         additionalInfo: String(form.get("additionalInfo") || ""),
         gigPlatformIds: selectedPlatforms,
+        referralCode,
       });
 
       if (!result.success) {

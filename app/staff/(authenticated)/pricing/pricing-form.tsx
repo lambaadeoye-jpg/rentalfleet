@@ -130,6 +130,76 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
         </label>
       </div>
 
+      {/* REFERRAL */}
+      <div className="card">
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Referral Bonus</h2>
+        <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
+          Paid to the referrer once the referred renter completes their first full paid week.
+          Requires staff approval before it becomes usable, even once set here.
+        </p>
+        <div className="form-row">
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Bonus amount ($)</span>
+            <input
+              type="number"
+              value={rules.referral.bonus_usd ?? ""}
+              onChange={(e) =>
+                setRules({ ...rules, referral: { ...rules.referral, bonus_usd: e.target.value ? Number(e.target.value) : null } })
+              }
+            />
+          </label>
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Cap</span>
+            <select
+              value={rules.referral.cap_type}
+              onChange={(e) => setRules({ ...rules, referral: { ...rules.referral, cap_type: e.target.value as "unlimited" | "per_period" } })}
+            >
+              <option value="unlimited">Unlimited</option>
+              <option value="per_period">Capped per period</option>
+            </select>
+          </label>
+        </div>
+        {rules.referral.cap_type === "per_period" && (
+          <div className="form-row">
+            <label className="field">
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Max $ per period</span>
+              <input
+                type="number"
+                value={rules.referral.cap_amount_usd ?? ""}
+                onChange={(e) =>
+                  setRules({
+                    ...rules,
+                    referral: { ...rules.referral, cap_amount_usd: e.target.value ? Number(e.target.value) : null },
+                  })
+                }
+              />
+            </label>
+            <label className="field">
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Period length (days)</span>
+              <input
+                type="number"
+                value={rules.referral.cap_period_days ?? ""}
+                onChange={(e) =>
+                  setRules({
+                    ...rules,
+                    referral: { ...rules.referral, cap_period_days: e.target.value ? Number(e.target.value) : null },
+                  })
+                }
+                placeholder="e.g. 30"
+              />
+            </label>
+          </div>
+        )}
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={rules.referral.approved}
+            onChange={(e) => setRules({ ...rules, referral: { ...rules.referral, approved: e.target.checked } })}
+          />
+          Approved for use (referrals won&apos;t be approvable on the Referrals page until this is checked and an amount is set)
+        </label>
+      </div>
+
       {error && <p className="error-text">{error}</p>}
       {saved && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 14 }}>Saved.</p>}
 

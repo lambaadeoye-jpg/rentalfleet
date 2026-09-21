@@ -1,4 +1,5 @@
 import { createPublicClient } from "@/lib/supabase/public";
+import { Suspense } from "react";
 import LeadForm from "./lead-form";
 import { PHONE_DISPLAY, PHONE_TEL, MINIMUM_AGE } from "@/lib/site-config";
 import {
@@ -384,7 +385,9 @@ export default async function Home() {
             </a>
             .
           </p>
-          <LeadForm categories={categories ?? []} platforms={platforms ?? []} />
+          <Suspense fallback={null}>
+            <LeadForm categories={categories ?? []} platforms={platforms ?? []} />
+          </Suspense>
         </div>
       </section>
 

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
+import ApplyReferralCreditForm from "./apply-referral-credit-form";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     { data: drivers },
     { data: tickets },
     { data: leads },
+    { data: referralLedger },
   ] = await Promise.all([
     supabase.from("application").select("id, status, submitted_at, decision_at, decision_reason").eq("customer_id", id).order("created_at", { ascending: false }),
     supabase
@@ -34,7 +36,12 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     supabase.from("authorized_driver").select("id, first_name, last_name, status, license_expiry").eq("customer_id", id),
     supabase.from("support_ticket").select("id, subject, status, priority, created_at").eq("customer_id", id).order("created_at", { ascending: false }),
     supabase.from("lead").select("id, source, campaign, stage, created_at").eq("customer_id", id).order("created_at", { ascending: false }),
+    supabase.from("ledger_entry").select("entry_type, amount").eq("customer_id", id).in("entry_type", ["referral_credit_earned", "referral_credit_applied"]),
   ]);
+
+  const referralCreditBalance = (referralLedger ?? []).reduce((sum, e) => {
+    return e.entry_type === "referral_credit_earned" ? sum + Number(e.amount) : sum - Number(e.amount);
+  }, 0);
 
   const totalPaid = (payments ?? []).filter((p) => p.status === "paid").reduce((sum, p) => sum + Number(p.amount), 0);
   const totalCharges = (charges ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
@@ -100,8 +107,17 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         })}
       </Section>
 
-      <Section title="Payments">
-        {!payments?.length && <Empty text="No payments recorded." />}
+      <Section title="Referral Credit">
+        <div style={{ padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <p className="muted-text" style={{ fontSize: 13 }}>Available balance</p>
+            <p style={{ fontSize: 20, fontWeight: 800 }}>${referralCreditBalance.toFixed(2)}</p>
+          </div>
+          {referralCreditBalance > 0 && <ApplyReferralCreditForm customerId={id} maxAmount={referralCreditBalance} />}
+        </div>
+      </Section>
+
+      <Section title="Payments">        {!payments?.length && <Empty text="No payments recorded." />}
         {payments?.map((p) => (
           <Row key={p.id}>
             ${Number(p.amount).toFixed(2)} via {p.method_type} — <span style={{ textTransform: "capitalize" }}>{p.status}</span>

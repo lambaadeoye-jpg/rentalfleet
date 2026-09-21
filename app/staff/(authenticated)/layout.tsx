@@ -27,23 +27,30 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   // UI itself. These are the same counts the Dashboard already computes,
   // just now visible from anywhere in the nav, not only after navigating
   // to Dashboard specifically.
-  const [{ count: newLeadsCount }, { count: pendingApplicationsCount }, { count: expiringInsuranceCount }, { count: readyForPickupCount }] =
-    await Promise.all([
-      supabase.from("lead").select("*", { count: "exact", head: true }).eq("stage", "new"),
-      supabase.from("application").select("*", { count: "exact", head: true }).eq("status", "submitted"),
-      supabase
-        .from("insurance_policy")
-        .select("*", { count: "exact", head: true })
-        .eq("policy_type", "renter")
-        .in("verification_status", ["pending", "document_received", "expiring_soon", "review_required"]),
-      supabase.from("rental").select("*", { count: "exact", head: true }).eq("status", "scheduled"),
-    ]);
+  const [
+    { count: newLeadsCount },
+    { count: pendingApplicationsCount },
+    { count: expiringInsuranceCount },
+    { count: readyForPickupCount },
+    { count: qualifiedReferralsCount },
+  ] = await Promise.all([
+    supabase.from("lead").select("*", { count: "exact", head: true }).eq("stage", "new"),
+    supabase.from("application").select("*", { count: "exact", head: true }).eq("status", "submitted"),
+    supabase
+      .from("insurance_policy")
+      .select("*", { count: "exact", head: true })
+      .eq("policy_type", "renter")
+      .in("verification_status", ["pending", "document_received", "expiring_soon", "review_required"]),
+    supabase.from("rental").select("*", { count: "exact", head: true }).eq("status", "scheduled"),
+    supabase.from("referral").select("*", { count: "exact", head: true }).eq("status", "qualified"),
+  ]);
 
   const badgeCounts: Record<string, number> = {
     "/staff/leads": newLeadsCount ?? 0,
     "/staff/applications": pendingApplicationsCount ?? 0,
     "/staff/insurance": expiringInsuranceCount ?? 0,
     "/staff/pickups": readyForPickupCount ?? 0,
+    "/staff/referrals": qualifiedReferralsCount ?? 0,
   };
 
   // Field staff get a genuinely different, mobile-first layout -- not the

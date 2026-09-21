@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { generateReferralCode } from "@/lib/referral-code";
 
 // ---------------------------------------------------------------------------
 // AUTH: anonymous-first entry. Starting the application no longer requires
@@ -141,20 +142,32 @@ export async function getOrCreateApplication(): Promise<
 
     if (!tenant) return { success: false, error: "Something went wrong. Please try again." };
 
-    const { data: newCustomer, error: customerError } = await supabase
-      .from("customer")
-      .insert({
-        tenant_id: tenant.id,
-        first_name: "",
-        last_name: "",
-        email: user.email ?? "",
-        auth_user_id: user.id,
-        status: "applicant",
-      })
-      .select("id")
-      .single();
+    // Two attempts, not an unbounded retry loop -- collision odds with
+    // an 8-char code from a 32-char alphabet are astronomically low for
+    // any realistic customer volume, but this is a must-never-fail path
+    // (every applicant goes through it), so one safeguard retry is worth
+    // the few extra lines even for a near-zero-probability case.
+    let newCustomer: { id: string } | null = null;
+    for (let attempt = 0; attempt < 2 && !newCustomer; attempt++) {
+      const { data, error: customerError } = await supabase
+        .from("customer")
+        .insert({
+          tenant_id: tenant.id,
+          first_name: "",
+          last_name: "",
+          email: user.email ?? "",
+          auth_user_id: user.id,
+          status: "applicant",
+          referral_code: generateReferralCode(),
+        })
+        .select("id")
+        .single();
 
-    if (customerError || !newCustomer) {
+      if (data) newCustomer = data;
+      else if (!customerError?.message?.toLowerCase().includes("duplicate")) break;
+    }
+
+    if (!newCustomer) {
       return { success: false, error: "Couldn't start your application. Please try again." };
     }
     customerId = newCustomer.id;
