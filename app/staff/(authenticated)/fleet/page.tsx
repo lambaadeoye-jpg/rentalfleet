@@ -29,6 +29,14 @@ export default async function FleetPage() {
           <h1 style={{ fontSize: 22, marginBottom: 4 }}>Fleet</h1>
           <p className="muted-text">{vehiclesWithCategory.length} vehicles.</p>
         </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <a href="/staff/fleet/categories" className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
+            Categories
+          </a>
+          <a href="/staff/fleet/locations" className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
+            Locations
+          </a>
+        </div>
       </div>
 
       <AddVehicleForm categories={categories ?? []} />
