@@ -36,6 +36,12 @@ export default async function FleetPage() {
           <a href="/staff/fleet/locations" className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
             Locations
           </a>
+          <a href="/staff/fleet/maintenance" className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
+            Maintenance
+          </a>
+          <a href="/staff/fleet/incidents" className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
+            Incidents
+          </a>
         </div>
       </div>
 
