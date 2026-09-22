@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Megaphone, User, IdCard, Gift } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Megaphone, User, IdCard, Gift, Download } from "lucide-react";
 import SignOutButton from "./(authenticated)/dashboard/sign-out-button";
+import GlobalSearchBar from "./global-search-bar";
 
 const NAV_ITEMS = [
   { href: "/staff/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
   { href: "/staff/team", label: "Team", icon: UserCog },
   { href: "/staff/pricing", label: "Pricing", icon: DollarSign },
   { href: "/staff/settings", label: "Marketing Settings", icon: Megaphone },
+  { href: "/staff/export", label: "Export", icon: Download },
   { href: "/staff/profile", label: "My Profile", icon: User },
 ] as const;
 
@@ -49,6 +51,8 @@ export default function StaffNav({
         <Car size={20} color="var(--teal)" />
         <span style={{ fontWeight: 700, fontSize: 14 }}>{tenantName}</span>
       </div>
+
+      <GlobalSearchBar />
 
       <div style={{ flex: 1 }}>
         {NAV_ITEMS.map((item) => {
