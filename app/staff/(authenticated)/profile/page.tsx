@@ -9,7 +9,7 @@ export default async function StaffProfilePage() {
   return (
     <div style={{ padding: "32px 40px" }}>
       <h1 style={{ fontSize: 22, marginBottom: 20 }}>My Profile</h1>
-      <StaffProfileForm initialFullName={profile.fullName} email={profile.email} />
+      <StaffProfileForm initialFullName={profile.fullName} email={profile.email} isAdmin={profile.isAdmin} />
     </div>
   );
 }

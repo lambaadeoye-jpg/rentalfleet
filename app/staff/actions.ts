@@ -29,3 +29,20 @@ export async function sendStaffMagicLink(email: string): Promise<{ success: bool
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
+
+// Optional password sign-in -- additive only. Magic link above remains
+// the permanent, unconditional fallback for everyone; this just gives
+// admin a faster path if they've chosen to set one (see the profile
+// page). A field_staff account or a customer with no password ever set
+// simply gets "invalid credentials" here, which is the correct, safe
+// response -- they were never offered this option in the first place.
+export async function signInWithPassword(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  const trimmed = email.trim();
+  if (!trimmed || !password) return { success: false, error: "Enter your email and password." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
+
+  if (error) return { success: false, error: "Incorrect email or password." };
+  return { success: true };
+}
