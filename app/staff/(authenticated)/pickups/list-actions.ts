@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export type PickupItem = {
   rentalId: string;
+  vehicleId: string;
   customerFirstName: string;
   customerLastName: string;
   vehicleLabel: string;
@@ -13,6 +14,7 @@ export type PickupItem = {
 
 export type DropoffItem = {
   rentalId: string;
+  vehicleId: string;
   customerFirstName: string;
   customerLastName: string;
   vehicleLabel: string;
@@ -25,11 +27,11 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
   const [{ data: scheduled }, { data: active }] = await Promise.all([
     supabase
       .from("rental")
-      .select("id, customer:customer_id(id, first_name, last_name), rental_segment(vehicle:vehicle_id(make, model, year))")
+      .select("id, customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
       .eq("status", "scheduled"),
     supabase
       .from("rental")
-      .select("id, customer:customer_id(first_name, last_name), rental_segment(vehicle:vehicle_id(make, model, year), start_mileage)")
+      .select("id, customer:customer_id(first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year), start_mileage)")
       .eq("status", "active"),
   ]);
 
@@ -55,6 +57,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
 
       return {
         rentalId: r.id,
+        vehicleId: segment?.vehicle_id ?? "",
         customerFirstName: customer?.first_name ?? "",
         customerLastName: customer?.last_name ?? "",
         vehicleLabel: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : "No vehicle assigned",
@@ -71,6 +74,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
     const vehicle = segment?.vehicle;
     return {
       rentalId: r.id,
+      vehicleId: segment?.vehicle_id ?? "",
       customerFirstName: customer?.first_name ?? "",
       customerLastName: customer?.last_name ?? "",
       vehicleLabel: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : "No vehicle assigned",

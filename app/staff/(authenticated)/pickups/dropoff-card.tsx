@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { confirmDropoff, recordPayment } from "../applications/rental-actions";
+import InspectionPhotoUpload from "./inspection-photo-upload";
 import type { DropoffItem } from "./list-actions";
 
 export default function DropoffCard({ item }: { item: DropoffItem }) {
@@ -119,6 +120,8 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
           </button>
 
           {/* Confirm dropoff */}
+          <InspectionPhotoUpload rentalId={item.rentalId} vehicleId={item.vehicleId} inspectionType="return" />
+
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
             Confirm return
           </p>

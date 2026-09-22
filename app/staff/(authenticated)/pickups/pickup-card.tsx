@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { confirmPickup, recordPayment } from "../applications/rental-actions";
+import InspectionPhotoUpload from "./inspection-photo-upload";
 import type { PickupItem } from "./list-actions";
 
 export default function PickupCard({ item }: { item: PickupItem }) {
@@ -135,6 +136,8 @@ export default function PickupCard({ item }: { item: PickupItem }) {
           >
             {paymentLoading ? "Recording..." : "Record Payment"}
           </button>
+
+          <InspectionPhotoUpload rentalId={item.rentalId} vehicleId={item.vehicleId} inspectionType="pickup" />
 
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8, paddingTop: 12, borderTop: "1px solid var(--border)" }}>
             Confirm handover
