@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import ApplyReferralCreditForm from "./apply-referral-credit-form";
+import DamageReportForm from "./damage-report-form";
 
 export const dynamic = "force-dynamic";
 
@@ -99,9 +100,16 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
           const vehicle = segment?.vehicle;
           return (
             <Row key={r.id}>
-              <strong style={{ textTransform: "capitalize" }}>{r.status}</strong>
-              {vehicle ? ` — ${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.vin})` : ""}
-              {r.actual_return_at && ` — returned ${new Date(r.actual_return_at).toLocaleDateString()}`}
+              <div>
+                <strong style={{ textTransform: "capitalize" }}>{r.status}</strong>
+                {vehicle ? ` — ${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.vin})` : ""}
+                {r.actual_return_at && ` — returned ${new Date(r.actual_return_at).toLocaleDateString()}`}
+              </div>
+              {(r.status === "returned" || r.status === "closed") && (
+                <div style={{ marginTop: 6 }}>
+                  <DamageReportForm rentalId={r.id} />
+                </div>
+              )}
             </Row>
           );
         })}
