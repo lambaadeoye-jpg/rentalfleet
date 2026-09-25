@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import AnonymousEntry from "./anonymous-entry";
 import Workspace from "./workspace";
-import { getOrCreateApplication } from "./actions";
+import { getOrCreateApplication, getAdditionalDrivers } from "./actions";
 
 export const dynamic = "force-dynamic";
 
@@ -44,5 +44,14 @@ export default async function ApplyPage({
     .select("id, code, name")
     .order("sort_order");
 
-  return <Workspace data={result.data} platforms={platforms ?? []} initialEmail={emailFromLead} />;
+  const additionalDrivers = await getAdditionalDrivers(result.data.customerId);
+
+  return (
+    <Workspace
+      data={result.data}
+      platforms={platforms ?? []}
+      initialEmail={emailFromLead}
+      initialAdditionalDrivers={additionalDrivers}
+    />
+  );
 }

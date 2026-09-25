@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone, Mail, X } from "lucide-react";
+import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone, Mail, X, Users, Plus, Trash2 } from "lucide-react";
 import DocumentUpload from "./document-upload";
 import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/site-config";
 import {
@@ -10,8 +10,10 @@ import {
   saveLicenseStep,
   saveWorkStep,
   saveInsuranceStep,
+  saveAdditionalDrivers,
   submitApplication,
   linkEmailForResume,
+  type AdditionalDriverInput,
 } from "./actions";
 
 type GigPlatform = { id: string; code: string; name: string };
@@ -21,6 +23,7 @@ const STEPS = [
   { key: "license", label: "License", icon: IdCard },
   { key: "work", label: "Work", icon: Briefcase },
   { key: "insurance", label: "Insurance", icon: ShieldCheck },
+  { key: "drivers", label: "Drivers", icon: Users },
   { key: "review", label: "Review", icon: ClipboardCheck },
 ] as const;
 
@@ -30,10 +33,12 @@ export default function Workspace({
   data,
   platforms,
   initialEmail,
+  initialAdditionalDrivers,
 }: {
   data: ApplicationData;
   platforms: GigPlatform[];
   initialEmail?: string;
+  initialAdditionalDrivers: AdditionalDriverInput[];
 }) {
   const [step, setStep] = useState<StepKey>(
     data.applicationStatus === "submitted" || data.applicationStatus === "screening" ? "review" : "personal"
@@ -74,6 +79,10 @@ export default function Workspace({
   const [gigPlatformIds, setGigPlatformIds] = useState<string[]>(data.gigPlatformIds);
   const [insuranceProvider, setInsuranceProvider] = useState(data.insuranceProvider);
   const [insurancePolicyReference, setInsurancePolicyReference] = useState(data.insurancePolicyReference);
+  const [hasAdditionalDrivers, setHasAdditionalDrivers] = useState(initialAdditionalDrivers.length > 0);
+  const [additionalDrivers, setAdditionalDrivers] = useState<AdditionalDriverInput[]>(
+    initialAdditionalDrivers.length > 0 ? initialAdditionalDrivers : []
+  );
 
   function togglePlatform(id: string) {
     setGigPlatformIds((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
@@ -101,6 +110,8 @@ export default function Workspace({
         provider: insuranceProvider,
         policyReference: insurancePolicyReference,
       });
+    } else if (step === "drivers") {
+      result = await saveAdditionalDrivers(data.customerId, hasAdditionalDrivers ? additionalDrivers : []);
     }
 
     if (!result.success) {
@@ -324,6 +335,118 @@ export default function Workspace({
           </>
         )}
 
+        {step === "drivers" && (
+          <>
+            <h2 style={{ fontSize: 18, marginBottom: 4 }}>Will anyone else be driving?</h2>
+            <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
+              A spouse, roommate, or anyone else who might drive the car needs to be on file too.
+              You can always add someone later from your account.
+            </p>
+            <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
+              <button
+                type="button"
+                onClick={() => setHasAdditionalDrivers(false)}
+                className={hasAdditionalDrivers ? "button-secondary" : "button-primary"}
+                style={!hasAdditionalDrivers ? undefined : { color: "var(--text)", borderColor: "var(--border)" }}
+              >
+                No, just me
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setHasAdditionalDrivers(true);
+                  if (additionalDrivers.length === 0) {
+                    setAdditionalDrivers([{ firstName: "", lastName: "", licenseState: "", licenseNumberRef: "" }]);
+                  }
+                }}
+                className={hasAdditionalDrivers ? "button-primary" : "button-secondary"}
+                style={hasAdditionalDrivers ? undefined : { color: "var(--text)", borderColor: "var(--border)" }}
+              >
+                Yes, someone else too
+              </button>
+            </div>
+
+            {hasAdditionalDrivers &&
+              additionalDrivers.map((driver, i) => (
+                <div key={i} className="card" style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 700 }}>Driver {i + 1}</span>
+                    {additionalDrivers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setAdditionalDrivers((prev) => prev.filter((_, idx) => idx !== i))}
+                        style={{ background: "none", border: "none", cursor: "pointer" }}
+                      >
+                        <Trash2 size={14} color="var(--error, #dc2626)" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="form-row">
+                    <label className="field">
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>First name</span>
+                      <input
+                        value={driver.firstName}
+                        onChange={(e) =>
+                          setAdditionalDrivers((prev) =>
+                            prev.map((d, idx) => (idx === i ? { ...d, firstName: e.target.value } : d))
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>Last name</span>
+                      <input
+                        value={driver.lastName}
+                        onChange={(e) =>
+                          setAdditionalDrivers((prev) =>
+                            prev.map((d, idx) => (idx === i ? { ...d, lastName: e.target.value } : d))
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+                  <div className="form-row">
+                    <label className="field">
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>License state</span>
+                      <input
+                        value={driver.licenseState}
+                        onChange={(e) =>
+                          setAdditionalDrivers((prev) =>
+                            prev.map((d, idx) => (idx === i ? { ...d, licenseState: e.target.value } : d))
+                          )
+                        }
+                      />
+                    </label>
+                    <label className="field">
+                      <span style={{ fontSize: 13, fontWeight: 600 }}>License number</span>
+                      <input
+                        value={driver.licenseNumberRef}
+                        onChange={(e) =>
+                          setAdditionalDrivers((prev) =>
+                            prev.map((d, idx) => (idx === i ? { ...d, licenseNumberRef: e.target.value } : d))
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+              ))}
+
+            {hasAdditionalDrivers && (
+              <button
+                type="button"
+                onClick={() =>
+                  setAdditionalDrivers((prev) => [...prev, { firstName: "", lastName: "", licenseState: "", licenseNumberRef: "" }])
+                }
+                className="button-secondary"
+                style={{ color: "var(--text)", borderColor: "var(--border)", display: "flex", alignItems: "center", gap: 6 }}
+              >
+                <Plus size={14} /> Add another driver
+              </button>
+            )}
+          </>
+        )}
+
         {step === "review" && (
           <>
             <h2 style={{ fontSize: 18, marginBottom: 16 }}>Review &amp; submit</h2>
@@ -355,6 +478,12 @@ export default function Workspace({
                       .join(", ") || "(none selected)"}
                   </li>
                   <li>Insurance: {insuranceProvider || "(not yet provided)"}</li>
+                  <li>
+                    Additional drivers:{" "}
+                    {hasAdditionalDrivers && additionalDrivers.length > 0
+                      ? additionalDrivers.map((d) => `${d.firstName} ${d.lastName}`.trim()).filter(Boolean).join(", ") || "(details pending)"
+                      : "None"}
+                  </li>
                 </ul>
                 <p className="muted-text" style={{ fontSize: 13, marginBottom: 20 }}>
                   Submitting doesn&apos;t charge you anything — we&apos;ll always show you the

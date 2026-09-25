@@ -1,10 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { Car } from "lucide-react";
+import { getAdditionalDrivers } from "@/app/apply/actions";
+import PortalDriversManager from "./portal-drivers-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalRentalPage() {
   const supabase = await createClient();
+
+  const { data: customer } = await supabase.from("customer").select("id").maybeSingle();
 
   const { data: rental } = await supabase
     .from("rental")
@@ -14,6 +18,8 @@ export default async function PortalRentalPage() {
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  const additionalDrivers = customer ? await getAdditionalDrivers(customer.id) : [];
 
   const vehicle = (rental?.rental_segment as any)?.[0]?.vehicle;
   const policy = (rental?.governing_policy_snapshot as any) ?? {};
@@ -77,6 +83,13 @@ export default async function PortalRentalPage() {
           {policy.mileage_policy && (
             <p style={{ fontSize: 14, textTransform: "capitalize" }}>Mileage: {policy.mileage_policy}</p>
           )}
+        </div>
+      )}
+
+      {customer && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Other Drivers</h2>
+          <PortalDriversManager customerId={customer.id} initialDrivers={additionalDrivers} />
         </div>
       )}
     </div>

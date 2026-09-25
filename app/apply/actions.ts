@@ -215,6 +215,7 @@ export async function getOrCreateApplication(): Promise<
     .from("authorized_driver")
     .select("license_state, license_number_ref, license_expiry")
     .eq("customer_id", customerId)
+    .eq("is_primary", true)
     .limit(1)
     .maybeSingle();
 
@@ -312,6 +313,7 @@ export async function saveLicenseStep(
     .from("authorized_driver")
     .select("id")
     .eq("customer_id", customerId)
+    .eq("is_primary", true)
     .limit(1)
     .maybeSingle();
 
@@ -341,6 +343,7 @@ export async function saveLicenseStep(
       license_number_ref: fields.licenseNumberRef,
       license_expiry: fields.licenseExpiry || null,
       status: "pending",
+      is_primary: true,
     });
     if (error) return { success: false, error: "Couldn't save. Please try again." };
   }
@@ -468,6 +471,74 @@ export async function saveInsuranceStep(
       verification_status: "pending",
     });
     if (error) return { success: false, error: "Couldn't save. Please try again." };
+  }
+
+  await touchApplication(customerId);
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// STEP 4b: Additional Drivers -- "will someone else be driving?"
+// ---------------------------------------------------------------------------
+export type AdditionalDriverInput = {
+  firstName: string;
+  lastName: string;
+  licenseState: string;
+  licenseNumberRef: string;
+};
+
+export async function getAdditionalDrivers(customerId: string): Promise<AdditionalDriverInput[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("authorized_driver")
+    .select("first_name, last_name, license_state, license_number_ref")
+    .eq("customer_id", customerId)
+    .eq("is_primary", false);
+
+  return (data ?? []).map((d) => ({
+    firstName: d.first_name,
+    lastName: d.last_name,
+    licenseState: d.license_state ?? "",
+    licenseNumberRef: d.license_number_ref ?? "",
+  }));
+}
+
+// Replaces the full set of additional drivers each save -- simpler and
+// safer than diffing individual rows for a form with an add/remove list,
+// and this step is revisited rarely enough that the extra writes don't
+// matter. Never touches the is_primary=true row (the applicant's own
+// license), which is exactly the distinction migration 0051 exists for.
+export async function saveAdditionalDrivers(
+  customerId: string,
+  drivers: AdditionalDriverInput[]
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const { data: customer } = await supabase.from("customer").select("tenant_id").eq("id", customerId).single();
+  if (!customer) return { success: false, error: "Something went wrong. Please try again." };
+
+  const { error: deleteError } = await supabase
+    .from("authorized_driver")
+    .delete()
+    .eq("customer_id", customerId)
+    .eq("is_primary", false);
+  if (deleteError) return { success: false, error: "Couldn't save. Please try again." };
+
+  const validDrivers = drivers.filter((d) => d.firstName.trim() && d.lastName.trim());
+  if (validDrivers.length > 0) {
+    const { error: insertError } = await supabase.from("authorized_driver").insert(
+      validDrivers.map((d) => ({
+        tenant_id: customer.tenant_id,
+        customer_id: customerId,
+        first_name: d.firstName.trim(),
+        last_name: d.lastName.trim(),
+        license_state: d.licenseState.trim() || null,
+        license_number_ref: d.licenseNumberRef.trim() || null,
+        status: "pending",
+        is_primary: false,
+      }))
+    );
+    if (insertError) return { success: false, error: "Couldn't save. Please try again." };
   }
 
   await touchApplication(customerId);
