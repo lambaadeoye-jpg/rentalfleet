@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
+import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
 
 export type ChargeRecord = {
   id: string;
@@ -168,6 +169,28 @@ export async function approveCharge(chargeId: string): Promise<{ success: boolea
     afterData: { amount: charge.amount, depositDeducted: !!charge.deposit_id },
     source: "staff_portal",
   });
+
+  // Deposit-deducted charges don't need an invoice -- there's nothing
+  // separately owed, the deposit already covered it. Only bill-
+  // separately charges get one.
+  if (!charge.deposit_id) {
+    const { data: chargeDetails } = await supabase
+      .from("charge")
+      .select("rental_id, customer_id, charge_type")
+      .eq("id", chargeId)
+      .single();
+
+    if (chargeDetails?.rental_id && chargeDetails?.customer_id) {
+      void generateAndStoreFinancialDocument({
+        documentType: "invoice",
+        rentalId: chargeDetails.rental_id,
+        customerId: chargeDetails.customer_id,
+        amount: Number(charge.amount),
+        lineLabel: chargeDetails.charge_type,
+        relatedChargeId: chargeId,
+      });
+    }
+  }
 
   revalidatePath("/staff/charges");
   return { success: true };

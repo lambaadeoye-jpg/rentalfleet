@@ -1,14 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
+import { getMyGeneratedDocuments } from "./documents-actions";
+import GeneratedDocumentsList from "./generated-documents-list";
 
 export const dynamic = "force-dynamic";
 
 export default async function PortalMoneyPage() {
   const supabase = await createClient();
 
-  const [{ data: deposits }, { data: charges }, { data: payments }] = await Promise.all([
+  const [{ data: deposits }, { data: charges }, { data: payments }, documents] = await Promise.all([
     supabase.from("deposit").select("amount_collected, status, refunded_at").order("id", { ascending: false }),
     supabase.from("charge").select("charge_type, amount, approval_status, created_at").order("created_at", { ascending: false }),
     supabase.from("payment").select("amount, status, paid_at, method_type").order("paid_at", { ascending: false, nullsFirst: false }),
+    getMyGeneratedDocuments(),
   ]);
 
   return (
@@ -57,6 +60,11 @@ export default async function PortalMoneyPage() {
         ) : (
           <p className="muted-text" style={{ fontSize: 14 }}>No payments yet.</p>
         )}
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Receipts & Invoices</h2>
+        <GeneratedDocumentsList documents={documents} />
       </div>
 
       <a

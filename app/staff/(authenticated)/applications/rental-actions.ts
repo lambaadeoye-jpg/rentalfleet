@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
 import { calculateDailyRentalPrice } from "@/lib/pricing";
+import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
 
 export type AvailableVehicle = {
   id: string;
@@ -465,6 +466,19 @@ export async function recordPayment(
       entityId: payment.id,
       afterData: { amount, methodType, rentalId },
       source: "staff_portal",
+    });
+
+    // Best-effort, same discipline as everything else fired off the
+    // back of a successful write in this build: a receipt failing to
+    // generate must never undo or block the payment that was just
+    // recorded.
+    void generateAndStoreFinancialDocument({
+      documentType: "receipt",
+      rentalId,
+      customerId: rental.customer_id,
+      amount,
+      lineLabel: `Payment received (${methodType})`,
+      relatedPaymentId: payment.id,
     });
   }
 

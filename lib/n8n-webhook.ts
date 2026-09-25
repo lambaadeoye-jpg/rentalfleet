@@ -17,6 +17,7 @@ export const N8N_WEBHOOK_PATHS = {
   newLead: "fleet-rental-new-lead",
   applicationDecision: "fleet-rental-application-decision",
   pickupReviewRequest: "fleet-rental-pickup-review-request",
+  documentReady: "fleet-rental-document-ready",
 } as const;
 
 export async function fireN8nWebhook(
