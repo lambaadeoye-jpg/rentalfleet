@@ -215,7 +215,7 @@ export default function GetStartedFlow() {
                 { label: "Yes", value: true },
                 { label: "No", value: false },
               ].map((opt) => (
-                <label key={String(opt.value)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer" }}>
+                <label key={String(opt.value)} className="radio-option" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer" }}>
                   <input type="radio" name="license" checked={hasLicense === opt.value} onChange={() => setHasLicense(opt.value)} />
                   {opt.label}
                 </label>
@@ -236,7 +236,7 @@ export default function GetStartedFlow() {
                   { label: "No", value: "no" },
                 ] as { label: string; value: DrivingStatus }[]
               ).map((opt) => (
-                <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer" }}>
+                <label key={opt.value} className="radio-option" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer" }}>
                   <input type="radio" name="driving" checked={drivingStatus === opt.value} onChange={() => setDrivingStatus(opt.value)} />
                   {opt.label}
                 </label>
@@ -255,7 +255,7 @@ export default function GetStartedFlow() {
                   { label: "Just checking my options", value: "just_checking" },
                 ] as { label: string; value: Urgency }[]
               ).map((opt) => (
-                <label key={opt.value} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer" }}>
+                <label key={opt.value} className="radio-option" style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 0", cursor: "pointer" }}>
                   <input type="radio" name="urgency" checked={urgency === opt.value} onChange={() => setUrgency(opt.value)} />
                   {opt.label}
                 </label>

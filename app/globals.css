@@ -350,6 +350,13 @@ label {
   width: auto;
 }
 
+.radio-option input {
+  width: auto;
+  height: 18px;
+  aspect-ratio: 1;
+  flex-shrink: 0;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
