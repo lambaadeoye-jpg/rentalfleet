@@ -33,6 +33,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     { count: expiringInsuranceCount },
     { count: readyForPickupCount },
     { count: qualifiedReferralsCount },
+    { count: flaggedLeadsCount },
   ] = await Promise.all([
     supabase.from("lead").select("*", { count: "exact", head: true }).eq("stage", "new"),
     supabase.from("application").select("*", { count: "exact", head: true }).eq("status", "submitted"),
@@ -43,6 +44,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
       .in("verification_status", ["pending", "document_received", "expiring_soon", "review_required"]),
     supabase.from("rental").select("*", { count: "exact", head: true }).eq("status", "scheduled"),
     supabase.from("referral").select("*", { count: "exact", head: true }).eq("status", "qualified"),
+    supabase.from("lead").select("*", { count: "exact", head: true }).eq("red_flag_matched", true),
   ]);
 
   const badgeCounts: Record<string, number> = {
@@ -51,6 +53,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     "/staff/insurance": expiringInsuranceCount ?? 0,
     "/staff/pickups": readyForPickupCount ?? 0,
     "/staff/referrals": qualifiedReferralsCount ?? 0,
+    "/staff/red-flags": flaggedLeadsCount ?? 0,
   };
 
   // Field staff get a genuinely different, mobile-first layout -- not the

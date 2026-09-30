@@ -65,6 +65,25 @@ export async function submitLead(formData: {
       return { success: false, error: "Something went wrong on our end. Please try again shortly." };
     }
 
+    // Never blocks submission -- flags for staff review only, same
+    // "a human decides, automation never auto-rejects" principle as
+    // everything else with real consequences in this build. A false
+    // positive (shared phone number, common name) is possible, so this
+    // is a heads-up for staff, not a gate.
+    let redFlagMatched = false;
+    let redFlagMatchType: string | null = null;
+    const { data: redFlagResult } = await supabase.rpc("check_red_flag", {
+      p_tenant_id: tenant.id,
+      p_phone: phone,
+      p_email: email,
+      p_first_name: firstName,
+      p_last_name: lastName,
+    });
+    if (redFlagResult && redFlagResult.length > 0) {
+      redFlagMatched = redFlagResult[0].matched;
+      redFlagMatchType = redFlagResult[0].match_type;
+    }
+
     const leadId = randomUUID();
 
     const { error: insertError } = await supabase.from("lead").insert({
@@ -80,6 +99,8 @@ export async function submitLead(formData: {
       has_drivers_license: formData.hasDriversLicense ?? null,
       driving_status: formData.drivingStatus ?? null,
       urgency: formData.urgency ?? null,
+      red_flag_matched: redFlagMatched,
+      red_flag_match_type: redFlagMatchType,
       source: "homepage",
       stage: "new",
       // "What are you driving for?" is answered by the gig_platform

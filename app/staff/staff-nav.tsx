@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Megaphone, User, IdCard, Gift, Download, Receipt } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Megaphone, User, IdCard, Gift, Download, Receipt, AlertTriangle } from "lucide-react";
 import SignOutButton from "./(authenticated)/dashboard/sign-out-button";
 import GlobalSearchBar from "./global-search-bar";
 
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: "/staff/leads", label: "Leads", icon: Users },
   { href: "/staff/applications", label: "Applications", icon: ClipboardList },
   { href: "/staff/customers", label: "Customers", icon: IdCard },
+  { href: "/staff/red-flags", label: "Red Flags", icon: AlertTriangle },
   { href: "/staff/referrals", label: "Referrals", icon: Gift },
   { href: "/staff/charges", label: "Charges", icon: Receipt },
   { href: "/staff/fleet", label: "Fleet", icon: Car },
