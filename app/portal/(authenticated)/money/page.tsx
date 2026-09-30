@@ -63,7 +63,7 @@ export default async function PortalMoneyPage() {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Receipts & Invoices</h2>
+        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Documents</h2>
         <GeneratedDocumentsList documents={documents} />
       </div>
 

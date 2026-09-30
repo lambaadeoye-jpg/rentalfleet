@@ -15,7 +15,7 @@ export async function getMyGeneratedDocuments(): Promise<GeneratedDocumentSummar
   const { data } = await supabase
     .from("generated_document")
     .select("id, document_type, amount, generated_at, storage_key")
-    .in("document_type", ["receipt", "invoice"])
+    .in("document_type", ["receipt", "invoice", "damage_report"])
     .order("generated_at", { ascending: false });
 
   return (data ?? []).map((d) => ({
