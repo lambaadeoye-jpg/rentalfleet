@@ -8,10 +8,29 @@ import "@fontsource/plus-jakarta-sans/700.css";
 import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 
+const SITE_URL = "https://rentzivo.com";
+const TITLE = "Zivo | Gig Worker & Rideshare Car Rental — Get a Car. Get to Work. Get Moving.";
+const DESCRIPTION =
+  "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville. No credit check, insurance included.";
+
 export const metadata: Metadata = {
-  title: "Gig Worker & Rideshare Car Rental | Get a Car. Get to Work. Get Moving.",
-  description:
-    "Reliable, fuel-efficient vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville.",
+  metadataBase: new URL(SITE_URL),
+  title: { default: TITLE, template: "%s | Zivo" },
+  description: DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    siteName: "Zivo",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: TITLE,
+    description: DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

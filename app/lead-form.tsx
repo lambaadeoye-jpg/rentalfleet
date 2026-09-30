@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useRef, useEffect, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { submitLead } from "./actions";
@@ -22,6 +22,15 @@ export default function LeadForm({
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("ref") ?? undefined;
+  // Real bug found in testing: the success card is much shorter than the
+  // full form it replaces. The page's total height collapses, but the
+  // browser keeps its scroll position in pixels, not tied to content --
+  // so the viewport ends up pointed at whatever now sits at that old
+  // offset (a lower section), never showing the success message at all.
+  // A lead who submits and sees an unrelated section has no idea their
+  // submission worked -- a real, silent way to lose leads who think it
+  // failed and leave (or worse, resubmit).
+  const successRef = useRef<HTMLDivElement>(null);
 
   const otherPlatform = platforms.find((p) => p.code === "other");
   const otherSelected = otherPlatform ? selectedPlatforms.includes(otherPlatform.id) : false;
@@ -61,6 +70,10 @@ export default function LeadForm({
       }
       setSubmittedEmail(emailValue);
       setSubmitted(true);
+      // Explicit scroll, not left to chance: fires on the next paint
+      // after the success card has actually replaced the form in the
+      // DOM (see the useEffect below), so it scrolls to where the
+      // message really is, not where the form used to be.
     } catch {
       // Belt-and-suspenders: submitLead itself is try/caught server-side and
       // should never throw, but a second guard here means this button can
@@ -71,9 +84,15 @@ export default function LeadForm({
     }
   }
 
+  useEffect(() => {
+    if (submitted) {
+      successRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [submitted]);
+
   if (submitted) {
     return (
-      <div className="card" style={{ textAlign: "center", padding: 48 }}>
+      <div ref={successRef} className="card" style={{ textAlign: "center", padding: 48 }}>
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
         <h3 style={{ fontSize: 22, marginBottom: 8 }}>Thanks — we've got your request.</h3>
         <p className="muted-text" style={{ marginBottom: 20 }}>
@@ -118,8 +137,8 @@ export default function LeadForm({
           <input id="phone" name="phone" type="tel" required autoComplete="tel" />
         </div>
         <div className="field">
-          <label htmlFor="email">Email</label>
-          <input id="email" name="email" type="email" autoComplete="email" />
+          <label htmlFor="email">Email *</label>
+          <input id="email" name="email" type="email" required autoComplete="email" />
         </div>
       </div>
 

@@ -35,16 +35,21 @@ export async function submitLead(formData: {
   additionalInfo: string;
   gigPlatformIds: string[];
   referralCode?: string;
+  hasDriversLicense?: boolean;
+  drivingStatus?: "already_driving" | "ready_to_start" | "no";
+  urgency?: "today" | "this_week" | "within_2_weeks" | "just_checking";
 }): Promise<SubmitLeadResult> {
   try {
     const firstName = formData.firstName.trim();
     const lastName = formData.lastName.trim();
     const phone = formData.phone.trim();
+    const email = formData.email.trim();
 
-    // Mirror the DB-level checks (migration 0024) with friendlier messages --
-    // the database is still the real enforcement, this is just faster feedback.
-    if (!firstName || !lastName || !phone) {
-      return { success: false, error: "First name, last name, and mobile phone are required." };
+    // Mirror the DB-level checks (migrations 0024, 0052) with friendlier
+    // messages -- the database is still the real enforcement, this is
+    // just faster feedback.
+    if (!firstName || !lastName || !phone || !email) {
+      return { success: false, error: "First name, last name, mobile phone, and email are required." };
     }
 
     const supabase = createPublicClient();
@@ -68,10 +73,13 @@ export async function submitLead(formData: {
       first_name: firstName,
       last_name: lastName,
       phone,
-      email: formData.email.trim() || null,
+      email,
       preferred_category_id: formData.preferredCategoryId,
       pickup_date: formData.pickupDate,
       duration_unit: formData.rentalOption,
+      has_drivers_license: formData.hasDriversLicense ?? null,
+      driving_status: formData.drivingStatus ?? null,
+      urgency: formData.urgency ?? null,
       source: "homepage",
       stage: "new",
       // "What are you driving for?" is answered by the gig_platform
@@ -117,7 +125,7 @@ export async function submitLead(formData: {
       firstName,
       lastName,
       phone,
-      email: formData.email.trim() || null,
+      email,
       platformIds: formData.gigPlatformIds,
     });
 

@@ -51,7 +51,7 @@ export default async function Home() {
             name: brandName,
             description:
               "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent-driving work throughout Greater Nashville.",
-            url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://fleet-rental-os.netlify.app",
+            url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rentzivo.com",
             telephone: PHONE_TEL,
             areaServed: {
               "@type": "City",
