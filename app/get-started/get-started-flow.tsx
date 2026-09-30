@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Phone, Mail, MessageSquare } from "lucide-react";
 import { submitLead } from "../actions";
 import { PHONE_DISPLAY } from "@/lib/site-config";
+import { splitFullName } from "@/lib/split-full-name";
 
 type Step = "license" | "driving" | "urgency" | "contact";
 const STEPS: Step[] = ["license", "driving", "urgency", "contact"];
@@ -20,8 +21,7 @@ export default function GetStartedFlow() {
   const [hasLicense, setHasLicense] = useState<boolean | null>(null);
   const [drivingStatus, setDrivingStatus] = useState<DrivingStatus | null>(null);
   const [urgency, setUrgency] = useState<Urgency | null>(null);
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,15 +47,19 @@ export default function GetStartedFlow() {
   }
 
   async function handleSubmit() {
-    const firstNameTrimmed = firstName.trim();
-    const lastNameTrimmed = lastName.trim();
+    const fullNameTrimmed = fullName.trim();
     const emailTrimmed = email.trim();
     const phoneTrimmed = phone.trim();
 
-    if (!firstNameTrimmed || !emailTrimmed || !phoneTrimmed) {
+    if (!fullNameTrimmed || !emailTrimmed || !phoneTrimmed) {
       setError("Full name, email, and phone are required.");
       return;
     }
+
+    // Single "Full Name" field, matching the benchmark -- split into
+    // first/last here since that's still what submitLead()/the lead
+    // table actually store.
+    const { firstName: firstNameTrimmed, lastName: lastNameTrimmed } = splitFullName(fullNameTrimmed);
 
     setError(null);
     setLoading(true);
@@ -161,24 +165,40 @@ export default function GetStartedFlow() {
     <div style={{ minHeight: "100vh", padding: "40px 20px" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-          <span className="muted-text">{step === "contact" ? "ALMOST DONE" : "GETTING STARTED"}</span>
+          <span className="muted-text">ALMOST DONE</span>
           <span style={{ color: "var(--teal)" }}>{progress}%</span>
         </div>
-        <div style={{ height: 6, background: "var(--border)", borderRadius: 999, marginBottom: 32, overflow: "hidden" }}>
+        <div style={{ height: 6, background: "var(--border)", borderRadius: 999, marginBottom: 20, overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${progress}%`, background: "var(--teal)", transition: "width 0.3s" }} />
         </div>
 
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              fontSize: 12,
+              fontWeight: 700,
+              color: "var(--teal)",
+              background: "rgba(0,169,157,0.1)",
+              borderRadius: 999,
+              padding: "4px 12px",
+            }}
+          >
+            ● TAKES ABOUT 2 MINUTES
+          </span>
+        </div>
+
+        {/* Headline and subtext stay the SAME across every step, matching
+            the benchmark -- one stable frame the person sees throughout,
+            only the question underneath changes. Not step-conditional. */}
         <h1 style={{ fontSize: 26, marginBottom: 8, textAlign: "center" }}>
-          {step === "contact" ? (
-            <>
-              You&apos;re one step from <em style={{ color: "var(--teal)", fontStyle: "italic" }}>the keys</em>.
-            </>
-          ) : (
-            "Let's see if we're a fit."
-          )}
+          You&apos;re one step from <em style={{ color: "var(--teal)", fontStyle: "italic" }}>the keys</em>.
         </h1>
         <p className="muted-text" style={{ textAlign: "center", marginBottom: 28 }}>
-          No credit check, unlimited mileage, insurance included — takes about 2 minutes.
+          Answer a few quick questions and we&apos;ll get you moving fast — no credit check,
+          unlimited mileage, and insurance already included.
         </p>
 
         <div className="card">
@@ -239,22 +259,18 @@ export default function GetStartedFlow() {
 
           {step === "contact" && (
             <>
-              <label className="field">
-                <span style={{ fontSize: 13, fontWeight: 600 }}>First name *</span>
-                <input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-              </label>
-              <label className="field">
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Last name</span>
-                <input value={lastName} onChange={(e) => setLastName(e.target.value)} />
-              </label>
-              <label className="field">
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Email *</span>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-              </label>
-              <label className="field">
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Phone *</span>
+              <div className="field">
+                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Full Name *</label>
+                <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" />
+              </div>
+              <div className="field">
+                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Email *</label>
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
+              </div>
+              <div className="field">
+                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Phone *</label>
                 <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
-              </label>
+              </div>
             </>
           )}
 
