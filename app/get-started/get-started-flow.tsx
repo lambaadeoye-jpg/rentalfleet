@@ -165,7 +165,13 @@ export default function GetStartedFlow() {
     <div style={{ minHeight: "100vh", padding: "40px 20px" }}>
       <div style={{ maxWidth: 520, margin: "0 auto" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, marginBottom: 6 }}>
-          <span className="muted-text">ALMOST DONE</span>
+          {/* "ALMOST DONE" on every step (matching the benchmark
+              literally) would mean saying it on question one of four --
+              manufactured momentum, not honest framing. A real step
+              counter is accurate at every step instead of just
+              borrowing a competitor's psychological device because it
+              converts well for them. */}
+          <span className="muted-text">STEP {stepIndex + 1} OF {STEPS.length}</span>
           <span style={{ color: "var(--teal)" }}>{progress}%</span>
         </div>
         <div style={{ height: 6, background: "var(--border)", borderRadius: 999, marginBottom: 20, overflow: "hidden" }}>
