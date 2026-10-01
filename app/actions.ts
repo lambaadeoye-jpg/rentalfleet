@@ -155,6 +155,14 @@ export async function submitLead(formData: {
       redFlagMatchType,
     });
 
+    // Separate webhook, separate workflow from the staff alert above --
+    // deliberately minimal payload (just the lead's id). The call-trigger
+    // workflow re-fetches everything fresh from the lead row itself after
+    // its delay rather than trusting this snapshot, since application
+    // progress or a red flag match could change in the minutes between
+    // submission and the call actually firing.
+    void fireN8nWebhook(N8N_WEBHOOK_PATHS.newLeadCallTrigger, { leadId });
+
     return { success: true };
   } catch {
     // Catches anything unexpected (network failure, serialization issue,

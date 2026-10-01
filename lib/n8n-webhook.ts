@@ -18,6 +18,11 @@ export const N8N_WEBHOOK_PATHS = {
   applicationDecision: "fleet-rental-application-decision",
   pickupReviewRequest: "fleet-rental-pickup-review-request",
   documentReady: "fleet-rental-document-ready",
+  // Deliberately separate from `newLead` even though both fire off the
+  // same event -- keeps "alert staff" and "trigger the AI call" as
+  // independently iterable workflows, since SOPs for the calling side
+  // specifically are still expected to change.
+  newLeadCallTrigger: "fleet-rental-new-lead-call-trigger",
 } as const;
 
 export async function fireN8nWebhook(
