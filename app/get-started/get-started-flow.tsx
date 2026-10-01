@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Phone, Mail, MessageSquare } from "lucide-react";
 import { submitLead } from "../actions";
 import { PHONE_DISPLAY } from "@/lib/site-config";
-import { splitFullName } from "@/lib/split-full-name";
 
 type Step = "license" | "driving" | "urgency" | "contact";
 const STEPS: Step[] = ["license", "driving", "urgency", "contact"];
@@ -21,7 +20,8 @@ export default function GetStartedFlow() {
   const [hasLicense, setHasLicense] = useState<boolean | null>(null);
   const [drivingStatus, setDrivingStatus] = useState<DrivingStatus | null>(null);
   const [urgency, setUrgency] = useState<Urgency | null>(null);
-  const [fullName, setFullName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,26 +47,22 @@ export default function GetStartedFlow() {
   }
 
   async function handleSubmit() {
-    const fullNameTrimmed = fullName.trim();
+    const firstNameTrimmed = firstName.trim();
+    const lastNameTrimmed = lastName.trim();
     const emailTrimmed = email.trim();
     const phoneTrimmed = phone.trim();
 
-    if (!fullNameTrimmed || !emailTrimmed || !phoneTrimmed) {
-      setError("Full name, email, and phone are required.");
+    if (!firstNameTrimmed || !lastNameTrimmed || !emailTrimmed || !phoneTrimmed) {
+      setError("First name, last name, email, and phone are required.");
       return;
     }
-
-    // Single "Full Name" field, matching the benchmark -- split into
-    // first/last here since that's still what submitLead()/the lead
-    // table actually store.
-    const { firstName: firstNameTrimmed, lastName: lastNameTrimmed } = splitFullName(fullNameTrimmed);
 
     setError(null);
     setLoading(true);
     try {
       const result = await submitLead({
         firstName: firstNameTrimmed,
-        lastName: lastNameTrimmed || firstNameTrimmed,
+        lastName: lastNameTrimmed,
         phone: phoneTrimmed,
         email: emailTrimmed,
         otherPlatformDetail: "",
@@ -265,9 +261,15 @@ export default function GetStartedFlow() {
 
           {step === "contact" && (
             <>
-              <div className="field">
-                <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Full Name *</label>
-                <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Enter your full name" />
+              <div className="form-row">
+                <div className="field">
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>First Name *</label>
+                  <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" />
+                </div>
+                <div className="field">
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Last Name *</label>
+                  <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" />
+                </div>
               </div>
               <div className="field">
                 <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Email *</label>

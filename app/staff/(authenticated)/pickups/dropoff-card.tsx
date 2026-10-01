@@ -15,7 +15,7 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
   const [error, setError] = useState<string | null>(null);
 
   const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [paymentSaved, setPaymentSaved] = useState(false);
@@ -99,8 +99,6 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
             <label className="field">
               <span style={{ fontSize: 13, fontWeight: 600 }}>Method</span>
               <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                <option value="cash">Cash</option>
-                <option value="venmo">Venmo</option>
                 <option value="card">Card</option>
                 <option value="other">Other</option>
               </select>

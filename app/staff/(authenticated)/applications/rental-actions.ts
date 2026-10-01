@@ -84,6 +84,17 @@ export async function scheduleRental(
   const dailyRules = rules.daily;
   const days = 7;
 
+  // Explicit guard, not just reliance on `days` happening to be hardcoded
+  // to 7 above. The 7-day minimum is a real, locked business rule (not
+  // just marketing copy -- it's stated on the homepage FAQ, but nothing
+  // in code actually enforced it before this). If a future change ever
+  // turns `days` into a real parameter instead of a constant, this stops
+  // a violation at the source rather than relying on the current value
+  // never changing by accident.
+  if (days < 7) {
+    return { success: false, error: "Rentals must be at least 7 days — this is a locked minimum." };
+  }
+
   const quotedAmount = rentalOption === "daily" ? calculateDailyRentalPrice(days, dailyRules) : null;
 
   const plannedPickupAt = new Date();

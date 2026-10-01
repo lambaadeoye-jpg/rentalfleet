@@ -148,6 +148,11 @@ export async function submitLead(formData: {
       phone,
       email,
       platformIds: formData.gigPlatformIds,
+      hasDriversLicense: formData.hasDriversLicense ?? null,
+      drivingStatus: formData.drivingStatus ?? null,
+      urgency: formData.urgency ?? null,
+      redFlagMatched,
+      redFlagMatchType,
     });
 
     return { success: true };
