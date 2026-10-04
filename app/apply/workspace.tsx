@@ -77,6 +77,7 @@ export default function Workspace({
   const [licenseNumberRef, setLicenseNumberRef] = useState(data.licenseNumberRef);
   const [licenseExpiry, setLicenseExpiry] = useState(data.licenseExpiry);
   const [gigPlatformIds, setGigPlatformIds] = useState<string[]>(data.gigPlatformIds);
+  const [hasOwnInsurance, setHasOwnInsurance] = useState<boolean | null>(data.hasOwnInsurance);
   const [insuranceProvider, setInsuranceProvider] = useState(data.insuranceProvider);
   const [insurancePolicyReference, setInsurancePolicyReference] = useState(data.insurancePolicyReference);
   const [hasAdditionalDrivers, setHasAdditionalDrivers] = useState(initialAdditionalDrivers.length > 0);
@@ -106,7 +107,8 @@ export default function Workspace({
     } else if (step === "work") {
       result = await saveWorkStep(data.customerId, gigPlatformIds);
     } else if (step === "insurance") {
-      result = await saveInsuranceStep(data.customerId, {
+      result = await saveInsuranceStep(data.customerId, data.applicationId, {
+        hasOwnInsurance,
         provider: insuranceProvider,
         policyReference: insurancePolicyReference,
       });
@@ -318,20 +320,45 @@ export default function Workspace({
               We ask so we can confirm you&apos;re covered before you drive — bring your own
               policy, or ask us about options once you&apos;re approved.
             </p>
-            <div className="form-row">
-              <label className="field">
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Insurance provider</span>
-                <input value={insuranceProvider} onChange={(e) => setInsuranceProvider(e.target.value)} />
-              </label>
-              <label className="field">
-                <span style={{ fontSize: 13, fontWeight: 600 }}>Policy number</span>
-                <input
-                  value={insurancePolicyReference}
-                  onChange={(e) => setInsurancePolicyReference(e.target.value)}
-                />
-              </label>
+            <div className="field" style={{ marginBottom: 16 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
+                Do you currently have your own insurance?
+              </span>
+              <div style={{ display: "flex", gap: 16 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                  <input type="radio" name="hasOwnInsurance" checked={hasOwnInsurance === true} onChange={() => setHasOwnInsurance(true)} />
+                  Yes
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }}>
+                  <input type="radio" name="hasOwnInsurance" checked={hasOwnInsurance === false} onChange={() => setHasOwnInsurance(false)} />
+                  No
+                </label>
+              </div>
             </div>
-            <DocumentUpload customerId={data.customerId} documentType="insurance_card" label="Upload insurance card" />
+            {hasOwnInsurance === false && (
+              <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
+                No problem — that&apos;s not a blocker. We&apos;ll follow up about getting you set up
+                with coverage as part of the process.
+              </p>
+            )}
+            {hasOwnInsurance === true && (
+              <>
+                <div className="form-row">
+                  <label className="field">
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Insurance provider</span>
+                    <input value={insuranceProvider} onChange={(e) => setInsuranceProvider(e.target.value)} />
+                  </label>
+                  <label className="field">
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>Policy number</span>
+                    <input
+                      value={insurancePolicyReference}
+                      onChange={(e) => setInsurancePolicyReference(e.target.value)}
+                    />
+                  </label>
+                </div>
+                <DocumentUpload customerId={data.customerId} documentType="insurance_card" label="Upload insurance card" />
+              </>
+            )}
           </>
         )}
 
@@ -477,7 +504,14 @@ export default function Workspace({
                       .map((p) => p.name)
                       .join(", ") || "(none selected)"}
                   </li>
-                  <li>Insurance: {insuranceProvider || "(not yet provided)"}</li>
+                  <li>
+                    Insurance:{" "}
+                    {hasOwnInsurance === true
+                      ? insuranceProvider || "(provider not yet provided)"
+                      : hasOwnInsurance === false
+                        ? "Will get set up through Zivo"
+                        : "(not yet answered)"}
+                  </li>
                   <li>
                     Additional drivers:{" "}
                     {hasAdditionalDrivers && additionalDrivers.length > 0

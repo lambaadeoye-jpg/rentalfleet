@@ -103,6 +103,7 @@ export type ApplicationData = {
   licenseNumberRef: string;
   licenseExpiry: string;
   gigPlatformIds: string[];
+  hasOwnInsurance: boolean | null;
   insuranceProvider: string;
   insurancePolicyReference: string;
 };
@@ -176,7 +177,7 @@ export async function getOrCreateApplication(): Promise<
   // Find an in-progress application, or start one.
   const { data: existingApplication } = await supabase
     .from("application")
-    .select("id, status")
+    .select("id, status, has_own_insurance")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -184,6 +185,7 @@ export async function getOrCreateApplication(): Promise<
 
   let applicationId = existingApplication?.id as string | undefined;
   let applicationStatus = existingApplication?.status ?? "draft";
+  const hasOwnInsurance = (existingApplication?.has_own_insurance ?? null) as boolean | null;
 
   if (!applicationId) {
     const { data: customerRow } = await supabase
@@ -250,6 +252,7 @@ export async function getOrCreateApplication(): Promise<
       licenseNumberRef: driver?.license_number_ref ?? "",
       licenseExpiry: driver?.license_expiry ?? "",
       gigPlatformIds: (platforms ?? []).map((p) => p.gig_platform_id),
+      hasOwnInsurance,
       insuranceProvider: insurance?.provider ?? "",
       insurancePolicyReference: insurance?.policy_reference ?? "",
     },
@@ -437,7 +440,8 @@ export async function saveWorkStep(
 // ---------------------------------------------------------------------------
 export async function saveInsuranceStep(
   customerId: string,
-  fields: { provider: string; policyReference: string }
+  applicationId: string,
+  fields: { hasOwnInsurance: boolean | null; provider: string; policyReference: string }
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { data: customer } = await supabase
@@ -447,30 +451,41 @@ export async function saveInsuranceStep(
     .single();
   if (!customer) return { success: false, error: "Something went wrong. Please try again." };
 
-  const { data: existing } = await supabase
-    .from("insurance_policy")
-    .select("id")
-    .eq("customer_id", customerId)
-    .eq("policy_type", "renter")
-    .limit(1)
-    .maybeSingle();
+  const { error: applicationError } = await supabase
+    .from("application")
+    .update({ has_own_insurance: fields.hasOwnInsurance })
+    .eq("id", applicationId);
+  if (applicationError) return { success: false, error: "Couldn't save. Please try again." };
 
-  if (existing) {
-    const { error } = await supabase
+  // Someone who says they don't have insurance has no real policy to
+  // record yet -- an empty insurance_policy row wouldn't mean anything.
+  // Only touch insurance_policy when they've actually said yes.
+  if (fields.hasOwnInsurance) {
+    const { data: existing } = await supabase
       .from("insurance_policy")
-      .update({ provider: fields.provider, policy_reference: fields.policyReference })
-      .eq("id", existing.id);
-    if (error) return { success: false, error: "Couldn't save. Please try again." };
-  } else {
-    const { error } = await supabase.from("insurance_policy").insert({
-      tenant_id: customer.tenant_id,
-      customer_id: customerId,
-      policy_type: "renter",
-      provider: fields.provider,
-      policy_reference: fields.policyReference,
-      verification_status: "pending",
-    });
-    if (error) return { success: false, error: "Couldn't save. Please try again." };
+      .select("id")
+      .eq("customer_id", customerId)
+      .eq("policy_type", "renter")
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("insurance_policy")
+        .update({ provider: fields.provider, policy_reference: fields.policyReference })
+        .eq("id", existing.id);
+      if (error) return { success: false, error: "Couldn't save. Please try again." };
+    } else {
+      const { error } = await supabase.from("insurance_policy").insert({
+        tenant_id: customer.tenant_id,
+        customer_id: customerId,
+        policy_type: "renter",
+        provider: fields.provider,
+        policy_reference: fields.policyReference,
+        verification_status: "pending",
+      });
+      if (error) return { success: false, error: "Couldn't save. Please try again." };
+    }
   }
 
   await touchApplication(customerId);
