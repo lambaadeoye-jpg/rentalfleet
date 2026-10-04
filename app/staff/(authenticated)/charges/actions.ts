@@ -18,7 +18,7 @@ export type ChargeRecord = {
 
 export type RentalOption = { id: string; customerId: string; label: string; hasOpenDeposit: boolean };
 
-const CHARGE_TYPES = ["toll", "ticket", "cleaning", "damage", "other"] as const;
+const CHARGE_TYPES = ["toll", "ticket", "cleaning", "fuel", "damage", "other"] as const;
 
 export async function getCharges(): Promise<ChargeRecord[]> {
   const supabase = await createClient();

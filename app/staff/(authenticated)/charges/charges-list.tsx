@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { logCharge, approveCharge, type ChargeRecord, type RentalOption } from "./actions";
 
-const CHARGE_TYPES = ["toll", "ticket", "cleaning", "damage", "other"] as const;
+const CHARGE_TYPES = ["toll", "ticket", "cleaning", "fuel", "damage", "other"] as const;
 
 export default function ChargesList({ initialCharges, rentals }: { initialCharges: ChargeRecord[]; rentals: RentalOption[] }) {
   const router = useRouter();
