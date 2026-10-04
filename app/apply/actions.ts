@@ -103,6 +103,7 @@ export type ApplicationData = {
   licenseNumberRef: string;
   licenseExpiry: string;
   gigPlatformIds: string[];
+  drivingStatus: string | null;
   hasOwnInsurance: boolean | null;
   insuranceProvider: string;
   insurancePolicyReference: string;
@@ -177,7 +178,7 @@ export async function getOrCreateApplication(): Promise<
   // Find an in-progress application, or start one.
   const { data: existingApplication } = await supabase
     .from("application")
-    .select("id, status, has_own_insurance")
+    .select("id, status, has_own_insurance, driving_status")
     .eq("customer_id", customerId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -186,6 +187,7 @@ export async function getOrCreateApplication(): Promise<
   let applicationId = existingApplication?.id as string | undefined;
   let applicationStatus = existingApplication?.status ?? "draft";
   const hasOwnInsurance = (existingApplication?.has_own_insurance ?? null) as boolean | null;
+  const drivingStatus = (existingApplication?.driving_status ?? null) as string | null;
 
   if (!applicationId) {
     const { data: customerRow } = await supabase
@@ -252,6 +254,7 @@ export async function getOrCreateApplication(): Promise<
       licenseNumberRef: driver?.license_number_ref ?? "",
       licenseExpiry: driver?.license_expiry ?? "",
       gigPlatformIds: (platforms ?? []).map((p) => p.gig_platform_id),
+      drivingStatus,
       hasOwnInsurance,
       insuranceProvider: insurance?.provider ?? "",
       insurancePolicyReference: insurance?.policy_reference ?? "",
@@ -406,7 +409,9 @@ export async function uploadApplicantDocument(
 // ---------------------------------------------------------------------------
 export async function saveWorkStep(
   customerId: string,
-  gigPlatformIds: string[]
+  applicationId: string,
+  gigPlatformIds: string[],
+  drivingStatus: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { data: customer } = await supabase
@@ -415,6 +420,12 @@ export async function saveWorkStep(
     .eq("id", customerId)
     .single();
   if (!customer) return { success: false, error: "Something went wrong. Please try again." };
+
+  const { error: applicationError } = await supabase
+    .from("application")
+    .update({ driving_status: drivingStatus })
+    .eq("id", applicationId);
+  if (applicationError) return { success: false, error: "Couldn't save. Please try again." };
 
   // Replace the set: delete existing, insert the current selection. Simple
   // and correct for a form re-save; this table has no history requirement.

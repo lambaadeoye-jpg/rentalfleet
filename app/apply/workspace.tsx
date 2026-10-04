@@ -77,6 +77,7 @@ export default function Workspace({
   const [licenseNumberRef, setLicenseNumberRef] = useState(data.licenseNumberRef);
   const [licenseExpiry, setLicenseExpiry] = useState(data.licenseExpiry);
   const [gigPlatformIds, setGigPlatformIds] = useState<string[]>(data.gigPlatformIds);
+  const [drivingStatus, setDrivingStatus] = useState<string | null>(data.drivingStatus);
   const [hasOwnInsurance, setHasOwnInsurance] = useState<boolean | null>(data.hasOwnInsurance);
   const [insuranceProvider, setInsuranceProvider] = useState(data.insuranceProvider);
   const [insurancePolicyReference, setInsurancePolicyReference] = useState(data.insurancePolicyReference);
@@ -105,7 +106,7 @@ export default function Workspace({
     } else if (step === "license") {
       result = await saveLicenseStep(data.customerId, { licenseState, licenseNumberRef, licenseExpiry });
     } else if (step === "work") {
-      result = await saveWorkStep(data.customerId, gigPlatformIds);
+      result = await saveWorkStep(data.customerId, data.applicationId, gigPlatformIds, drivingStatus);
     } else if (step === "insurance") {
       result = await saveInsuranceStep(data.customerId, data.applicationId, {
         hasOwnInsurance,
@@ -310,6 +311,56 @@ export default function Workspace({
                 </label>
               ))}
             </div>
+
+            <div className="field" style={{ marginTop: 20, marginBottom: 16 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
+                Are you already driving for a gig platform, or new to it?
+              </span>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="drivingStatus"
+                    checked={drivingStatus === "already_driving"}
+                    onChange={() => setDrivingStatus("already_driving")}
+                  />
+                  I&apos;m already driving / approved on a platform
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="drivingStatus"
+                    checked={drivingStatus === "ready_to_start"}
+                    onChange={() => setDrivingStatus("ready_to_start")}
+                  />
+                  I&apos;m new / not yet approved
+                </label>
+                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="drivingStatus"
+                    checked={drivingStatus === "no"}
+                    onChange={() => setDrivingStatus("no")}
+                  />
+                  Neither applies to me
+                </label>
+              </div>
+            </div>
+
+            {drivingStatus === "already_driving" && (
+              <DocumentUpload
+                customerId={data.customerId}
+                documentType="proof_of_income"
+                label="Upload a screenshot of your earnings from the platform"
+              />
+            )}
+            {drivingStatus === "ready_to_start" && (
+              <DocumentUpload
+                customerId={data.customerId}
+                documentType="platform_approval"
+                label="Upload a screenshot showing your platform approval (e.g. your driver profile)"
+              />
+            )}
           </>
         )}
 
