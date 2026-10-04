@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import ApplyReferralCreditForm from "./apply-referral-credit-form";
 import DamageReportForm from "./damage-report-form";
+import NotesSection from "./notes-section";
+import { getCustomerNotes } from "./notes-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     { data: tickets },
     { data: leads },
     { data: referralLedger },
+    notes,
   ] = await Promise.all([
     supabase.from("application").select("id, status, submitted_at, decision_at, decision_reason").eq("customer_id", id).order("created_at", { ascending: false }),
     supabase
@@ -38,6 +41,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
     supabase.from("support_ticket").select("id, subject, status, priority, created_at").eq("customer_id", id).order("created_at", { ascending: false }),
     supabase.from("lead").select("id, source, campaign, stage, created_at").eq("customer_id", id).order("created_at", { ascending: false }),
     supabase.from("ledger_entry").select("entry_type, amount").eq("customer_id", id).in("entry_type", ["referral_credit_earned", "referral_credit_applied"]),
+    getCustomerNotes(id),
   ]);
 
   const referralCreditBalance = (referralLedger ?? []).reduce((sum, e) => {
@@ -183,6 +187,10 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
             {t.priority})
           </Row>
         ))}
+      </Section>
+
+      <Section title="Notes">
+        <NotesSection customerId={id} initialNotes={notes} />
       </Section>
     </div>
   );
