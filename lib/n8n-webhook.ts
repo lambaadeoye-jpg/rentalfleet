@@ -23,6 +23,8 @@ export const N8N_WEBHOOK_PATHS = {
   // independently iterable workflows, since SOPs for the calling side
   // specifically are still expected to change.
   newLeadCallTrigger: "fleet-rental-new-lead-call-trigger",
+  inboxSendReply: "fleet-rental-inbox-send-reply",
+  inboxNewMessageAlert: "fleet-rental-inbox-new-message-alert",
 } as const;
 
 export async function fireN8nWebhook(
