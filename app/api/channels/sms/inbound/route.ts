@@ -3,6 +3,7 @@ import { createHmac, timingSafeEqual } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { parseInboundKeyword, HELP_REPLY, renderTemplate } from "@/lib/outreach-rules";
+import { YES_REPLY, CHANGE_REPLY, formatPickupWhen } from "@/lib/pickup-reminders";
 
 // Twilio POSTs here the moment someone texts the business number. This is
 // third-party-initiated, not an internal call, so it's authenticated with
@@ -106,6 +107,26 @@ export async function POST(request: Request) {
 
   if (insertError) {
     console.error("[sms-inbound] Failed to log communication_event:", insertError);
+  }
+
+  // A YES / CHANGE answering a recent pickup reminder is recorded against the rental
+  // and answered right here. Anything else falls through to the normal flow.
+  if ((keyword === "yes" || keyword === "change") && matchedCustomer) {
+    const { data: replyRows } = await supabase.rpc("record_pickup_reply", { p_tenant_id: tenantRow.id, p_phone: fromPhone, p_keyword: keyword });
+    const rr = Array.isArray(replyRows) ? replyRows[0] : null;
+    if (rr) {
+      const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://rentzivo.com").replace(/\/$/, "");
+      const msg = keyword === "yes"
+        ? renderTemplate(YES_REPLY, { when: formatPickupWhen(rr.pickup_at, rr.location_tz, new Date()), place: rr.location_name ?? "our pickup location" })
+        : renderTemplate(CHANGE_REPLY, { link: `${base}/portal/rental` });
+      if (keyword === "change") {
+        void fireN8nWebhook(N8N_WEBHOOK_PATHS.inboxNewMessageAlert, {
+          fromPhone, messageBody: messageBody ?? "", matched: true, customerId: matchedCustomer.id, leadId,
+        });
+      }
+      const esc = msg.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      return new NextResponse(`<Response><Message>${esc}</Message></Response>`, { status: 200, headers: { "Content-Type": "text/xml" } });
+    }
   }
 
   // Opt-out bookkeeping needs no staff alert. HELP gets a reply if a support

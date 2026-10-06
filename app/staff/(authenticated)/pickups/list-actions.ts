@@ -74,7 +74,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
   const [{ data: scheduled }, { data: active }] = await Promise.all([
     supabase
       .from("rental")
-      .select("id, pickup_confirmed_at, expected_return_at, drop_off_manually_set, needs_human_followup, last_call_outcome, last_call_summary, last_call_at, last_call_committed_time, insurance_arrangement, agreed_weekly_rate_usd, deposit_required_usd, booking:booking_id(pickup_at, pickup_location_id, quoted_amount), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
+      .select("id, pickup_confirmed_at, expected_return_at, drop_off_manually_set, needs_human_followup, missed_pickup_at, last_call_outcome, last_call_summary, last_call_at, last_call_committed_time, insurance_arrangement, agreed_weekly_rate_usd, deposit_required_usd, booking:booking_id(pickup_at, pickup_location_id, quoted_amount), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
       .eq("status", "scheduled"),
     supabase
       .from("rental")
@@ -124,7 +124,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
         followup: {
           needed: Boolean((r as any).needs_human_followup),
           outcome: (r as any).last_call_outcome ?? null,
-          summary: (r as any).last_call_summary ?? null,
+          summary: (r as any).last_call_summary ?? ((r as any).missed_pickup_at ? "Missed pickup: the renter didn't arrive. They were texted a link to choose a new time, or reply CHANGE. Resolve this once handled." : null),
           at: (r as any).last_call_at ?? null,
           committedTime: (r as any).last_call_committed_time ?? null,
         },
