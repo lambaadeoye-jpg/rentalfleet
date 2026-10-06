@@ -51,9 +51,10 @@ describe("decideReminder", () => {
   it("opt-out wins over everything else", () => {
     expect(decideReminder(row({ suppressed: true, phone: null }), now, false, "x")).toEqual({ action: "skip", reason: "suppressed" });
   });
-  it("missed-pickup text carries the link", () => {
-    const d = decideReminder(row({ kind: "missed" }), now, true, "https://rentzivo.com/portal/rental");
-    expect(d.action === "send" && d.body.includes("https://rentzivo.com/portal/rental")).toBe(true);
+  it("missed-pickup text makes no promise about rescheduling or fees", () => {
+    const d = decideReminder(row({ kind: "missed" }), now, true, "x");
+    expect(d.action === "send" && /next steps/.test(d.body)).toBe(true);
+    expect(d.action === "send" && /new time|reschedul|fee/i.test(d.body)).toBe(false);
   });
 });
 

@@ -11,7 +11,7 @@ export const REMINDER_TEMPLATES: Record<ReminderKind, string> = {
   "24h": "Zivo: Reminder, your car pickup is {when} at {place}. Bring your driver license and the card you paid with. Reply YES to confirm or CHANGE to reschedule. Reply STOP to opt out.",
   "4h": "Zivo: Your pickup is {when} at {place}. Reply YES to confirm or CHANGE to reschedule. Reply STOP to opt out.",
   "2h": "Zivo: See you {when} at {place}. Bring your driver license and the card you paid with. Reply CHANGE if you can't make it. Reply STOP to opt out.",
-  missed: "Zivo: We missed you at your pickup. Pick a new time here: {link} Reply STOP to opt out.",
+  missed: "Zivo: We missed you at your pickup time. Our team will reach out shortly about next steps. Reply STOP to opt out.",
 };
 
 export const YES_REPLY = "Zivo: Thanks, you're confirmed for {when} at {place}. See you then! Reply STOP to opt out.";

@@ -34,6 +34,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     { count: flaggedLeadsCount },
     { count: followupCount },
     { count: pendingChargesCount },
+    { count: refundAttentionCount },
     { count: overdueCount },
     { data: inboxEvents },
   ] = await Promise.all([
@@ -44,6 +45,8 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     // Pickups badge: rentals the voice assistant flagged for a human.
     supabase.from("rental").select("*", { count: "exact", head: true }).eq("needs_human_followup", true),
     supabase.from("charge").select("*", { count: "exact", head: true }).eq("approval_status", "pending"),
+    // Refunds waiting for a decision, failed, or needing a manual payback.
+    supabase.from("refund").select("*", { count: "exact", head: true }).in("status", ["pending_approval", "failed", "manual_pending"]),
     // Weekly rent past its due date on a rental that is out on the road.
     // Inner join so only schedules belonging to active rentals count.
     supabase
@@ -132,6 +135,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     // pickup -- a badge that is always lit stops meaning anything.
     "/staff/pickups": (followupCount ?? 0) + (overdueCount ?? 0),
     "/staff/charges": pendingChargesCount ?? 0,
+    "/staff/refunds": refundAttentionCount ?? 0,
     "/staff/referrals": qualifiedReferralsCount ?? 0,
     "/staff/red-flags": flaggedLeadsCount ?? 0,
   };

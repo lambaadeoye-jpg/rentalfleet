@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Megaphone, User, IdCard, Gift, Download, Receipt, AlertTriangle, MessageSquare, ShieldAlert } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Megaphone, User, IdCard, Gift, Download, Receipt, AlertTriangle, MessageSquare, ShieldAlert, Undo2 } from "lucide-react";
 import SignOutButton from "./(authenticated)/dashboard/sign-out-button";
 import GlobalSearchBar from "./global-search-bar";
 
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { href: "/staff/red-flags", label: "Red Flags", icon: AlertTriangle },
   { href: "/staff/referrals", label: "Referrals", icon: Gift },
   { href: "/staff/charges", label: "Charges", icon: Receipt },
+  { href: "/staff/refunds", label: "Refunds", icon: Undo2 },
   { href: "/staff/recovery", label: "Recovery", icon: ShieldAlert },
   { href: "/staff/fleet", label: "Fleet", icon: Car },
   { href: "/staff/insurance", label: "Insurance", icon: ShieldCheck },

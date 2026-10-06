@@ -7,6 +7,7 @@ import StartRentalForm from "./start-rental-form";
 import DocumentPanel from "./document-panel";
 import AgreementCard from "./agreement-card";
 import PaymentCard from "./payment-card";
+import CancelCard from "./cancel-card";
 import { getPaymentStatus } from "../payment-actions";
 import { getAgreementStatus } from "../agreement-actions";
 
@@ -75,7 +76,8 @@ export default async function ApplicationDetailPage({
       .select("id, document_type, storage_key, created_at, review_status, review_note, source")
       .eq("customer_id", customerId)
       .order("created_at", { ascending: false }),
-    supabase.from("rental").select("id, status").eq("customer_id", customerId).limit(1).maybeSingle(),
+    // Cancelled rentals are history: ignoring them lets staff schedule a fresh rental for a renter who cancelled and came back.
+    supabase.from("rental").select("id, status").eq("customer_id", customerId).neq("status", "cancelled").order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
 
   const canStartRental =
@@ -149,6 +151,7 @@ export default async function ApplicationDetailPage({
 
       {existingRental && agreementStatus && <AgreementCard rentalId={existingRental.id} status={agreementStatus} />}
       {existingRental && paymentStatus && <PaymentCard rentalId={existingRental.id} status={paymentStatus} />}
+      {existingRental && ["approved", "scheduled"].includes(existingRental.status) && <CancelCard rentalId={existingRental.id} />}
 
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 12 }}>Decision</h2>

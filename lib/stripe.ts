@@ -65,3 +65,29 @@ export async function fetchCardInfo(paymentIntentId: string): Promise<CardInfo |
     return null;
   }
 }
+
+/** One refund against one PaymentIntent. The idempotency key makes a retry return the same refund instead of refunding twice. */
+export async function createRefund(
+  paymentIntentId: string, amountCents: number, idempotencyKey: string, refundId: string
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return { ok: false, error: "not_configured" };
+  if (!/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId) || !Number.isInteger(amountCents) || amountCents <= 0) return { ok: false, error: "bad_request" };
+  const body = new URLSearchParams({ payment_intent: paymentIntentId, amount: String(amountCents), "metadata[refund_id]": refundId });
+  try {
+    const res = await fetch(`${API}/refunds`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": idempotencyKey },
+      body,
+    });
+    const json: any = await res.json().catch(() => null);
+    if (!res.ok || !json?.id) {
+      console.error("[stripe] refund failed:", res.status, json?.error?.type, json?.error?.code, json?.error?.message);
+      return { ok: false, error: `stripe_${json?.error?.code ?? res.status}`.slice(0, 120) };
+    }
+    return { ok: true, id: json.id };
+  } catch (e) {
+    console.error("[stripe] refund network error:", (e as Error).message);
+    return { ok: false, error: "network" };
+  }
+}

@@ -6,6 +6,8 @@ import PickupSlotPicker from "./pickup-slot-picker";
 import { getPickerState } from "./pickup-actions";
 import PayNow from "./pay-now";
 import { getPortalPayState } from "./payment-actions";
+import CancelRental from "./cancel-rental";
+import { getMyCancelState } from "./cancel-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,7 @@ export default async function PortalRentalPage() {
   const additionalDrivers = customer ? await getAdditionalDrivers(customer.id) : [];
   const pickerState = await getPickerState();
   const payState = await getPortalPayState();
+  const cancelState = await getMyCancelState();
 
   const vehicle = (rental?.rental_segment as any)?.[0]?.vehicle;
   const policy = (rental?.governing_policy_snapshot as any) ?? {};
@@ -79,6 +82,8 @@ export default async function PortalRentalPage() {
       )}
 
       <PickupSlotPicker state={pickerState} />
+
+      {cancelState.canCancel && <CancelRental />}
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Rental Period</h2>
