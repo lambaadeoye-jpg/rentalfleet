@@ -4,6 +4,8 @@ import { useState, useRef, useEffect, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { submitLead } from "./actions";
+import { readFirstTouch } from "@/lib/attribution";
+import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
 
 type VehicleCategory = { id: string; name: string; description: string | null };
 type GigPlatform = { id: string; code: string; name: string };
@@ -19,6 +21,7 @@ export default function LeadForm({
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false); // unchecked by default, never required
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("ref") ?? undefined;
@@ -62,6 +65,10 @@ export default function LeadForm({
         additionalInfo: String(form.get("additionalInfo") || ""),
         gigPlatformIds: selectedPlatforms,
         referralCode,
+        urgency: ((form.get("urgency") as string) || undefined) as
+          | "today" | "this_week" | "within_2_weeks" | "just_checking" | undefined,
+        contactConsent: consent,
+        attribution: readFirstTouch(),
       });
 
       if (!result.success) {
@@ -184,6 +191,17 @@ export default function LeadForm({
       </div>
 
       <div className="field">
+        <label htmlFor="urgency">How soon do you need a car?</label>
+        <select id="urgency" name="urgency" defaultValue="">
+          <option value="">Select one</option>
+          <option value="today">Today</option>
+          <option value="this_week">This week</option>
+          <option value="within_2_weeks">Within 2 weeks</option>
+          <option value="just_checking">Just checking options</option>
+        </select>
+      </div>
+
+      <div className="field">
         <label>Rental option</label>
         <div style={{ display: "flex", gap: 20, marginTop: 6 }}>
           <label className="checkbox-item">
@@ -201,6 +219,16 @@ export default function LeadForm({
         <label htmlFor="additionalInfo">Additional information (optional)</label>
         <textarea id="additionalInfo" name="additionalInfo" rows={3} />
       </div>
+
+      <label className="checkbox-item" style={{ alignItems: "flex-start", marginBottom: 14, fontSize: 13 }}>
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(e) => setConsent(e.target.checked)}
+          style={{ marginTop: 3 }}
+        />
+        <span>{CONTACT_CONSENT_TEXT}</span>
+      </label>
 
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
 

@@ -2,7 +2,11 @@
 
 import { randomUUID } from "crypto";
 import { createPublicClient } from "@/lib/supabase/public";
+import { headers } from "next/headers";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
+import { sanitizeAttribution, deriveSource, type Attribution } from "@/lib/attribution";
+import { CONTACT_CONSENT_TEXT, CONTACT_CONSENT_VERSION } from "@/lib/contact-consent";
+import { isValidEmail, isValidUsPhone } from "@/lib/contact-validation";
 
 export type SubmitLeadResult =
   | { success: true }
@@ -38,6 +42,11 @@ export async function submitLead(formData: {
   hasDriversLicense?: boolean;
   drivingStatus?: "already_driving" | "ready_to_start" | "no";
   urgency?: "today" | "this_week" | "within_2_weeks" | "just_checking";
+  /** Optional, unchecked-by-default permission to text/call. Never required. */
+  contactConsent?: boolean;
+  attribution?: Attribution;
+  /** Fallback source label when attribution says nothing (e.g. "get-started"). */
+  sourceFallback?: string;
 }): Promise<SubmitLeadResult> {
   try {
     const firstName = formData.firstName.trim();
@@ -50,6 +59,35 @@ export async function submitLead(formData: {
     // just faster feedback.
     if (!firstName || !lastName || !phone || !email) {
       return { success: false, error: "First name, last name, mobile phone, and email are required." };
+    }
+
+    if (!isValidEmail(email)) {
+      return { success: false, error: "Please enter a valid email address." };
+    }
+    if (!isValidUsPhone(phone)) {
+      return { success: false, error: "Please enter a valid 10-digit mobile number." };
+    }
+    if (firstName.length > 80 || lastName.length > 80) {
+      return { success: false, error: "That name looks too long. Please check it." };
+    }
+
+    const attribution = sanitizeAttribution(formData.attribution);
+    const fallback = formData.sourceFallback === "get-started" ? "get-started" : "homepage";
+    const source = deriveSource(attribution, fallback);
+
+    // Consent record: wording + version come from the server, never the
+    // client, so what's stored is exactly what we showed.
+    const consented = formData.contactConsent === true;
+    let consentIp: string | null = null;
+    let consentUa: string | null = null;
+    if (consented) {
+      try {
+        const h = await headers();
+        consentIp = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim().slice(0, 64) || null;
+        consentUa = (h.get("user-agent") ?? "").slice(0, 300) || null;
+      } catch {
+        // Header access failing must not lose the lead.
+      }
     }
 
     const supabase = createPublicClient();
@@ -101,8 +139,21 @@ export async function submitLead(formData: {
       urgency: formData.urgency ?? null,
       red_flag_matched: redFlagMatched,
       red_flag_match_type: redFlagMatchType,
-      source: "homepage",
+      source,
       stage: "new",
+      utm_source: attribution.utmSource ?? null,
+      utm_medium: attribution.utmMedium ?? null,
+      utm_campaign: attribution.utmCampaign ?? null,
+      utm_content: attribution.utmContent ?? null,
+      utm_term: attribution.utmTerm ?? null,
+      click_id: attribution.clickId ?? null,
+      landing_path: attribution.landingPath ?? null,
+      referrer: attribution.referrer ?? null,
+      contact_consent_at: consented ? new Date().toISOString() : null,
+      contact_consent_text: consented ? CONTACT_CONSENT_TEXT : null,
+      contact_consent_version: consented ? CONTACT_CONSENT_VERSION : null,
+      consent_ip: consentIp,
+      consent_user_agent: consentUa,
       // "What are you driving for?" is answered by the gig_platform
       // checkboxes (lead_gig_platform, below) -- driving_for only holds the
       // free-text detail when "Other" is selected, so we're not asking the
@@ -153,6 +204,13 @@ export async function submitLead(formData: {
       urgency: formData.urgency ?? null,
       redFlagMatched,
       redFlagMatchType,
+      source,
+      utmSource: attribution.utmSource ?? null,
+      utmMedium: attribution.utmMedium ?? null,
+      utmCampaign: attribution.utmCampaign ?? null,
+      landingPath: attribution.landingPath ?? null,
+      contactConsent: consented,
+      referralCode: formData.referralCode?.trim() || null,
     });
 
     // Separate webhook, separate workflow from the staff alert above --

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Phone, Mail, MessageSquare } from "lucide-react";
 import { submitLead } from "../actions";
+import { readFirstTouch } from "@/lib/attribution";
 import { PHONE_DISPLAY } from "@/lib/site-config";
 
 type Step = "license" | "driving" | "urgency" | "contact";
@@ -75,6 +76,8 @@ export default function GetStartedFlow() {
         hasDriversLicense: hasLicense ?? undefined,
         drivingStatus: drivingStatus ?? undefined,
         urgency: urgency ?? undefined,
+        attribution: readFirstTouch(),
+        sourceFallback: "get-started",
       });
 
       if (!result.success) {
