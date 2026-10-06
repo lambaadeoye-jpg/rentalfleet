@@ -36,6 +36,11 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // The old /get-started lead flow is retired. Old ad and email links keep working:
+  // they land on the homepage form, and the query string (UTMs) is carried over.
+  async redirects() {
+    return [{ source: "/get-started", destination: "/", permanent: true }];
+  },
   async headers() {
     return [
       {
