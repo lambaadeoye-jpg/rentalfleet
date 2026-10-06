@@ -68,26 +68,16 @@ export async function POST(request: Request) {
   // than invent one, this logs the message unlinked; staff see it in the
   // inbox and can create/link a real lead once they actually have enough
   // information (name, email) from the conversation itself.
-  const { data: matchedCustomer } = await supabase
-    .from("customer")
-    .select("id")
-    .eq("tenant_id", tenantRow.id)
-    .eq("phone", fromPhone)
-    .limit(1)
-    .maybeSingle();
-
-  let leadId: string | null = null;
-  if (!matchedCustomer) {
-    const { data: matchedLead } = await supabase
-      .from("lead")
-      .select("id")
-      .eq("tenant_id", tenantRow.id)
-      .eq("phone", fromPhone)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    leadId = matchedLead?.id ?? null;
-  }
+  // Phones are stored in mixed formats, so match on the last 10 digits via
+  // the service-role-only match_caller_by_phone() rather than exact equality
+  // (an exact match silently missed "+1..." vs "615..." variants).
+  const { data: matches } = await supabase.rpc("match_caller_by_phone", {
+    p_tenant_id: tenantRow.id,
+    p_phone: fromPhone,
+  });
+  const top = ((matches ?? []) as { kind: string; id: string; customer_id: string | null }[])[0];
+  const matchedCustomer = top?.kind === "customer" ? { id: top.id } : null;
+  const leadId: string | null = top?.kind === "lead" ? top.id : null;
 
   const { error: insertError } = await supabase.from("communication_event").insert({
     tenant_id: tenantRow.id,
