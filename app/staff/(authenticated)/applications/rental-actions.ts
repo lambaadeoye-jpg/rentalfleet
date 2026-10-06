@@ -961,3 +961,37 @@ export async function changeRentalInsurance(
   revalidatePath("/staff/pickups");
   return { success: true };
 }
+
+// ---------------------------------------------------------------------------
+// STAFF: mark a pickup-call follow-up as handled. The reminder assistant
+// raises needs_human_followup when a renter needs to reschedule, can't make
+// it, or needs help; this clears it once a person has dealt with it. Does
+// not touch the rental's status, appointment or payments.
+// ---------------------------------------------------------------------------
+export async function resolvePickupFollowup(rentalId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, tenant_id, needs_human_followup, last_call_outcome")
+    .eq("id", rentalId)
+    .maybeSingle();
+  if (!rental) return { success: false, error: "Rental not found." };
+  if (!rental.needs_human_followup) return { success: true };
+
+  const { error } = await supabase.from("rental").update({ needs_human_followup: false }).eq("id", rentalId);
+  if (error) return { success: false, error: "Couldn't mark that as handled. Please try again." };
+
+  void logAuditEvent({
+    tenantId: rental.tenant_id,
+    action: "rental.pickup_followup_resolved",
+    entityType: "rental",
+    entityId: rentalId,
+    beforeData: { needs_human_followup: true, last_call_outcome: rental.last_call_outcome },
+    afterData: { needs_human_followup: false },
+    source: "staff",
+  });
+
+  revalidatePath("/staff/pickups");
+  return { success: true };
+}

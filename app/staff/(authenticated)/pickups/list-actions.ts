@@ -29,6 +29,13 @@ export type PickupItem = {
   expectedReturnAt: string | null;
   dropOffManuallySet: boolean;
   money: RentalMoney;
+  followup: {
+    needed: boolean;
+    outcome: string | null;
+    summary: string | null;
+    at: string | null;
+    committedTime: string | null;
+  };
 };
 
 export type DropoffItem = {
@@ -67,7 +74,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
   const [{ data: scheduled }, { data: active }] = await Promise.all([
     supabase
       .from("rental")
-      .select("id, pickup_confirmed_at, expected_return_at, drop_off_manually_set, insurance_arrangement, agreed_weekly_rate_usd, deposit_required_usd, booking:booking_id(pickup_at, pickup_location_id, quoted_amount), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
+      .select("id, pickup_confirmed_at, expected_return_at, drop_off_manually_set, needs_human_followup, last_call_outcome, last_call_summary, last_call_at, last_call_committed_time, insurance_arrangement, agreed_weekly_rate_usd, deposit_required_usd, booking:booking_id(pickup_at, pickup_location_id, quoted_amount), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
       .eq("status", "scheduled"),
     supabase
       .from("rental")
@@ -114,9 +121,19 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
         expectedReturnAt: (r.booking as any)?.pickup_location_id ? ((r as any).expected_return_at ?? null) : null,
         dropOffManuallySet: Boolean((r as any).drop_off_manually_set),
         money: await loadMoney(supabase, r),
+        followup: {
+          needed: Boolean((r as any).needs_human_followup),
+          outcome: (r as any).last_call_outcome ?? null,
+          summary: (r as any).last_call_summary ?? null,
+          at: (r as any).last_call_at ?? null,
+          committedTime: (r as any).last_call_committed_time ?? null,
+        },
       };
     })
   );
+
+  // Rentals that need a person come first.
+  pickups.sort((a, b) => Number(b.followup.needed) - Number(a.followup.needed));
 
   const dropoffs: DropoffItem[] = await Promise.all((active ?? []).map(async (r) => {
     const customer = r.customer as any;

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { confirmPickup, setPickupAppointment, type PickupLocationOption } from "../applications/rental-actions";
+import { confirmPickup, setPickupAppointment, resolvePickupFollowup, type PickupLocationOption } from "../applications/rental-actions";
 import RentalMoneyPanel from "./rental-money-panel";
 import InspectionPhotoUpload from "./inspection-photo-upload";
 import type { PickupItem } from "./list-actions";
@@ -18,6 +18,28 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
 
 
   const readyChecks = item.hasLicenseDocument && item.insuranceVerified;
+
+  const [followupLoading, setFollowupLoading] = useState(false);
+  const [followupError, setFollowupError] = useState<string | null>(null);
+  const outcomeLabels: Record<string, string> = {
+    needs_reschedule: "Renter wants to reschedule",
+    cannot_make_it: "Renter can't make it",
+    needs_help_from_staff: "Renter asked for help from a person",
+    no_answer: "No answer",
+    voicemail: "Voicemail left",
+    confirmed: "Confirmed",
+  };
+  async function handleResolveFollowup() {
+    setFollowupError(null);
+    setFollowupLoading(true);
+    const result = await resolvePickupFollowup(item.rentalId);
+    setFollowupLoading(false);
+    if (!result.success) {
+      setFollowupError(result.error ?? "Couldn't mark that as handled.");
+      return;
+    }
+    router.refresh();
+  }
 
   // datetime-local wants "YYYY-MM-DDTHH:mm" in the browser's local time.
   const toLocalInput = (iso: string | null) => {
@@ -92,6 +114,13 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
         <div>
           <div style={{ fontWeight: 700, fontSize: 15 }}>
             {item.customerFirstName} {item.customerLastName}
+            {item.followup.needed && (
+              <span
+                style={{ marginLeft: 8, fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#fef3c7", color: "#92400e" }}
+              >
+                Needs follow-up
+              </span>
+            )}
           </div>
           <div className="muted-text" style={{ fontSize: 13 }}>{item.vehicleLabel}</div>
           <div className="muted-text" style={{ fontSize: 13 }}>
@@ -105,6 +134,27 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
 
       {expanded && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
+          {item.followup.needed && (
+            <div style={{ background: "#fffbeb", border: "1px solid #fcd34d", borderRadius: 8, padding: 12, marginBottom: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>
+                {item.followup.outcome ? outcomeLabels[item.followup.outcome] ?? item.followup.outcome : "Needs follow-up"}
+                {item.followup.at ? ` · ${new Date(item.followup.at).toLocaleString()}` : ""}
+              </p>
+              {item.followup.summary && <p style={{ fontSize: 13, marginBottom: 4 }}>{item.followup.summary}</p>}
+              {item.followup.committedTime && (
+                <p style={{ fontSize: 13, marginBottom: 4 }}>Renter mentioned: {item.followup.committedTime}</p>
+              )}
+              {followupError && <p className="error-text" style={{ fontSize: 13, marginBottom: 8 }}>{followupError}</p>}
+              <button
+                onClick={handleResolveFollowup}
+                disabled={followupLoading}
+                className="button-secondary"
+                style={{ color: "var(--text)", borderColor: "var(--border)", marginTop: 4 }}
+              >
+                {followupLoading ? "Saving..." : "Mark as handled"}
+              </button>
+            </div>
+          )}
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Pickup appointment</p>
           <div className="form-row" style={{ marginBottom: 8 }}>
             <label className="field">

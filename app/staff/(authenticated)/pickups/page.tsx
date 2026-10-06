@@ -18,6 +18,11 @@ export default async function PickupsPage() {
 
       <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
         Ready for Pickup ({pickups.length})
+        {pickups.some((p) => p.followup.needed) && (
+          <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#fef3c7", color: "#92400e" }}>
+            {pickups.filter((p) => p.followup.needed).length} need follow-up
+          </span>
+        )}
       </h2>
       {pickups.length === 0 ? (
         <p className="muted-text" style={{ marginBottom: 24, fontSize: 14 }}>Nothing scheduled right now.</p>
