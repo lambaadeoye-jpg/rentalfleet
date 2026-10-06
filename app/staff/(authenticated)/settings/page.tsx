@@ -1,10 +1,13 @@
 import { getMarketingSettings } from "./actions";
 import MarketingSettingsForm from "./marketing-settings-form";
+import PickupSchedulingForm from "./pickup-scheduling-form";
+import { getPickupScheduling } from "./pickup-actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function MarketingSettingsPage() {
   const settings = await getMarketingSettings();
+  const pickup = await getPickupScheduling();
 
   return (
     <div style={{ padding: "32px 40px" }}>
@@ -14,6 +17,7 @@ export default async function MarketingSettingsPage() {
         n8n when you start a new Facebook ad campaign.
       </p>
       <MarketingSettingsForm initialGoogleUrl={settings.googleReviewUrl} initialFacebookUrl={settings.facebookAdUrl} />
+      <PickupSchedulingForm initial={pickup} />
     </div>
   );
 }

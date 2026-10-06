@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Car } from "lucide-react";
 import { getAdditionalDrivers } from "@/app/apply/actions";
 import PortalDriversManager from "./portal-drivers-manager";
+import PickupSlotPicker from "./pickup-slot-picker";
+import { getPickerState } from "./pickup-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,7 @@ export default async function PortalRentalPage() {
     .maybeSingle();
 
   const additionalDrivers = customer ? await getAdditionalDrivers(customer.id) : [];
+  const pickerState = await getPickerState();
 
   const vehicle = (rental?.rental_segment as any)?.[0]?.vehicle;
   const policy = (rental?.governing_policy_snapshot as any) ?? {};
@@ -63,6 +66,8 @@ export default async function PortalRentalPage() {
           {rental.status}
         </span>
       </div>
+
+      <PickupSlotPicker state={pickerState} />
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Rental Period</h2>
