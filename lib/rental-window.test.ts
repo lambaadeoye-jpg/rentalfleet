@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { validateRentalWindow } from "./rental-window";
+import { validateRentalWindow, defaultDropoff, isDefaultDropoff } from "./rental-window";
 
 const pickup = new Date("2026-10-10T14:00:00Z");
 const plus = (ms: number) => new Date(pickup.getTime() + ms);
@@ -24,5 +24,19 @@ describe("validateRentalWindow", () => {
   });
   it("rejects invalid dates", () => {
     expect(validateRentalWindow(new Date("nope"), plus(8 * DAY)).ok).toBe(false);
+  });
+});
+
+describe("defaultDropoff / isDefaultDropoff", () => {
+  it("defaults to exactly 7 days after pickup", () => {
+    expect(defaultDropoff(pickup).getTime()).toBe(pickup.getTime() + 7 * DAY);
+  });
+  it("treats the default (and tiny rounding) as automatic", () => {
+    expect(isDefaultDropoff(pickup, plus(7 * DAY))).toBe(true);
+    expect(isDefaultDropoff(pickup, plus(7 * DAY + 30 * 1000))).toBe(true);
+  });
+  it("treats any real change as a staff override", () => {
+    expect(isDefaultDropoff(pickup, plus(8 * DAY))).toBe(false);
+    expect(isDefaultDropoff(pickup, plus(7 * DAY + 5 * 60 * 1000))).toBe(false);
   });
 });

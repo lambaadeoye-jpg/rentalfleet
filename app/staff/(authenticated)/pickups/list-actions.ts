@@ -14,6 +14,7 @@ export type PickupItem = {
   pickupLocationId: string | null;
   pickupConfirmedAt: string | null;
   expectedReturnAt: string | null;
+  dropOffManuallySet: boolean;
 };
 
 export type DropoffItem = {
@@ -23,6 +24,8 @@ export type DropoffItem = {
   customerLastName: string;
   vehicleLabel: string;
   startMileage: number | null;
+  expectedReturnAt: string | null;
+  dropOffManuallySet: boolean;
 };
 
 export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; dropoffs: DropoffItem[] }> {
@@ -31,11 +34,11 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
   const [{ data: scheduled }, { data: active }] = await Promise.all([
     supabase
       .from("rental")
-      .select("id, pickup_confirmed_at, expected_return_at, booking:booking_id(pickup_at, pickup_location_id), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
+      .select("id, pickup_confirmed_at, expected_return_at, drop_off_manually_set, booking:booking_id(pickup_at, pickup_location_id), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
       .eq("status", "scheduled"),
     supabase
       .from("rental")
-      .select("id, customer:customer_id(first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year), start_mileage)")
+      .select("id, expected_return_at, drop_off_manually_set, customer:customer_id(first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year), start_mileage)")
       .eq("status", "active"),
   ]);
 
@@ -76,6 +79,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
         // Only meaningful once an appointment is set; before that it is
         // scheduleRental's placeholder, so don't present it as staff's choice.
         expectedReturnAt: (r.booking as any)?.pickup_location_id ? ((r as any).expected_return_at ?? null) : null,
+        dropOffManuallySet: Boolean((r as any).drop_off_manually_set),
       };
     })
   );
@@ -91,6 +95,8 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
       customerLastName: customer?.last_name ?? "",
       vehicleLabel: vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : "No vehicle assigned",
       startMileage: segment?.start_mileage ?? null,
+      expectedReturnAt: (r as any).expected_return_at ?? null,
+      dropOffManuallySet: Boolean((r as any).drop_off_manually_set),
     };
   });
 

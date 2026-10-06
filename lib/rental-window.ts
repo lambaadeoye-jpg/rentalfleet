@@ -21,3 +21,15 @@ export function validateRentalWindow(pickupAt: Date, dropoffAt: Date): RentalWin
   }
   return { ok: true, days: Math.ceil(diffMs / DAY_MS) };
 }
+
+// Every rental's drop-off defaults to pickup + 7 days; staff may change it
+// at any time (still subject to the 7-day minimum above).
+export function defaultDropoff(pickupAt: Date): Date {
+  return new Date(pickupAt.getTime() + MIN_RENTAL_DAYS * DAY_MS);
+}
+
+// A saved drop-off counts as "automatic" (not a staff override) when it is
+// the default for that pickup, give or take a minute of form rounding.
+export function isDefaultDropoff(pickupAt: Date, dropoffAt: Date): boolean {
+  return Math.abs(dropoffAt.getTime() - defaultDropoff(pickupAt).getTime()) < 60 * 1000;
+}

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
 import { calculateDailyRentalPrice } from "@/lib/pricing";
-import { validateRentalWindow } from "@/lib/rental-window";
+import { validateRentalWindow, defaultDropoff, isDefaultDropoff } from "@/lib/rental-window";
 import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
 
 export type AvailableVehicle = {
@@ -199,9 +199,11 @@ export async function getPickupLocations(): Promise<PickupLocationOption[]> {
 }
 
 // ---------------------------------------------------------------------------
-// STAFF: set the pickup appointment (time + location) AND the drop-off
-// (return) date for a scheduled rental. Staff choose the drop-off date --
-// it is never auto-computed. Nothing in the app captured either before:
+// STAFF: set the pickup appointment (time + location) and, optionally, a
+// drop-off (return) date for a scheduled rental. With no drop-off given it
+// defaults to pickup + 7 days automatically; any other date is a staff
+// override (drop_off_manually_set) that pickup confirmation will not
+// overwrite. Nothing in the app captured either before:
 // scheduleRental used "now" as a placeholder pickup time, no location, and
 // a return date fixed at scheduling time + 7 days that ignored when pickup
 // actually happens.
@@ -219,14 +221,15 @@ export async function getPickupLocations(): Promise<PickupLocationOption[]> {
 export async function setPickupAppointment(
   rentalId: string,
   pickupAtIso: string,
-  returnAtIso: string,
+  returnAtIso: string | null,
   locationId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
   const pickupAt = new Date(pickupAtIso);
-  const returnAt = new Date(returnAtIso);
   if (Number.isNaN(pickupAt.getTime())) return { success: false, error: "Enter a valid pickup date and time." };
+  // Drop-off defaults to pickup + 7 days automatically; staff may override.
+  const returnAt = returnAtIso ? new Date(returnAtIso) : defaultDropoff(pickupAt);
   if (pickupAt.getTime() < Date.now() - 5 * 60 * 1000) return { success: false, error: "Pickup time can't be in the past." };
   if (!locationId) return { success: false, error: "Choose a pickup location." };
 
@@ -278,9 +281,97 @@ export async function setPickupAppointment(
 
   const { error: rentalError } = await supabase
     .from("rental")
-    .update({ expected_return_at: returnAt.toISOString(), pickup_confirmed_at: null })
+    .update({
+      expected_return_at: returnAt.toISOString(),
+      drop_off_manually_set: !isDefaultDropoff(pickupAt, returnAt),
+      pickup_confirmed_at: null,
+    })
     .eq("id", rentalId);
   if (rentalError) return { success: false, error: "Saved the pickup time but couldn't save the drop-off date. Please try again." };
+
+  revalidatePath("/staff/pickups");
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// STAFF: change a rental's drop-off date at ANY time before it is returned
+// (scheduled, active, extended, ...). Counted from the real pickup moment
+// once the rental has started, otherwise from the planned appointment.
+// Enforces the locked 7-day minimum. Always marks the date as a staff
+// choice so automatic recomputation never overwrites it. While still
+// scheduled, daily-plan quotes are re-quoted for the new length; once a
+// rental is active the stored quote is left alone (money may already have
+// been collected against it -- billing changes for extensions belong with
+// the payment processor work, not a silent edit here). Does not touch any
+// payment_schedule due date. Writes an audit event with before/after.
+// ---------------------------------------------------------------------------
+const DROPOFF_EDITABLE_STATUSES = ["scheduled", "active", "extended", "return_pending", "delinquent", "suspended"];
+
+export async function setDropoffDate(
+  rentalId: string,
+  returnAtIso: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const returnAt = new Date(returnAtIso);
+  if (Number.isNaN(returnAt.getTime())) return { success: false, error: "Enter a valid drop-off date and time." };
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, tenant_id, status, start_at, actual_return_at, expected_return_at, booking_id")
+    .eq("id", rentalId)
+    .maybeSingle();
+  if (!rental) return { success: false, error: "Rental not found." };
+  if (rental.actual_return_at || !DROPOFF_EDITABLE_STATUSES.includes(rental.status)) {
+    return { success: false, error: "This rental is no longer open, so its drop-off date can't be changed." };
+  }
+
+  const { data: booking } = rental.booking_id
+    ? await supabase.from("booking").select("id, pickup_at, quoted_amount").eq("id", rental.booking_id).maybeSingle()
+    : { data: null };
+
+  const basisIso = rental.start_at ?? booking?.pickup_at;
+  if (!basisIso) return { success: false, error: "This rental has no pickup time yet. Set the pickup appointment first." };
+
+  const window = validateRentalWindow(new Date(basisIso), returnAt);
+  if (!window.ok) return { success: false, error: window.error };
+
+  if (booking) {
+    const bookingUpdate: Record<string, unknown> = { return_at: returnAt.toISOString() };
+    if (rental.status === "scheduled" && booking.quoted_amount !== null) {
+      const { data: policy } = await supabase
+        .from("policy_version")
+        .select("rules")
+        .eq("tenant_id", rental.tenant_id)
+        .eq("policy_type", "pricing_and_mileage")
+        .maybeSingle();
+      const requoted = calculateDailyRentalPrice(window.days, (policy?.rules as any)?.daily);
+      if (requoted !== null) bookingUpdate.quoted_amount = requoted;
+    }
+    const { error: bookingError } = await supabase.from("booking").update(bookingUpdate).eq("id", booking.id);
+    if (bookingError) {
+      const msg = bookingError.message?.toLowerCase().includes("permission")
+        ? "You don't have permission to change the drop-off date."
+        : "Couldn't save the drop-off date. Please try again.";
+      return { success: false, error: msg };
+    }
+  }
+
+  const { error: rentalError } = await supabase
+    .from("rental")
+    .update({ expected_return_at: returnAt.toISOString(), drop_off_manually_set: true })
+    .eq("id", rentalId);
+  if (rentalError) return { success: false, error: "Couldn't save the drop-off date. Please try again." };
+
+  await logAuditEvent({
+    tenantId: rental.tenant_id,
+    action: "rental.dropoff_date_changed",
+    entityType: "rental",
+    entityId: rentalId,
+    beforeData: { expected_return_at: rental.expected_return_at },
+    afterData: { expected_return_at: returnAt.toISOString() },
+    source: "staff",
+  });
 
   revalidatePath("/staff/pickups");
   return { success: true };
@@ -374,7 +465,7 @@ export async function confirmPickup(
 
   const { data: rental } = await supabase
     .from("rental")
-    .select("id, tenant_id, customer_id, status, rental_segment(id, vehicle_id)")
+    .select("id, tenant_id, customer_id, status, booking_id, expected_return_at, drop_off_manually_set, rental_segment(id, vehicle_id)")
     .eq("id", rentalId)
     .single();
 
@@ -399,13 +490,29 @@ export async function confirmPickup(
     return { success: false, error: "Record a payment/deposit before confirming pickup." };
   }
 
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+
+  // Drop-off: automatic (actual pickup + 7 days) unless staff set it by hand.
+  // A staff-set date is never silently overwritten; if the pickup happens so
+  // late that it would fall under the 7-day minimum, staff must fix it first.
+  let expectedReturnAt: string;
+  if (rental.drop_off_manually_set && rental.expected_return_at) {
+    const check = validateRentalWindow(nowDate, new Date(rental.expected_return_at));
+    if (!check.ok) {
+      return { success: false, error: "The drop-off date staff set is now less than 7 days from pickup. Update the drop-off date, then confirm pickup." };
+    }
+    expectedReturnAt = rental.expected_return_at;
+  } else {
+    expectedReturnAt = defaultDropoff(nowDate).toISOString();
+  }
 
   const { error: rentalUpdateError } = await supabase
     .from("rental")
     .update({
       status: "active",
       start_at: now,
+      expected_return_at: expectedReturnAt,
       agreement_acknowledged_at: now,
       pickup_checklist_completed_at: now,
     })
@@ -421,6 +528,10 @@ export async function confirmPickup(
   }
 
   await supabase.from("rental_segment").update({ start_mileage: startMileage }).eq("id", segment.id);
+
+  if (rental.booking_id) {
+    await supabase.from("booking").update({ return_at: expectedReturnAt }).eq("id", rental.booking_id);
+  }
 
   const { error: vehicleError } = await supabase
     .from("vehicle")
