@@ -1,11 +1,12 @@
 import { getPickupsAndDropoffs } from "./list-actions";
+import { getPickupLocations } from "../applications/rental-actions";
 import PickupCard from "./pickup-card";
 import DropoffCard from "./dropoff-card";
 
 export const dynamic = "force-dynamic";
 
 export default async function PickupsPage() {
-  const { pickups, dropoffs } = await getPickupsAndDropoffs();
+  const [{ pickups, dropoffs }, locations] = await Promise.all([getPickupsAndDropoffs(), getPickupLocations()]);
 
   return (
     <div style={{ padding: "32px 40px", maxWidth: 720 }}>
@@ -23,7 +24,7 @@ export default async function PickupsPage() {
       ) : (
         <div style={{ marginBottom: 24 }}>
           {pickups.map((p) => (
-            <PickupCard key={p.rentalId} item={p} />
+            <PickupCard key={p.rentalId} item={p} locations={locations} />
           ))}
         </div>
       )}

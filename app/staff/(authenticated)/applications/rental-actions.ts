@@ -181,6 +181,72 @@ export async function scheduleRental(
   return { success: true, rentalId: rental.id };
 }
 
+export type PickupLocationOption = { id: string; name: string; address: string };
+
+export async function getPickupLocations(): Promise<PickupLocationOption[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("location")
+    .select("id, name, address_line1, city, state")
+    .eq("active", true)
+    .order("name");
+  return (data ?? []).map((l) => ({
+    id: l.id,
+    name: l.name,
+    address: [l.address_line1, l.city, l.state].filter(Boolean).join(", "),
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// OFFICE/FIELD: set the real pickup appointment (time + location) for a
+// scheduled rental. Nothing in the app captured this before --
+// scheduleRental used "now" as a placeholder pickup time and never set a
+// location -- so there was nothing for a reminder (call or text) to refer
+// to. Writes to the booking's existing pickup_at / pickup_location_id.
+//
+// Changing the appointment clears pickup_confirmed_at: a renter who
+// confirmed the OLD time hasn't confirmed this one. Does not touch rental
+// status, vehicle, or payments.
+// ---------------------------------------------------------------------------
+export async function setPickupAppointment(
+  rentalId: string,
+  pickupAtIso: string,
+  locationId: string
+): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+
+  const when = new Date(pickupAtIso);
+  if (Number.isNaN(when.getTime())) return { success: false, error: "Enter a valid pickup date and time." };
+  if (when.getTime() < Date.now() - 5 * 60 * 1000) return { success: false, error: "Pickup time can't be in the past." };
+  if (!locationId) return { success: false, error: "Choose a pickup location." };
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, status, booking_id")
+    .eq("id", rentalId)
+    .maybeSingle();
+  if (!rental) return { success: false, error: "Rental not found." };
+  if (rental.status !== "scheduled") return { success: false, error: "Only a scheduled rental can have its pickup appointment changed." };
+  if (!rental.booking_id) return { success: false, error: "This rental has no booking to attach the appointment to." };
+
+  const { error: bookingError } = await supabase
+    .from("booking")
+    .update({ pickup_at: when.toISOString(), pickup_location_id: locationId })
+    .eq("id", rental.booking_id);
+
+  if (bookingError) {
+    const msg = bookingError.message?.toLowerCase().includes("permission")
+      ? "You don't have permission to set the pickup appointment."
+      : "Couldn't save the pickup appointment. Please try again.";
+    return { success: false, error: msg };
+  }
+
+  await supabase.from("rental").update({ pickup_confirmed_at: null }).eq("id", rentalId);
+
+  revalidatePath("/staff/pickups");
+  return { success: true };
+}
+
 export type ActiveRentalInfo = {
   id: string;
   status: string;

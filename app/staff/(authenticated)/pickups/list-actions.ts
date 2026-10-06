@@ -10,6 +10,9 @@ export type PickupItem = {
   vehicleLabel: string;
   hasLicenseDocument: boolean;
   insuranceVerified: boolean;
+  pickupAt: string | null;
+  pickupLocationId: string | null;
+  pickupConfirmedAt: string | null;
 };
 
 export type DropoffItem = {
@@ -27,7 +30,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
   const [{ data: scheduled }, { data: active }] = await Promise.all([
     supabase
       .from("rental")
-      .select("id, customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
+      .select("id, pickup_confirmed_at, booking:booking_id(pickup_at, pickup_location_id), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
       .eq("status", "scheduled"),
     supabase
       .from("rental")
@@ -64,6 +67,11 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
         hasLicenseDocument: (docCount ?? 0) > 0,
         insuranceVerified:
           insurance?.verification_status === "verified_active" || insurance?.verification_status === "expiring_soon",
+        // pickup_at is only a real appointment when a location was also
+        // set; scheduleRental's placeholder "now" never has one.
+        pickupAt: (r.booking as any)?.pickup_location_id ? ((r.booking as any)?.pickup_at ?? null) : null,
+        pickupLocationId: (r.booking as any)?.pickup_location_id ?? null,
+        pickupConfirmedAt: (r as any).pickup_confirmed_at ?? null,
       };
     })
   );
