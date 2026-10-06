@@ -19,6 +19,7 @@ const OUTCOMES = new Set([
   "needs_reschedule",
   "cannot_make_it",
   "needs_help_from_staff",
+  "not_applicable", // rental no longer waiting for pickup when the call connected
   "no_answer",
   "wrong_number",
   "voicemail_left",
