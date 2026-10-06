@@ -34,6 +34,11 @@ export async function getConversations(): Promise<ConversationSummary[]> {
     .select(
       "id, customer_id, lead_id, channel, direction, payload, created_at, customer:customer_id(first_name, last_name, phone), lead:lead_id(first_name, last_name, phone)"
     )
+    // Only human-readable events. Voice audit rows (call_identified,
+    // auth_succeeded, tool_*...) share this table and must not render as
+    // blank "Unknown" conversations. callback_request rows ARE shown --
+    // that's how an unmatched caller's request reaches staff.
+    .in("event_type", ["message", "callback_request"])
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -73,7 +78,11 @@ export async function getConversations(): Promise<ConversationSummary[]> {
 
 export async function getConversationMessages(customerId: string | null, leadId: string | null, phone: string | null): Promise<ConversationMessage[]> {
   const supabase = await createClient();
-  let query = supabase.from("communication_event").select("id, channel, direction, payload, created_at").order("created_at", { ascending: true });
+  let query = supabase
+    .from("communication_event")
+    .select("id, channel, direction, payload, created_at")
+    .in("event_type", ["message", "callback_request"])
+    .order("created_at", { ascending: true });
 
   if (customerId) {
     query = query.eq("customer_id", customerId);

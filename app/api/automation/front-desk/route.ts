@@ -283,7 +283,19 @@ export async function POST(request: Request) {
       tenantId,
       "callback_request",
       callId,
-      { name, reason, category, urgent, callbackNumber, matchedKind: top?.kind ?? null, ticketCreated },
+      {
+        // from/body make this render as a normal row in /staff/inbox
+        // (grouped by the callback number for unmatched callers).
+        from: callbackNumber,
+        body: `Callback requested (${category}${urgent ? ", URGENT" : ""}): ${reason}${name ? ` - ${name}` : ""}`,
+        name,
+        reason,
+        category,
+        urgent,
+        callbackNumber,
+        matchedKind: top?.kind ?? null,
+        ticketCreated,
+      },
       { customerId, leadId: top?.kind === "lead" ? top.id : null },
     );
 
