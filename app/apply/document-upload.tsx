@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Upload, CheckCircle2, Lock } from "lucide-react";
 import { uploadApplicantDocument } from "./actions";
+import { prepareUploadFile } from "@/lib/image-compress";
 
 export default function DocumentUpload({
   customerId,
@@ -18,11 +19,13 @@ export default function DocumentUpload({
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function handleChange() {
-    const file = inputRef.current?.files?.[0];
-    if (!file) return;
-
+    const original = inputRef.current?.files?.[0];
+    if (!original) return;
+    // Shrink big phone photos first: hosting request-size limits would
+    // otherwise reject multi-megabyte uploads.
     setStatus("uploading");
     setError(null);
+    const file = await prepareUploadFile(original);
 
     const formData = new FormData();
     formData.set("file", file);

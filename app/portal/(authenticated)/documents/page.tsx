@@ -25,7 +25,7 @@ export default async function PortalDocumentsPage() {
 
   const { data: documents } = await supabase
     .from("customer_document")
-    .select("id, document_type, storage_key, created_at")
+    .select("id, document_type, storage_key, created_at, review_status, review_note")
     .order("created_at", { ascending: false });
 
   const documentsWithUrls = await Promise.all(
@@ -62,7 +62,12 @@ export default async function PortalDocumentsPage() {
               </div>
               <div className="muted-text" style={{ fontSize: 12 }}>
                 Uploaded {new Date(doc.created_at).toLocaleDateString()}
+                {" · "}
+                {doc.review_status === "accepted" ? "Approved" : doc.review_status === "rejected" ? "Needs a redo" : "Under review"}
               </div>
+              {doc.review_status === "rejected" && doc.review_note && (
+                <div style={{ fontSize: 12, marginTop: 2 }}>{doc.review_note}</div>
+              )}
             </div>
           </a>
         ))

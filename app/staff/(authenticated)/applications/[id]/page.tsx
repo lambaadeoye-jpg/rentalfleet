@@ -4,6 +4,7 @@ import { getSignedDocumentUrl } from "../actions";
 import { getAvailableVehicles } from "../rental-actions";
 import DecisionForm from "./decision-form";
 import StartRentalForm from "./start-rental-form";
+import DocumentPanel from "./document-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -67,7 +68,7 @@ export default async function ApplicationDetailPage({
       .maybeSingle(),
     supabase
       .from("customer_document")
-      .select("id, document_type, storage_key, created_at")
+      .select("id, document_type, storage_key, created_at, review_status, review_note, source")
       .eq("customer_id", customerId)
       .order("created_at", { ascending: false }),
     supabase.from("rental").select("id, status").eq("customer_id", customerId).limit(1).maybeSingle(),
@@ -125,35 +126,18 @@ export default async function ApplicationDetailPage({
 
       <div className="card" style={{ marginBottom: 24 }}>
         <h2 style={{ fontSize: 16, marginBottom: 12 }}>Documents</h2>
-        {documentsWithUrls.length === 0 ? (
-          <p className="muted-text" style={{ fontSize: 14 }}>No documents uploaded yet.</p>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {documentsWithUrls.map((doc) => (
-              <div
-                key={doc.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "10px 0",
-                  borderBottom: "1px solid var(--border)",
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: 600 }}>
-                  {DOCUMENT_LABELS[doc.document_type] ?? doc.document_type}
-                </span>
-                {doc.url ? (
-                  <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>
-                    View (link expires in 10 min)
-                  </a>
-                ) : (
-                  <span className="muted-text" style={{ fontSize: 13 }}>Unavailable</span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+        <DocumentPanel
+          applicationId={application.id}
+          docs={documentsWithUrls.map((d) => ({
+            id: d.id,
+            document_type: d.document_type,
+            review_status: d.review_status,
+            review_note: d.review_note,
+            created_at: d.created_at,
+            url: d.url,
+            source: d.source,
+          }))}
+        />
       </div>
 
       <div className="card">
