@@ -28,6 +28,15 @@ export default async function PortalDocumentsPage() {
     .select("id, document_type, storage_key, created_at, review_status, review_note")
     .order("created_at", { ascending: false });
 
+  const { data: signedRows } = await supabase
+    .from("signed_document")
+    .select("id, storage_key, signed_at")
+    .not("sign_request_id", "is", null)
+    .order("signed_at", { ascending: false });
+  const signedWithUrls = await Promise.all(
+    (signedRows ?? []).map(async (d) => ({ ...d, url: await getSignedUrl(d.storage_key) }))
+  );
+
   const documentsWithUrls = await Promise.all(
     (documents ?? []).map(async (doc) => ({ ...doc, url: await getSignedUrl(doc.storage_key) }))
   );
@@ -36,7 +45,18 @@ export default async function PortalDocumentsPage() {
     <div style={{ padding: "24px 20px" }}>
       <h1 style={{ fontSize: 20, marginBottom: 16 }}>Documents</h1>
 
-      {documentsWithUrls.length === 0 ? (
+      {signedWithUrls.map((d) => (
+        <a key={d.id} href={d.url ?? "#"} target="_blank" rel="noreferrer" className="card"
+           style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10, textDecoration: "none", color: "var(--text)" }}>
+          <FileText size={18} color="var(--teal)" />
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700 }}>Rental agreement (signed)</div>
+            <div className="muted-text" style={{ fontSize: 12 }}>Signed {new Date(d.signed_at).toLocaleDateString()}</div>
+          </div>
+        </a>
+      ))}
+
+      {documentsWithUrls.length === 0 && signedWithUrls.length === 0 ? (
         <p className="muted-text">No documents on file yet.</p>
       ) : (
         documentsWithUrls.map((doc) => (

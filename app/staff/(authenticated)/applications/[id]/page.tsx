@@ -5,6 +5,8 @@ import { getAvailableVehicles } from "../rental-actions";
 import DecisionForm from "./decision-form";
 import StartRentalForm from "./start-rental-form";
 import DocumentPanel from "./document-panel";
+import AgreementCard from "./agreement-card";
+import { getAgreementStatus } from "../agreement-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -77,6 +79,8 @@ export default async function ApplicationDetailPage({
   const canStartRental =
     (application.status === "approved" || application.status === "conditionally_approved") && !existingRental;
 
+  const agreementStatus = existingRental ? await getAgreementStatus(existingRental.id) : null;
+
   const availableVehicles = canStartRental ? await getAvailableVehicles() : [];
 
   const platforms = (platformLinks ?? []).map((p) => (p.gig_platform as any)?.name).filter(Boolean);
@@ -139,6 +143,8 @@ export default async function ApplicationDetailPage({
           }))}
         />
       </div>
+
+      {existingRental && agreementStatus && <AgreementCard rentalId={existingRental.id} status={agreementStatus} />}
 
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 12 }}>Decision</h2>
