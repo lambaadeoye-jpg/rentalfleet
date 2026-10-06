@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { callerKey, isLockedOut, LOCKOUT_WINDOW_MINUTES } from "@/lib/caller-lockout";
 
 // Internal-only endpoint behind the Zivo Front Desk Vapi assistant (called
 // by the n8n "Vapi Tool - Front Desk" workflow -- never by a browser).
@@ -57,6 +58,31 @@ async function matchCaller(db: Db, tenantId: string, phone: string): Promise<Mat
   }
   return (data ?? []) as Match[];
 }
+
+// Failed verifications for this caller number in the lockout window.
+async function recentFailures(db: Db, tenantId: string, key: string | null): Promise<number> {
+  if (!key) return 0;
+  const since = new Date(Date.now() - LOCKOUT_WINDOW_MINUTES * 60 * 1000).toISOString();
+  const { count, error } = await db
+    .from("communication_event")
+    .select("id", { count: "exact", head: true })
+    .eq("tenant_id", tenantId)
+    .eq("event_type", "auth_failed")
+    .eq("payload->>caller_key", key)
+    .gte("created_at", since);
+  if (error) {
+    // Fail closed: if the limiter can't be read, don't allow guessing.
+    console.error("[front-desk] lockout lookup failed:", error);
+    return Number.MAX_SAFE_INTEGER;
+  }
+  return count ?? 0;
+}
+
+const LOCKED_RESPONSE = {
+  verified: false,
+  locked: true,
+  note: "Too many failed attempts. Do not try again on this call. Say you can't verify them right now and offer a callback request or general help only. Never say why.",
+};
 
 async function logEvent(
   db: Db,
@@ -219,11 +245,24 @@ export async function POST(request: Request) {
 
   if (action === "verify_caller") {
     const email = asString(args.email, 200);
+    if (!email) {
+      // Nothing was actually checked, so this must not count as a failed attempt.
+      return NextResponse.json({ verified: false, note: "Ask the caller for the email address on file first." });
+    }
+    const key = callerKey(callerPhone);
+    if (isLockedOut(await recentFailures(db, tenantId, key))) {
+      await logEvent(db, tenantId, "auth_locked", callId, { caller_key: key, for: "verify_caller" });
+      return NextResponse.json(LOCKED_RESPONSE);
+    }
     const who = callerPhone ? await verifyCaller(db, tenantId, callerPhone, email) : null;
-    await logEvent(db, tenantId, who ? "auth_succeeded" : "auth_failed", callId, { method: "phone+email" }, {
-      customerId: who?.customerId ?? null,
-      leadId: who?.leadId ?? null,
-    });
+    await logEvent(
+      db,
+      tenantId,
+      who ? "auth_succeeded" : "auth_failed",
+      callId,
+      who ? { method: "phone+email" } : { method: "phone+email", caller_key: key },
+      { customerId: who?.customerId ?? null, leadId: who?.leadId ?? null },
+    );
     if (!who) {
       return NextResponse.json({
         verified: false,
@@ -235,9 +274,18 @@ export async function POST(request: Request) {
 
   if (action === "get_application_status") {
     const email = asString(args.email, 200);
+    if (!email) {
+      // Nothing was actually checked, so this must not count as a failed attempt.
+      return NextResponse.json({ verified: false, note: "Ask the caller for the email address on file first." });
+    }
+    const key = callerKey(callerPhone);
+    if (isLockedOut(await recentFailures(db, tenantId, key))) {
+      await logEvent(db, tenantId, "auth_locked", callId, { caller_key: key, for: "application_status" });
+      return NextResponse.json(LOCKED_RESPONSE);
+    }
     const who = callerPhone ? await verifyCaller(db, tenantId, callerPhone, email) : null;
     if (!who) {
-      await logEvent(db, tenantId, "auth_failed", callId, { method: "phone+email", for: "application_status" });
+      await logEvent(db, tenantId, "auth_failed", callId, { method: "phone+email", for: "application_status", caller_key: key });
       return NextResponse.json({ verified: false, note: "Verification required first. Do not share any application details." });
     }
     const result = await applicationStatus(db, tenantId, who);
