@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
 import { calculateDailyRentalPrice } from "@/lib/pricing";
+import { validateRentalWindow } from "@/lib/rental-window";
 import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
 
 export type AvailableVehicle = {
@@ -198,50 +199,88 @@ export async function getPickupLocations(): Promise<PickupLocationOption[]> {
 }
 
 // ---------------------------------------------------------------------------
-// OFFICE/FIELD: set the real pickup appointment (time + location) for a
-// scheduled rental. Nothing in the app captured this before --
-// scheduleRental used "now" as a placeholder pickup time and never set a
-// location -- so there was nothing for a reminder (call or text) to refer
-// to. Writes to the booking's existing pickup_at / pickup_location_id.
+// STAFF: set the pickup appointment (time + location) AND the drop-off
+// (return) date for a scheduled rental. Staff choose the drop-off date --
+// it is never auto-computed. Nothing in the app captured either before:
+// scheduleRental used "now" as a placeholder pickup time, no location, and
+// a return date fixed at scheduling time + 7 days that ignored when pickup
+// actually happens.
 //
-// Changing the appointment clears pickup_confirmed_at: a renter who
-// confirmed the OLD time hasn't confirmed this one. Does not touch rental
-// status, vehicle, or payments.
+// Enforces the locked 7-day minimum between pickup and drop-off. Writes
+// booking.pickup_at / pickup_location_id / return_at and
+// rental.expected_return_at. If the booking was quoted on the daily plan
+// (quoted_amount set), the quote is recomputed for the real number of
+// days from the admin-editable pricing policy; weekly bookings carry no
+// quoted amount, so none is created. Changing the appointment clears
+// pickup_confirmed_at: a renter who confirmed the OLD time hasn't
+// confirmed this one. Does not touch rental status, vehicle or payments
+// (including any payment_schedule due date).
 // ---------------------------------------------------------------------------
 export async function setPickupAppointment(
   rentalId: string,
   pickupAtIso: string,
+  returnAtIso: string,
   locationId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
-  const when = new Date(pickupAtIso);
-  if (Number.isNaN(when.getTime())) return { success: false, error: "Enter a valid pickup date and time." };
-  if (when.getTime() < Date.now() - 5 * 60 * 1000) return { success: false, error: "Pickup time can't be in the past." };
+  const pickupAt = new Date(pickupAtIso);
+  const returnAt = new Date(returnAtIso);
+  if (Number.isNaN(pickupAt.getTime())) return { success: false, error: "Enter a valid pickup date and time." };
+  if (pickupAt.getTime() < Date.now() - 5 * 60 * 1000) return { success: false, error: "Pickup time can't be in the past." };
   if (!locationId) return { success: false, error: "Choose a pickup location." };
+
+  const window = validateRentalWindow(pickupAt, returnAt);
+  if (!window.ok) return { success: false, error: window.error };
 
   const { data: rental } = await supabase
     .from("rental")
-    .select("id, status, booking_id")
+    .select("id, status, booking_id, tenant_id")
     .eq("id", rentalId)
     .maybeSingle();
   if (!rental) return { success: false, error: "Rental not found." };
-  if (rental.status !== "scheduled") return { success: false, error: "Only a scheduled rental can have its pickup appointment changed." };
+  if (rental.status !== "scheduled") return { success: false, error: "Only a scheduled rental can have its appointment changed." };
   if (!rental.booking_id) return { success: false, error: "This rental has no booking to attach the appointment to." };
 
-  const { error: bookingError } = await supabase
+  const { data: booking } = await supabase
     .from("booking")
-    .update({ pickup_at: when.toISOString(), pickup_location_id: locationId })
-    .eq("id", rental.booking_id);
+    .select("id, quoted_amount")
+    .eq("id", rental.booking_id)
+    .maybeSingle();
+  if (!booking) return { success: false, error: "Booking not found." };
 
+  const bookingUpdate: Record<string, unknown> = {
+    pickup_at: pickupAt.toISOString(),
+    pickup_location_id: locationId,
+    return_at: returnAt.toISOString(),
+  };
+
+  // Daily-plan bookings were quoted for a fixed 7 days at scheduling time.
+  // Re-quote for the real window so the stored amount can't be stale.
+  if (booking.quoted_amount !== null) {
+    const { data: policy } = await supabase
+      .from("policy_version")
+      .select("rules")
+      .eq("tenant_id", rental.tenant_id)
+      .eq("policy_type", "pricing_and_mileage")
+      .maybeSingle();
+    const requoted = calculateDailyRentalPrice(window.days, (policy?.rules as any)?.daily);
+    if (requoted !== null) bookingUpdate.quoted_amount = requoted;
+  }
+
+  const { error: bookingError } = await supabase.from("booking").update(bookingUpdate).eq("id", booking.id);
   if (bookingError) {
     const msg = bookingError.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to set the pickup appointment."
-      : "Couldn't save the pickup appointment. Please try again.";
+      ? "You don't have permission to set the appointment."
+      : "Couldn't save the appointment. Please try again.";
     return { success: false, error: msg };
   }
 
-  await supabase.from("rental").update({ pickup_confirmed_at: null }).eq("id", rentalId);
+  const { error: rentalError } = await supabase
+    .from("rental")
+    .update({ expected_return_at: returnAt.toISOString(), pickup_confirmed_at: null })
+    .eq("id", rentalId);
+  if (rentalError) return { success: false, error: "Saved the pickup time but couldn't save the drop-off date. Please try again." };
 
   revalidatePath("/staff/pickups");
   return { success: true };

@@ -31,20 +31,21 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
   const [apptAt, setApptAt] = useState(toLocalInput(item.pickupAt));
+  const [returnAt, setReturnAt] = useState(toLocalInput(item.expectedReturnAt));
   const [apptLocation, setApptLocation] = useState(item.pickupLocationId ?? "");
   const [apptLoading, setApptLoading] = useState(false);
   const [apptError, setApptError] = useState<string | null>(null);
   const [apptSaved, setApptSaved] = useState(false);
 
   async function handleSaveAppointment() {
-    if (!apptAt || !apptLocation) {
-      setApptError("Choose both a date/time and a location.");
+    if (!apptAt || !returnAt || !apptLocation) {
+      setApptError("Choose a pickup date/time, a drop-off date/time, and a location.");
       return;
     }
     setApptError(null);
     setApptSaved(false);
     setApptLoading(true);
-    const result = await setPickupAppointment(item.rentalId, new Date(apptAt).toISOString(), apptLocation);
+    const result = await setPickupAppointment(item.rentalId, new Date(apptAt).toISOString(), new Date(returnAt).toISOString(), apptLocation);
     setApptLoading(false);
     if (!result.success) {
       setApptError(result.error ?? "Couldn't save the appointment.");
@@ -123,7 +124,7 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
           <div className="muted-text" style={{ fontSize: 13 }}>{item.vehicleLabel}</div>
           <div className="muted-text" style={{ fontSize: 13 }}>
             {item.pickupAt
-              ? `Pickup: ${new Date(item.pickupAt).toLocaleString()}${item.pickupConfirmedAt ? " (confirmed by renter)" : ""}`
+              ? `Pickup: ${new Date(item.pickupAt).toLocaleString()}${item.pickupConfirmedAt ? " (confirmed by renter)" : ""}${item.expectedReturnAt ? ` · Drop-off: ${new Date(item.expectedReturnAt).toLocaleString()}` : ""}`
               : "No pickup appointment set"}
           </div>
         </div>
@@ -136,7 +137,24 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
           <div className="form-row" style={{ marginBottom: 8 }}>
             <label className="field">
               <span style={{ fontSize: 13, fontWeight: 600 }}>Date &amp; time</span>
-              <input type="datetime-local" value={apptAt} onChange={(e) => setApptAt(e.target.value)} />
+              <input
+                type="datetime-local"
+                value={apptAt}
+                onChange={(e) => {
+                  setApptAt(e.target.value);
+                  // Convenience only: suggest the 7-day minimum if nothing
+                  // is chosen yet. Staff still own the drop-off date.
+                  if (!returnAt && e.target.value) {
+                    const d = new Date(e.target.value);
+                    d.setDate(d.getDate() + 7);
+                    setReturnAt(toLocalInput(d.toISOString()));
+                  }
+                }}
+              />
+            </label>
+            <label className="field">
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Drop-off (min. 7 days)</span>
+              <input type="datetime-local" value={returnAt} onChange={(e) => setReturnAt(e.target.value)} />
             </label>
             <label className="field">
               <span style={{ fontSize: 13, fontWeight: 600 }}>Location</span>

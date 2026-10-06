@@ -13,6 +13,7 @@ export type PickupItem = {
   pickupAt: string | null;
   pickupLocationId: string | null;
   pickupConfirmedAt: string | null;
+  expectedReturnAt: string | null;
 };
 
 export type DropoffItem = {
@@ -30,7 +31,7 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
   const [{ data: scheduled }, { data: active }] = await Promise.all([
     supabase
       .from("rental")
-      .select("id, pickup_confirmed_at, booking:booking_id(pickup_at, pickup_location_id), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
+      .select("id, pickup_confirmed_at, expected_return_at, booking:booking_id(pickup_at, pickup_location_id), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
       .eq("status", "scheduled"),
     supabase
       .from("rental")
@@ -72,6 +73,9 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
         pickupAt: (r.booking as any)?.pickup_location_id ? ((r.booking as any)?.pickup_at ?? null) : null,
         pickupLocationId: (r.booking as any)?.pickup_location_id ?? null,
         pickupConfirmedAt: (r as any).pickup_confirmed_at ?? null,
+        // Only meaningful once an appointment is set; before that it is
+        // scheduleRental's placeholder, so don't present it as staff's choice.
+        expectedReturnAt: (r.booking as any)?.pickup_location_id ? ((r as any).expected_return_at ?? null) : null,
       };
     })
   );
