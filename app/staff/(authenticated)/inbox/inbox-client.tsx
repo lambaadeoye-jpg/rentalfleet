@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { MessageSquare } from "lucide-react";
-import { getConversationMessages, sendReply, type ConversationSummary, type ConversationMessage } from "./actions";
+import { getConversationMessages, markConversationHandled, sendReply, type ConversationSummary, type ConversationMessage } from "./actions";
 
 export default function InboxClient({ initialConversations }: { initialConversations: ConversationSummary[] }) {
-  const [conversations] = useState(initialConversations);
+  const [conversations, setConversations] = useState(initialConversations);
   const [selected, setSelected] = useState<ConversationSummary | null>(null);
   const [messages, setMessages] = useState<ConversationMessage[]>([]);
   const [loadingThread, setLoadingThread] = useState(false);
@@ -26,6 +26,19 @@ export default function InboxClient({ initialConversations }: { initialConversat
     setLoadingThread(false);
   }
 
+  async function handleMarkHandled() {
+    if (!selected) return;
+    setError(null);
+    const result = await markConversationHandled(selected.lastEventId);
+    if (!result.success) {
+      setError(result.error ?? "Couldn't mark that as handled.");
+      return;
+    }
+    const updated = { ...selected, needsReply: false };
+    setSelected(updated);
+    setConversations((prev) => prev.map((c) => (c.key === selected.key ? updated : c)));
+  }
+
   async function handleSend() {
     if (!selected || !selected.phone) return;
     setSending(true);
@@ -44,6 +57,9 @@ export default function InboxClient({ initialConversations }: { initialConversat
       return;
     }
     setReplyText("");
+    const answered = { ...selected, needsReply: false, lastDirection: "outbound" };
+    setSelected(answered);
+    setConversations((prev) => prev.map((c) => (c.key === selected.key ? answered : c)));
     // Optimistic append rather than a full re-fetch -- keeps the reply
     // box feeling immediate.
     setMessages((prev) => [...prev, { id: `temp-${Date.now()}`, channel: selected.channel, direction: "outbound", body: replyText, createdAt: new Date().toISOString() }]);
@@ -72,7 +88,10 @@ export default function InboxClient({ initialConversations }: { initialConversat
               cursor: "pointer",
             }}
           >
-            <div style={{ fontWeight: 700, fontSize: 14 }}>{c.displayName}</div>
+            <div style={{ fontWeight: 700, fontSize: 14 }}>
+              {c.needsReply && <span aria-label="Needs reply" style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "var(--coral, #e5484d)", marginRight: 6 }} />}
+              {c.displayName}
+            </div>
             <div className="muted-text" style={{ fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {c.lastDirection === "outbound" ? "You: " : ""}
               {c.lastMessage}
@@ -98,6 +117,11 @@ export default function InboxClient({ initialConversations }: { initialConversat
               <span className="muted-text" style={{ fontSize: 13 }}>
                 {selected.phone}
               </span>
+              {selected.needsReply && (
+                <button type="button" onClick={handleMarkHandled} className="btn btn-secondary" style={{ float: "right", fontSize: 13, padding: "4px 10px" }}>
+                  Mark as handled
+                </button>
+              )}
             </div>
             <div style={{ flex: 1, overflowY: "auto", marginBottom: 12 }}>
               {loadingThread && <p className="muted-text">Loading...</p>}

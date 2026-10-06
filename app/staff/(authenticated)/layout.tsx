@@ -63,7 +63,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     // always matches what staff see when they open it.
     supabase
       .from("communication_event")
-      .select("customer_id, lead_id, direction, payload")
+      .select("customer_id, lead_id, direction, payload, handled_at")
       .in("event_type", ["message", "callback_request"])
       .order("created_at", { ascending: false })
       .limit(200),
@@ -77,7 +77,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     const key = e.customer_id ? `c:${e.customer_id}` : e.lead_id ? `l:${e.lead_id}` : `u:${from}`;
     if (seenConversations.has(key)) continue;
     seenConversations.add(key);
-    if (e.direction === "inbound") unansweredCount++;
+    if (e.direction === "inbound" && !e.handled_at) unansweredCount++;
   }
 
   const badgeCounts: Record<string, number> = {

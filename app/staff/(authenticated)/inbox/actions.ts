@@ -14,6 +14,8 @@ export type ConversationSummary = {
   lastMessageAt: string;
   lastDirection: string;
   channel: string;
+  lastEventId: string;
+  needsReply: boolean; // latest event is inbound and not marked handled
 };
 
 export type ConversationMessage = {
@@ -32,7 +34,7 @@ export async function getConversations(): Promise<ConversationSummary[]> {
   const { data } = await supabase
     .from("communication_event")
     .select(
-      "id, customer_id, lead_id, channel, direction, payload, created_at, customer:customer_id(first_name, last_name, phone), lead:lead_id(first_name, last_name, phone)"
+      "id, customer_id, lead_id, channel, direction, payload, created_at, handled_at, customer:customer_id(first_name, last_name, phone), lead:lead_id(first_name, last_name, phone)"
     )
     // Only human-readable events. Voice audit rows (call_identified,
     // auth_succeeded, tool_*...) share this table and must not render as
@@ -70,6 +72,8 @@ export async function getConversations(): Promise<ConversationSummary[]> {
       lastMessageAt: row.created_at,
       lastDirection: row.direction,
       channel: row.channel,
+      lastEventId: row.id,
+      needsReply: row.direction === "inbound" && !row.handled_at,
     });
   }
 
@@ -151,5 +155,29 @@ export async function sendReply(fields: {
   });
 
   revalidatePath("/staff/inbox");
+  return { success: true };
+}
+
+// Clears the Inbox badge for a conversation whose latest inbound event was
+// dealt with outside the app (phone call, in person). A newer inbound
+// message is a new row, so it lights the badge again.
+export async function markConversationHandled(eventId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not signed in." };
+
+  const { data, error } = await supabase
+    .from("communication_event")
+    .update({ handled_at: new Date().toISOString(), handled_by: user.id })
+    .eq("id", eventId)
+    .eq("direction", "inbound")
+    .select("id");
+  if (error) return { success: false, error: "Couldn't mark that as handled." };
+  if (!data || data.length === 0) return { success: false, error: "Couldn't mark that as handled." };
+
+  revalidatePath("/staff/inbox");
+  revalidatePath("/staff", "layout");
   return { success: true };
 }
