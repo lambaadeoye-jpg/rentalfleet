@@ -1,5 +1,6 @@
 "use client";
 
+import PayNow from "./pay-now";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CalendarClock } from "lucide-react";
@@ -98,6 +99,12 @@ export default function PickupSlotPicker({ state }: { state: PickerState }) {
           <div style={{ display: "flex", gap: 8 }}>
             <button className="button-secondary" disabled={busy} onClick={() => release(state.pending!.holdId)}>Release this time</button>
           </div>
+          {state.requirePayment && (
+            <div style={{ marginTop: 12 }}>
+              <p className="muted-text" style={{ fontSize: 13, marginBottom: 8 }}>This time is confirmed once you pay.</p>
+              <PayNow label="Pay to confirm this time" />
+            </div>
+          )}
         </>
       )}
 

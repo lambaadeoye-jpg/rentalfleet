@@ -4,6 +4,8 @@ import { getAdditionalDrivers } from "@/app/apply/actions";
 import PortalDriversManager from "./portal-drivers-manager";
 import PickupSlotPicker from "./pickup-slot-picker";
 import { getPickerState } from "./pickup-actions";
+import PayNow from "./pay-now";
+import { getPortalPayState } from "./payment-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,7 @@ export default async function PortalRentalPage() {
 
   const additionalDrivers = customer ? await getAdditionalDrivers(customer.id) : [];
   const pickerState = await getPickerState();
+  const payState = await getPortalPayState();
 
   const vehicle = (rental?.rental_segment as any)?.[0]?.vehicle;
   const policy = (rental?.governing_policy_snapshot as any) ?? {};
@@ -66,6 +69,14 @@ export default async function PortalRentalPage() {
           {rental.status}
         </span>
       </div>
+
+      {payState.show && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Pay to lock in your rental</h2>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus refundable deposit, paid by card on a secure Stripe page. Sign your agreement first if you haven&apos;t.</p>
+          <PayNow />
+        </div>
+      )}
 
       <PickupSlotPicker state={pickerState} />
 

@@ -6,6 +6,8 @@ import DecisionForm from "./decision-form";
 import StartRentalForm from "./start-rental-form";
 import DocumentPanel from "./document-panel";
 import AgreementCard from "./agreement-card";
+import PaymentCard from "./payment-card";
+import { getPaymentStatus } from "../payment-actions";
 import { getAgreementStatus } from "../agreement-actions";
 
 export const dynamic = "force-dynamic";
@@ -80,6 +82,7 @@ export default async function ApplicationDetailPage({
     (application.status === "approved" || application.status === "conditionally_approved") && !existingRental;
 
   const agreementStatus = existingRental ? await getAgreementStatus(existingRental.id) : null;
+  const paymentStatus = existingRental ? await getPaymentStatus(existingRental.id) : null;
 
   const availableVehicles = canStartRental ? await getAvailableVehicles() : [];
 
@@ -145,6 +148,7 @@ export default async function ApplicationDetailPage({
       </div>
 
       {existingRental && agreementStatus && <AgreementCard rentalId={existingRental.id} status={agreementStatus} />}
+      {existingRental && paymentStatus && <PaymentCard rentalId={existingRental.id} status={paymentStatus} />}
 
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 12 }}>Decision</h2>

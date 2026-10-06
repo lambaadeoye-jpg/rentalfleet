@@ -1,0 +1,67 @@
+// Minimal Stripe client over plain HTTPS (no SDK). Server-only.
+// Needs STRIPE_SECRET_KEY (and STRIPE_WEBHOOK_SECRET for the webhook route).
+
+const API = "https://api.stripe.com/v1";
+
+export function stripeConfigured(): boolean {
+  return Boolean(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET);
+}
+
+export type CheckoutSession = { id: string; url: string; expiresAt: number };
+
+export async function createCheckoutSession(body: URLSearchParams, idempotencyKey: string): Promise<{ ok: true; session: CheckoutSession } | { ok: false; error: string }> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return { ok: false, error: "not_configured" };
+  try {
+    const res = await fetch(`${API}/checkout/sessions`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": idempotencyKey },
+      body,
+    });
+    const json: any = await res.json().catch(() => null);
+    if (!res.ok || !json?.id || !json?.url) {
+      console.error("[stripe] checkout session failed:", res.status, json?.error?.type, json?.error?.code, json?.error?.message);
+      return { ok: false, error: "stripe_error" };
+    }
+    return { ok: true, session: { id: json.id, url: json.url, expiresAt: Number(json.expires_at) || 0 } };
+  } catch (e) {
+    console.error("[stripe] network error:", (e as Error).message);
+    return { ok: false, error: "network" };
+  }
+}
+
+export type CardInfo = {
+  paymentMethodId: string | null;
+  brand: string | null;
+  last4: string | null;
+  expMonth: number | null;
+  expYear: number | null;
+  billingName: string | null;
+};
+
+/** Reads the saved-card details out of a PaymentIntent fetched with expand[]=latest_charge. */
+export function extractCardInfo(pi: any): CardInfo {
+  const charge = pi?.latest_charge && typeof pi.latest_charge === "object" ? pi.latest_charge : null;
+  const card = charge?.payment_method_details?.card;
+  return {
+    paymentMethodId: typeof pi?.payment_method === "string" ? pi.payment_method : null,
+    brand: typeof card?.brand === "string" ? card.brand : null,
+    last4: typeof card?.last4 === "string" ? card.last4 : null,
+    expMonth: Number.isInteger(card?.exp_month) ? card.exp_month : null,
+    expYear: Number.isInteger(card?.exp_year) ? card.exp_year : null,
+    billingName: typeof charge?.billing_details?.name === "string" ? charge.billing_details.name : null,
+  };
+}
+
+/** Best-effort: failing here must never block recording a payment that already succeeded. */
+export async function fetchCardInfo(paymentIntentId: string): Promise<CardInfo | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key || !/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId)) return null;
+  try {
+    const res = await fetch(`${API}/payment_intents/${paymentIntentId}?expand[]=latest_charge`, { headers: { Authorization: `Bearer ${key}` } });
+    if (!res.ok) return null;
+    return extractCardInfo(await res.json());
+  } catch {
+    return null;
+  }
+}
