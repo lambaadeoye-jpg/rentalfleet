@@ -31,9 +31,12 @@ export default async function StaffLayout({ children }: { children: React.ReactN
     { count: newLeadsCount },
     { count: pendingApplicationsCount },
     { count: expiringInsuranceCount },
-    { count: readyForPickupCount },
     { count: qualifiedReferralsCount },
     { count: flaggedLeadsCount },
+    { count: followupCount },
+    { count: pendingChargesCount },
+    { count: overdueCount },
+    { data: inboxEvents },
   ] = await Promise.all([
     supabase.from("lead").select("*", { count: "exact", head: true }).eq("stage", "new"),
     supabase.from("application").select("*", { count: "exact", head: true }).eq("status", "submitted"),
@@ -42,16 +45,50 @@ export default async function StaffLayout({ children }: { children: React.ReactN
       .select("*", { count: "exact", head: true })
       .eq("policy_type", "renter")
       .in("verification_status", ["pending", "document_received", "expiring_soon", "review_required"]),
-    supabase.from("rental").select("*", { count: "exact", head: true }).eq("status", "scheduled"),
     supabase.from("referral").select("*", { count: "exact", head: true }).eq("status", "qualified"),
     supabase.from("lead").select("*", { count: "exact", head: true }).eq("red_flag_matched", true),
+    // Pickups badge: rentals the voice assistant flagged for a human.
+    supabase.from("rental").select("*", { count: "exact", head: true }).eq("needs_human_followup", true),
+    supabase.from("charge").select("*", { count: "exact", head: true }).eq("approval_status", "pending"),
+    // Weekly rent past its due date on a rental that is out on the road.
+    // Inner join so only schedules belonging to active rentals count.
+    supabase
+      .from("payment_schedule")
+      .select("id, rental!inner(status)", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("cadence", "weekly")
+      .eq("rental.status", "active")
+      .lt("next_due_at", new Date().toISOString()),
+    // Same event set and grouping as the Inbox page itself, so the badge
+    // always matches what staff see when they open it.
+    supabase
+      .from("communication_event")
+      .select("customer_id, lead_id, direction, payload")
+      .in("event_type", ["message", "callback_request"])
+      .order("created_at", { ascending: false })
+      .limit(200),
   ]);
+
+  // Unanswered = conversations whose most recent event is inbound.
+  const seenConversations = new Set<string>();
+  let unansweredCount = 0;
+  for (const e of inboxEvents ?? []) {
+    const from = (e.payload as { from?: string } | null)?.from ?? "unknown";
+    const key = e.customer_id ? `c:${e.customer_id}` : e.lead_id ? `l:${e.lead_id}` : `u:${from}`;
+    if (seenConversations.has(key)) continue;
+    seenConversations.add(key);
+    if (e.direction === "inbound") unansweredCount++;
+  }
 
   const badgeCounts: Record<string, number> = {
     "/staff/leads": newLeadsCount ?? 0,
     "/staff/applications": pendingApplicationsCount ?? 0,
     "/staff/insurance": expiringInsuranceCount ?? 0,
-    "/staff/pickups": readyForPickupCount ?? 0,
+    "/staff/inbox": unansweredCount,
+    // Needs-attention only (follow-ups + overdue rent), not every scheduled
+    // pickup -- a badge that is always lit stops meaning anything.
+    "/staff/pickups": (followupCount ?? 0) + (overdueCount ?? 0),
+    "/staff/charges": pendingChargesCount ?? 0,
     "/staff/referrals": qualifiedReferralsCount ?? 0,
     "/staff/red-flags": flaggedLeadsCount ?? 0,
   };
