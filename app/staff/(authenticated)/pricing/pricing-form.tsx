@@ -163,6 +163,104 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
         </label>
       </div>
 
+      {/* CANCELLATION AND REFUNDS */}
+      <div className="card">
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Cancellation &amp; Refunds</h2>
+        <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
+          Money paid before pickup is refunded to the original card. Fees come out of the rent
+          only; the deposit is always refunded in full before pickup. After pickup a started
+          week is not prorated. Each rental keeps a snapshot of these numbers.
+        </p>
+        <div className="form-row">
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Late cancel / no-show fee ($)</span>
+            <input
+              type="number"
+              min={0}
+              value={rules.cancellation.late_fee_usd ?? ""}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, late_fee_usd: e.target.value ? Number(e.target.value) : null } })}
+            />
+          </label>
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Early cancel fee after free ones ($)</span>
+            <input
+              type="number"
+              min={0}
+              value={rules.cancellation.early_fee_usd ?? ""}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, early_fee_usd: e.target.value ? Number(e.target.value) : null } })}
+            />
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Free cancellations per 90 days</span>
+            <input
+              type="number"
+              min={0}
+              value={rules.cancellation.free_cancellations_per_90d}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, free_cancellations_per_90d: Number(e.target.value) } })}
+            />
+          </label>
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Late window (hours before pickup)</span>
+            <input
+              type="number"
+              min={1}
+              value={rules.cancellation.late_window_hours}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, late_window_hours: Number(e.target.value) } })}
+            />
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>No-show grace (hours)</span>
+            <input
+              type="number"
+              min={0}
+              value={rules.cancellation.noshow_grace_hours}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, noshow_grace_hours: Number(e.target.value) } })}
+            />
+          </label>
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Rebook window after no-show (days)</span>
+            <input
+              type="number"
+              min={1}
+              value={rules.cancellation.rebook_days}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, rebook_days: Number(e.target.value) } })}
+            />
+          </label>
+        </div>
+        <div className="form-row">
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Tolls/tickets charge window (days after return)</span>
+            <input
+              type="number"
+              min={7}
+              value={rules.cancellation.toll_ticket_window_days}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, toll_ticket_window_days: Number(e.target.value) } })}
+            />
+          </label>
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Admin approval above ($)</span>
+            <input
+              type="number"
+              min={0}
+              value={rules.cancellation.admin_approval_threshold_usd}
+              onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, admin_approval_threshold_usd: Number(e.target.value) } })}
+            />
+          </label>
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={rules.cancellation.approved}
+            onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, approved: e.target.checked } })}
+          />
+          Approved for use
+        </label>
+      </div>
+
       {/* LATE FEE */}
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 4 }}>Late Fee</h2>

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
 import { resolveDeposit, DEPOSIT_MIN_USD, DEPOSIT_MAX_USD } from "@/lib/rental-rate";
+import { DEFAULT_CANCELLATION_RULES, validateCancellationRules, type CancellationRules } from "@/lib/cancellation-policy";
 
 export type PricingRules = {
   mileage_policy: string;
@@ -17,6 +18,7 @@ export type PricingRules = {
     uninsured_weekly_deduction_usd: number | null;
     approved: boolean;
   };
+  cancellation: CancellationRules;
   daily: {
     first_tier_days: number;
     first_tier_total_usd: number;
@@ -56,6 +58,9 @@ export async function getPricingRules(): Promise<PricingRules | null> {
     ...(r as PricingRules),
     deposit: r.deposit ?? { amount_usd: null, approved: false },
     insurance: r.insurance ?? { insured_discount_pct: 22, uninsured_weekly_deduction_usd: null, approved: false },
+    // Pre-filled with the owner-approved figures but UNAPPROVED until staff
+    // tick the box, like every other new section.
+    cancellation: { ...DEFAULT_CANCELLATION_RULES, ...(r.cancellation ?? {}) },
   };
 }
 
@@ -88,6 +93,11 @@ export async function updatePricingRules(rules: PricingRules): Promise<{ success
     if (ins.approved && rules.weekly_rate_usd != null && ins.uninsured_weekly_deduction_usd != null && ins.uninsured_weekly_deduction_usd >= rules.weekly_rate_usd) {
       return { success: false, error: "The weekly insurance deduction must be less than the weekly rate." };
     }
+  }
+
+  if (rules.cancellation) {
+    const c = validateCancellationRules(rules.cancellation);
+    if (!c.ok) return { success: false, error: c.error };
   }
 
   const { data: existing } = await supabase
