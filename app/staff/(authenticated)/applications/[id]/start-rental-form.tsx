@@ -1,31 +1,55 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { scheduleRental, type AvailableVehicle } from "../rental-actions";
+import { scheduleRental, previewRentalRate, type AvailableVehicle, type RatePreview } from "../rental-actions";
 
 export default function StartRentalForm({
   applicationId,
   vehicles,
+  hasOwnInsurance,
 }: {
   applicationId: string;
   vehicles: AvailableVehicle[];
+  hasOwnInsurance: boolean | null;
 }) {
   const router = useRouter();
   const [vehicleId, setVehicleId] = useState("");
   const [rentalOption, setRentalOption] = useState<"daily" | "weekly">("weekly");
+  const [arrangement, setArrangement] = useState<"own" | "via_provider" | "">(
+    hasOwnInsurance === true ? "own" : hasOwnInsurance === false ? "via_provider" : ""
+  );
+  const [preview, setPreview] = useState<RatePreview | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!arrangement) {
+      setPreview(null);
+      return;
+    }
+    previewRentalRate(rentalOption, arrangement).then((r) => {
+      if (!cancelled) setPreview(r);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [rentalOption, arrangement]);
 
   async function handleSchedule() {
     if (!vehicleId) {
       setError("Select a vehicle first.");
       return;
     }
+    if (!arrangement) {
+      setError("Choose whether the renter has their own insurance.");
+      return;
+    }
     setError(null);
     setLoading(true);
 
-    const result = await scheduleRental(applicationId, vehicleId, rentalOption);
+    const result = await scheduleRental(applicationId, vehicleId, rentalOption, arrangement);
 
     setLoading(false);
 
@@ -74,6 +98,22 @@ export default function StartRentalForm({
           <option value="daily">Daily</option>
         </select>
       </label>
+
+      <label className="field">
+        <span style={{ fontSize: 13, fontWeight: 600 }}>Insurance (staff only)</span>
+        <select value={arrangement} onChange={(e) => setArrangement(e.target.value as "own" | "via_provider" | "")}>
+          <option value="">{hasOwnInsurance === null ? "Choose..." : "Choose..."}</option>
+          <option value="own">Has their own insurance</option>
+          <option value="via_provider">No insurance: buying cover from a provider</option>
+        </select>
+      </label>
+
+      {preview && preview.ok && (
+        <p className="muted-text" style={{ fontSize: 13, marginBottom: 12, lineHeight: 1.6 }}>
+          Rent: ${preview.rent.toFixed(2)} {preview.perLabel} (standard ${preview.base.toFixed(2)}). Refundable deposit: ${preview.deposit.toFixed(2)}, collected separately before pickup. Locked in when scheduled.
+        </p>
+      )}
+      {preview && !preview.ok && <p className="error-text" style={{ fontSize: 13, marginBottom: 12 }}>{preview.error}</p>}
 
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
 

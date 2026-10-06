@@ -93,6 +93,76 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
         </label>
       </div>
 
+      {/* DEPOSIT */}
+      <div className="card">
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Refundable Deposit</h2>
+        <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
+          One amount for every renter, between $100 and $200. Separate from rent; both are
+          collected before pickup. Card only (renter&apos;s own name) -- no cash.
+        </p>
+        <label className="field">
+          <span style={{ fontSize: 13, fontWeight: 600 }}>Deposit ($100-$200)</span>
+          <input
+            type="number"
+            min={100}
+            max={200}
+            value={rules.deposit.amount_usd ?? ""}
+            onChange={(e) => setRules({ ...rules, deposit: { ...rules.deposit, amount_usd: e.target.value ? Number(e.target.value) : null } })}
+          />
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={rules.deposit.approved}
+            onChange={(e) => setRules({ ...rules, deposit: { ...rules.deposit, approved: e.target.checked } })}
+          />
+          Approved for use (rentals can&apos;t be scheduled until this is set and approved)
+        </label>
+      </div>
+
+      {/* INSURANCE */}
+      <div className="card">
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Insurance Pricing (staff only)</h2>
+        <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
+          Renters with their own insurance get a percentage off the rental fee. Renters without
+          insurance buy cover themselves from a provider (Bonzah, RentalCover, ...) and pay
+          that provider directly, so a fixed weekly amount comes off what they pay us. Applies
+          to both daily and weekly rentals (daily uses the weekly amount / 7 per day). Renters
+          aren&apos;t shown this -- staff communicate the final numbers after approval.
+        </p>
+        <div className="form-row">
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>Own insurance: discount (%)</span>
+            <input
+              type="number"
+              min={0}
+              max={99}
+              value={rules.insurance.insured_discount_pct ?? ""}
+              onChange={(e) => setRules({ ...rules, insurance: { ...rules.insurance, insured_discount_pct: e.target.value ? Number(e.target.value) : null } })}
+            />
+          </label>
+          <label className="field">
+            <span style={{ fontSize: 13, fontWeight: 600 }}>No insurance: weekly deduction ($)</span>
+            <input
+              type="number"
+              min={0}
+              value={rules.insurance.uninsured_weekly_deduction_usd ?? ""}
+              onChange={(e) =>
+                setRules({ ...rules, insurance: { ...rules.insurance, uninsured_weekly_deduction_usd: e.target.value ? Number(e.target.value) : null } })
+              }
+            />
+          </label>
+        </div>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={rules.insurance.approved}
+            onChange={(e) => setRules({ ...rules, insurance: { ...rules.insurance, approved: e.target.checked } })}
+          />
+          Approved for use (rentals can&apos;t be scheduled until this is set and approved)
+        </label>
+      </div>
+
       {/* LATE FEE */}
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 4 }}>Late Fee</h2>

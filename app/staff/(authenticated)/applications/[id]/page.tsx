@@ -28,7 +28,7 @@ export default async function ApplicationDetailPage({
   const { data: application } = await supabase
     .from("application")
     .select(
-      "id, status, submitted_at, decision_at, decision_reason, customer_id, customer:customer_id(first_name, last_name, email, phone)"
+      "id, status, submitted_at, decision_at, decision_reason, has_own_insurance, customer_id, customer:customer_id(first_name, last_name, email, phone)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -186,7 +186,7 @@ export default async function ApplicationDetailPage({
                 </a>
               </div>
             )}
-            {canStartRental && <StartRentalForm applicationId={application.id} vehicles={availableVehicles} />}
+            {canStartRental && <StartRentalForm applicationId={application.id} vehicles={availableVehicles} hasOwnInsurance={(application as any).has_own_insurance ?? null} />}
           </div>
         ) : (
           <DecisionForm applicationId={application.id} />

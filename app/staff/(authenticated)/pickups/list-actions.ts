@@ -1,6 +1,19 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import type { InsuranceArrangement } from "@/lib/rental-rate";
+
+// Staff-only money summary for a rental (renters never see this).
+export type RentalMoney = {
+  arrangement: InsuranceArrangement | null;
+  plan: "weekly" | "daily" | null;
+  weeklyRateUsd: number | null;
+  quotedAmountUsd: number | null;
+  depositRequiredUsd: number | null;
+  rentPaidUsd: number;
+  depositPaidUsd: number;
+  nextDueAt: string | null;
+};
 
 export type PickupItem = {
   rentalId: string;
@@ -15,6 +28,7 @@ export type PickupItem = {
   pickupConfirmedAt: string | null;
   expectedReturnAt: string | null;
   dropOffManuallySet: boolean;
+  money: RentalMoney;
 };
 
 export type DropoffItem = {
@@ -26,7 +40,26 @@ export type DropoffItem = {
   startMileage: number | null;
   expectedReturnAt: string | null;
   dropOffManuallySet: boolean;
+  money: RentalMoney;
 };
+
+async function loadMoney(supabase: Awaited<ReturnType<typeof createClient>>, r: any): Promise<RentalMoney> {
+  const [{ data: pays }, { data: sched }] = await Promise.all([
+    supabase.from("payment").select("amount, kind").eq("rental_id", r.id).eq("status", "paid"),
+    supabase.from("payment_schedule").select("next_due_at").eq("rental_id", r.id).eq("status", "active").eq("cadence", "weekly").maybeSingle(),
+  ]);
+  const rows = pays ?? [];
+  return {
+    arrangement: (r.insurance_arrangement as InsuranceArrangement | null) ?? null,
+    plan: r.agreed_weekly_rate_usd != null ? "weekly" : r.insurance_arrangement ? "daily" : null,
+    weeklyRateUsd: r.agreed_weekly_rate_usd != null ? Number(r.agreed_weekly_rate_usd) : null,
+    quotedAmountUsd: (r.booking as any)?.quoted_amount != null ? Number((r.booking as any).quoted_amount) : null,
+    depositRequiredUsd: r.deposit_required_usd != null ? Number(r.deposit_required_usd) : null,
+    rentPaidUsd: rows.filter((p) => p.kind !== "deposit").reduce((t, p) => t + Number(p.amount), 0),
+    depositPaidUsd: rows.filter((p) => p.kind === "deposit").reduce((t, p) => t + Number(p.amount), 0),
+    nextDueAt: sched?.next_due_at ?? null,
+  };
+}
 
 export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; dropoffs: DropoffItem[] }> {
   const supabase = await createClient();
@@ -34,11 +67,11 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
   const [{ data: scheduled }, { data: active }] = await Promise.all([
     supabase
       .from("rental")
-      .select("id, pickup_confirmed_at, expected_return_at, drop_off_manually_set, booking:booking_id(pickup_at, pickup_location_id), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
+      .select("id, pickup_confirmed_at, expected_return_at, drop_off_manually_set, insurance_arrangement, agreed_weekly_rate_usd, deposit_required_usd, booking:booking_id(pickup_at, pickup_location_id, quoted_amount), customer:customer_id(id, first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year))")
       .eq("status", "scheduled"),
     supabase
       .from("rental")
-      .select("id, expected_return_at, drop_off_manually_set, customer:customer_id(first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year), start_mileage)")
+      .select("id, expected_return_at, drop_off_manually_set, insurance_arrangement, agreed_weekly_rate_usd, deposit_required_usd, booking:booking_id(quoted_amount), customer:customer_id(first_name, last_name), rental_segment(vehicle_id, vehicle:vehicle_id(make, model, year), start_mileage)")
       .eq("status", "active"),
   ]);
 
@@ -80,11 +113,12 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
         // scheduleRental's placeholder, so don't present it as staff's choice.
         expectedReturnAt: (r.booking as any)?.pickup_location_id ? ((r as any).expected_return_at ?? null) : null,
         dropOffManuallySet: Boolean((r as any).drop_off_manually_set),
+        money: await loadMoney(supabase, r),
       };
     })
   );
 
-  const dropoffs: DropoffItem[] = (active ?? []).map((r) => {
+  const dropoffs: DropoffItem[] = await Promise.all((active ?? []).map(async (r) => {
     const customer = r.customer as any;
     const segment = (r.rental_segment as any)?.[0];
     const vehicle = segment?.vehicle;
@@ -97,8 +131,9 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
       startMileage: segment?.start_mileage ?? null,
       expectedReturnAt: (r as any).expected_return_at ?? null,
       dropOffManuallySet: Boolean((r as any).drop_off_manually_set),
+      money: await loadMoney(supabase, r),
     };
-  });
+  }));
 
   return { pickups, dropoffs };
 }

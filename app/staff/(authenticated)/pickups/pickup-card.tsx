@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react";
-import { confirmPickup, recordPayment, setPickupAppointment, type PickupLocationOption } from "../applications/rental-actions";
+import { confirmPickup, setPickupAppointment, type PickupLocationOption } from "../applications/rental-actions";
+import RentalMoneyPanel from "./rental-money-panel";
 import InspectionPhotoUpload from "./inspection-photo-upload";
 import type { PickupItem } from "./list-actions";
 
@@ -15,11 +16,6 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [paymentAmount, setPaymentAmount] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState("card");
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
-  const [paymentSaved, setPaymentSaved] = useState(false);
 
   const readyChecks = item.hasLicenseDocument && item.insuranceVerified;
 
@@ -52,30 +48,6 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
       return;
     }
     setApptSaved(true);
-    router.refresh();
-  }
-
-  async function handleRecordPayment() {
-    if (!paymentAmount) {
-      setPaymentError("Enter an amount.");
-      return;
-    }
-
-    const confirmed = window.confirm(`Record a ${paymentMethod} payment of $${paymentAmount}? This creates a real payment record.`);
-    if (!confirmed) return;
-
-    setPaymentError(null);
-    setPaymentSaved(false);
-    setPaymentLoading(true);
-    const result = await recordPayment(item.rentalId, Number(paymentAmount), paymentMethod);
-    setPaymentLoading(false);
-
-    if (!result.success) {
-      setPaymentError(result.error ?? "Couldn't record that payment. Please try again.");
-      return;
-    }
-    setPaymentAmount("");
-    setPaymentSaved(true);
     router.refresh();
   }
 
@@ -185,32 +157,7 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
             </p>
           )}
 
-          {/* Payment/deposit -- now genuinely required before pickup, not
-              just recorded as a formality after the fact. */}
-          <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Payment / deposit</p>
-          <div className="form-row" style={{ marginBottom: 8 }}>
-            <label className="field">
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Amount ($)</span>
-              <input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} />
-            </label>
-            <label className="field">
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Method</span>
-              <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
-                <option value="card">Card</option>
-                <option value="other">Other</option>
-              </select>
-            </label>
-          </div>
-          {paymentError && <p className="error-text" style={{ fontSize: 13, marginBottom: 8 }}>{paymentError}</p>}
-          {paymentSaved && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 13, marginBottom: 8 }}>Payment recorded.</p>}
-          <button
-            onClick={handleRecordPayment}
-            disabled={paymentLoading}
-            className="button-secondary"
-            style={{ color: "var(--text)", borderColor: "var(--border)", marginBottom: 20 }}
-          >
-            {paymentLoading ? "Recording..." : "Record Payment"}
-          </button>
+          <RentalMoneyPanel rentalId={item.rentalId} money={item.money} />
 
           <InspectionPhotoUpload rentalId={item.rentalId} vehicleId={item.vehicleId} inspectionType="pickup" />
 

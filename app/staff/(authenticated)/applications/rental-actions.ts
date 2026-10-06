@@ -6,7 +6,64 @@ import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
 import { calculateDailyRentalPrice } from "@/lib/pricing";
 import { validateRentalWindow, defaultDropoff, isDefaultDropoff } from "@/lib/rental-window";
+import { computeWeeklyRate, computeDailyTotal, resolveDeposit, ACCEPTED_PAYMENT_METHODS, type InsuranceArrangement } from "@/lib/rental-rate";
 import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
+
+// Daily-plan total for a window, adjusted for the renter's insurance
+// arrangement. Legacy rentals (no arrangement recorded) keep the standard
+// price. Returns null when the daily price can't be computed.
+async function requoteDaily(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  tenantId: string,
+  billableDays: number,
+  arrangement: InsuranceArrangement | null
+): Promise<number | null> {
+  const { data: policy } = await supabase
+    .from("policy_version")
+    .select("rules")
+    .eq("tenant_id", tenantId)
+    .eq("policy_type", "pricing_and_mileage")
+    .maybeSingle();
+  const rules = (policy?.rules as any) ?? {};
+  const standard = calculateDailyRentalPrice(billableDays, rules.daily);
+  if (standard === null) return null;
+  if (!arrangement) return standard;
+  const adjusted = computeDailyTotal(standard, billableDays, arrangement, rules.insurance);
+  return adjusted.ok ? adjusted.amount : null;
+}
+
+export type RatePreview =
+  | { ok: true; rent: number; base: number; deposit: number; perLabel: string }
+  | { ok: false; error: string };
+
+// Staff-only preview shown on the Schedule Rental form so the number is
+// seen before it is locked in. Same calculation scheduleRental uses.
+export async function previewRentalRate(
+  rentalOption: "daily" | "weekly",
+  arrangement: InsuranceArrangement
+): Promise<RatePreview> {
+  const supabase = await createClient();
+  const { data: policy } = await supabase
+    .from("policy_version")
+    .select("rules")
+    .eq("policy_type", "pricing_and_mileage")
+    .eq("immutable", false)
+    .maybeSingle();
+  const rules = (policy?.rules as any) ?? {};
+
+  const deposit = resolveDeposit(rules.deposit);
+  if (!deposit.ok) return { ok: false, error: deposit.error };
+
+  if (rentalOption === "weekly") {
+    if (!rules.weekly_approved || !rules.weekly_rate_usd) return { ok: false, error: "Weekly pricing isn't approved on the Pricing page." };
+    const w = computeWeeklyRate(rules.weekly_rate_usd, arrangement, rules.insurance);
+    return w.ok ? { ok: true, rent: w.amount, base: w.base, deposit: deposit.amount, perLabel: "per week" } : { ok: false, error: w.error };
+  }
+  const standard = calculateDailyRentalPrice(7, rules.daily);
+  if (standard === null) return { ok: false, error: "Daily pricing isn't approved on the Pricing page." };
+  const d = computeDailyTotal(standard, 7, arrangement, rules.insurance);
+  return d.ok ? { ok: true, rent: d.amount, base: d.base, deposit: deposit.amount, perLabel: "for the first 7 days" } : { ok: false, error: d.error };
+}
 
 export type AvailableVehicle = {
   id: string;
@@ -40,13 +97,14 @@ export async function getAvailableVehicles(): Promise<AvailableVehicle[]> {
 export async function scheduleRental(
   applicationId: string,
   vehicleId: string,
-  rentalOption: "daily" | "weekly"
+  rentalOption: "daily" | "weekly",
+  insuranceArrangement?: InsuranceArrangement
 ): Promise<{ success: boolean; error?: string; rentalId?: string }> {
   const supabase = await createClient();
 
   const { data: application } = await supabase
     .from("application")
-    .select("id, tenant_id, customer_id, status")
+    .select("id, tenant_id, customer_id, status, has_own_insurance")
     .eq("id", applicationId)
     .single();
 
@@ -96,7 +154,34 @@ export async function scheduleRental(
     return { success: false, error: "Rentals must be at least 7 days — this is a locked minimum." };
   }
 
-  const quotedAmount = rentalOption === "daily" ? calculateDailyRentalPrice(days, dailyRules) : null;
+  // Insurance arrangement: staff may choose, otherwise it follows the
+  // renter's own answer on the application. Never guessed.
+  const arrangement: InsuranceArrangement | null =
+    insuranceArrangement ??
+    (application.has_own_insurance === true ? "own" : application.has_own_insurance === false ? "via_provider" : null);
+  if (!arrangement) {
+    return { success: false, error: "Choose whether this renter has their own insurance before scheduling." };
+  }
+
+  const deposit = resolveDeposit(rules.deposit);
+  if (!deposit.ok) return { success: false, error: deposit.error };
+
+  let quotedAmount: number | null = null;
+  let agreedWeeklyRate: number | null = null;
+  if (rentalOption === "daily") {
+    const standard = calculateDailyRentalPrice(days, dailyRules);
+    if (standard === null) return { success: false, error: "Daily pricing isn't approved on the Pricing page." };
+    const adjusted = computeDailyTotal(standard, days, arrangement, rules.insurance);
+    if (!adjusted.ok) return { success: false, error: adjusted.error };
+    quotedAmount = adjusted.amount;
+  } else {
+    if (!rules.weekly_approved || !rules.weekly_rate_usd) {
+      return { success: false, error: "Weekly pricing isn't approved on the Pricing page." };
+    }
+    const weekly = computeWeeklyRate(rules.weekly_rate_usd, arrangement, rules.insurance);
+    if (!weekly.ok) return { success: false, error: weekly.error };
+    agreedWeeklyRate = weekly.amount;
+  }
 
   const plannedPickupAt = new Date();
   const plannedReturnAt = new Date(plannedPickupAt.getTime() + days * 24 * 60 * 60 * 1000);
@@ -127,6 +212,9 @@ export async function scheduleRental(
       status: "pending",
       expected_return_at: plannedReturnAt.toISOString(),
       governing_policy_snapshot: policy?.rules ?? {},
+      insurance_arrangement: arrangement,
+      agreed_weekly_rate_usd: agreedWeeklyRate,
+      deposit_required_usd: deposit.amount,
     })
     .select("id")
     .single();
@@ -167,13 +255,13 @@ export async function scheduleRental(
   // Weekly payment schedule only created when explicitly approved (0038)
   // -- fixed a real bug where an unapproved draft rate would have been
   // silently used otherwise.
-  if (rules.weekly_approved && rules.weekly_rate_usd) {
+  if (agreedWeeklyRate !== null) {
     await supabase.from("payment_schedule").insert({
       tenant_id: application.tenant_id,
       rental_id: rental.id,
       cadence: "weekly",
       next_due_at: plannedReturnAt.toISOString(),
-      amount: rules.weekly_rate_usd,
+      amount: agreedWeeklyRate,
       status: "active",
     });
   }
@@ -238,7 +326,7 @@ export async function setPickupAppointment(
 
   const { data: rental } = await supabase
     .from("rental")
-    .select("id, status, booking_id, tenant_id")
+    .select("id, status, booking_id, tenant_id, insurance_arrangement")
     .eq("id", rentalId)
     .maybeSingle();
   if (!rental) return { success: false, error: "Rental not found." };
@@ -259,15 +347,10 @@ export async function setPickupAppointment(
   };
 
   // Daily-plan bookings were quoted for a fixed 7 days at scheduling time.
-  // Re-quote for the real window so the stored amount can't be stale.
+  // Re-quote for the real window (with the renter's insurance arrangement)
+  // so the stored amount can't be stale.
   if (booking.quoted_amount !== null) {
-    const { data: policy } = await supabase
-      .from("policy_version")
-      .select("rules")
-      .eq("tenant_id", rental.tenant_id)
-      .eq("policy_type", "pricing_and_mileage")
-      .maybeSingle();
-    const requoted = calculateDailyRentalPrice(window.days, (policy?.rules as any)?.daily);
+    const requoted = await requoteDaily(supabase, rental.tenant_id, window.days, (rental as any).insurance_arrangement ?? null);
     if (requoted !== null) bookingUpdate.quoted_amount = requoted;
   }
 
@@ -318,7 +401,7 @@ export async function setDropoffDate(
 
   const { data: rental } = await supabase
     .from("rental")
-    .select("id, tenant_id, status, start_at, actual_return_at, expected_return_at, booking_id")
+    .select("id, tenant_id, status, start_at, actual_return_at, expected_return_at, booking_id, insurance_arrangement")
     .eq("id", rentalId)
     .maybeSingle();
   if (!rental) return { success: false, error: "Rental not found." };
@@ -339,13 +422,7 @@ export async function setDropoffDate(
   if (booking) {
     const bookingUpdate: Record<string, unknown> = { return_at: returnAt.toISOString() };
     if (rental.status === "scheduled" && booking.quoted_amount !== null) {
-      const { data: policy } = await supabase
-        .from("policy_version")
-        .select("rules")
-        .eq("tenant_id", rental.tenant_id)
-        .eq("policy_type", "pricing_and_mileage")
-        .maybeSingle();
-      const requoted = calculateDailyRentalPrice(window.days, (policy?.rules as any)?.daily);
+      const requoted = await requoteDaily(supabase, rental.tenant_id, window.days, (rental as any).insurance_arrangement ?? null);
       if (requoted !== null) bookingUpdate.quoted_amount = requoted;
     }
     const { error: bookingError } = await supabase.from("booking").update(bookingUpdate).eq("id", booking.id);
@@ -475,19 +552,37 @@ export async function confirmPickup(
   const segment = (rental.rental_segment as any)?.[0];
   if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
 
-  // Real gap closed here: previously nothing required a payment/deposit
-  // to be collected before pickup could be confirmed. Requiring at least
-  // one recorded payment (any amount, any method) -- there's no dedicated
-  // "collect deposit" action separate from recordPayment() yet, so this
-  // is the honest, buildable version of that check with what actually
-  // exists today.
-  const { count: paymentCount } = await supabase
+  // Both the first rent period and the refundable deposit must be paid
+  // before the car is handed over. Rentals scheduled before this mechanism
+  // existed (no deposit recorded on them) keep the old rule: any payment.
+  const { data: paidRows } = await supabase
     .from("payment")
-    .select("id", { count: "exact", head: true })
-    .eq("rental_id", rentalId);
+    .select("amount, kind")
+    .eq("rental_id", rentalId)
+    .eq("status", "paid");
+  const paidRent = (paidRows ?? []).filter((p) => p.kind !== "deposit").reduce((t, p) => t + Number(p.amount), 0);
+  const paidDeposit = (paidRows ?? []).filter((p) => p.kind === "deposit").reduce((t, p) => t + Number(p.amount), 0);
 
-  if (!paymentCount || paymentCount === 0) {
-    return { success: false, error: "Record a payment/deposit before confirming pickup." };
+  const { data: rate } = await supabase
+    .from("rental")
+    .select("agreed_weekly_rate_usd, deposit_required_usd, booking:booking_id(quoted_amount)")
+    .eq("id", rentalId)
+    .single();
+
+  const depositRequired = rate?.deposit_required_usd != null ? Number(rate.deposit_required_usd) : null;
+  if (depositRequired === null) {
+    if ((paidRows ?? []).length === 0) return { success: false, error: "Record a payment/deposit before confirming pickup." };
+  } else {
+    const firstRentDue =
+      rate?.agreed_weekly_rate_usd != null
+        ? Number(rate.agreed_weekly_rate_usd)
+        : Number((rate?.booking as any)?.quoted_amount ?? 0);
+    if (paidDeposit + 0.005 < depositRequired) {
+      return { success: false, error: `Collect the refundable deposit ($${depositRequired.toFixed(2)}) before confirming pickup.` };
+    }
+    if (paidRent + 0.005 < firstRentDue) {
+      return { success: false, error: `Collect the first rent payment ($${firstRentDue.toFixed(2)}) before confirming pickup.` };
+    }
   }
 
   const nowDate = new Date();
@@ -655,12 +750,32 @@ export async function confirmDropoff(
 export async function recordPayment(
   rentalId: string,
   amount: number,
-  methodType: string
+  methodType: string,
+  kind: "rent" | "deposit" = "rent"
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
-  const { data: rental } = await supabase.from("rental").select("id, tenant_id, customer_id").eq("id", rentalId).single();
+  if (!(ACCEPTED_PAYMENT_METHODS as readonly string[]).includes(methodType)) {
+    return { success: false, error: "Only card payments are accepted (in the renter's own name). Cash isn't accepted." };
+  }
+  if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "Enter a valid amount." };
+  if (kind !== "rent" && kind !== "deposit") return { success: false, error: "Choose rent or deposit." };
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, tenant_id, customer_id, deposit_required_usd")
+    .eq("id", rentalId)
+    .single();
   if (!rental) return { success: false, error: "Rental not found." };
+
+  if (kind === "deposit") {
+    const { data: held } = await supabase.from("deposit").select("amount_collected").eq("rental_id", rentalId);
+    const alreadyHeld = (held ?? []).reduce((sum, d) => sum + Number(d.amount_collected ?? 0), 0);
+    const required = rental.deposit_required_usd !== null ? Number(rental.deposit_required_usd) : null;
+    if (required !== null && alreadyHeld + amount > required + 0.005) {
+      return { success: false, error: `That would put the deposit above the required $${required.toFixed(2)} ($${alreadyHeld.toFixed(2)} already collected).` };
+    }
+  }
 
   const { data: payment, error } = await supabase
     .from("payment")
@@ -670,6 +785,7 @@ export async function recordPayment(
       customer_id: rental.customer_id,
       method_type: methodType,
       amount,
+      kind,
       status: "paid",
       paid_at: new Date().toISOString(),
     })
@@ -683,6 +799,34 @@ export async function recordPayment(
     return { success: false, error: msg };
   }
 
+  // A deposit is also held in the deposit table, which is what deductions
+  // and refunds work from (separate from rent).
+  if (kind === "deposit") {
+    const { data: existing } = await supabase
+      .from("deposit")
+      .select("id, amount_collected, refundable_amount")
+      .eq("rental_id", rentalId)
+      .eq("status", "held")
+      .maybeSingle();
+    if (existing) {
+      await supabase
+        .from("deposit")
+        .update({
+          amount_collected: Number(existing.amount_collected) + amount,
+          refundable_amount: Number(existing.refundable_amount ?? existing.amount_collected) + amount,
+        })
+        .eq("id", existing.id);
+    } else {
+      await supabase.from("deposit").insert({
+        tenant_id: rental.tenant_id,
+        rental_id: rentalId,
+        amount_collected: amount,
+        refundable_amount: amount,
+        status: "held",
+      });
+    }
+  }
+
   revalidatePath("/staff/fleet");
 
   if (payment) {
@@ -691,7 +835,7 @@ export async function recordPayment(
       action: "payment_recorded",
       entityType: "payment",
       entityId: payment.id,
-      afterData: { amount, methodType, rentalId },
+      afterData: { amount, methodType, rentalId, kind },
       source: "staff_portal",
     });
 
@@ -704,10 +848,116 @@ export async function recordPayment(
       rentalId,
       customerId: rental.customer_id,
       amount,
-      lineLabel: `Payment received (${methodType})`,
+      lineLabel: kind === "deposit" ? "Refundable deposit received (card)" : `Rent payment received (${methodType})`,
       relatedPaymentId: payment.id,
     });
   }
 
+  return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// ADMIN: change a rental's insurance arrangement after scheduling (e.g. the
+// renter's own policy lapses, or they buy cover through a provider). The
+// rate is recomputed from the CURRENT pricing rules. Weekly plan: the
+// payment schedule amount changes from the next payment on (rent already
+// paid is untouched). Daily plan: only while still scheduled. Requires the
+// manage_pricing permission (same gate as editing the pricing itself).
+// Audited with before/after.
+// ---------------------------------------------------------------------------
+export async function changeRentalInsurance(
+  rentalId: string,
+  arrangement: InsuranceArrangement
+): Promise<{ success: boolean; error?: string; newWeeklyRate?: number }> {
+  if (arrangement !== "own" && arrangement !== "via_provider") return { success: false, error: "Choose an insurance arrangement." };
+  const supabase = await createClient();
+
+  const { data: allowed } = await supabase.rpc("can_manage_pricing");
+  if (allowed !== true) return { success: false, error: "You don't have permission to change a renter's rate." };
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, tenant_id, status, insurance_arrangement, agreed_weekly_rate_usd, booking_id, actual_return_at")
+    .eq("id", rentalId)
+    .maybeSingle();
+  if (!rental) return { success: false, error: "Rental not found." };
+  if (rental.actual_return_at || !["scheduled", "active", "extended"].includes(rental.status)) {
+    return { success: false, error: "This rental is closed, so its rate can't be changed." };
+  }
+  if (rental.insurance_arrangement === arrangement) return { success: false, error: "That's already this rental's arrangement." };
+
+  const { data: policy } = await supabase
+    .from("policy_version")
+    .select("rules")
+    .eq("tenant_id", rental.tenant_id)
+    .eq("policy_type", "pricing_and_mileage")
+    .maybeSingle();
+  const rules = (policy?.rules as any) ?? {};
+
+  if (rental.agreed_weekly_rate_usd !== null) {
+    const weekly = computeWeeklyRate(rules.weekly_rate_usd, arrangement, rules.insurance);
+    if (!weekly.ok) return { success: false, error: weekly.error };
+
+    // Guarded table (manage_pricing) first, then the rental record.
+    const { error: schedError } = await supabase
+      .from("payment_schedule")
+      .update({ amount: weekly.amount })
+      .eq("rental_id", rentalId)
+      .eq("status", "active")
+      .eq("cadence", "weekly");
+    if (schedError) return { success: false, error: "Couldn't update the payment schedule. Nothing was changed." };
+
+    const { error: rentalError } = await supabase
+      .from("rental")
+      .update({ insurance_arrangement: arrangement, agreed_weekly_rate_usd: weekly.amount })
+      .eq("id", rentalId);
+    if (rentalError) return { success: false, error: "The schedule was updated but the rental record wasn't. Please contact support." };
+
+    void logAuditEvent({
+      tenantId: rental.tenant_id,
+      action: "rental.insurance_arrangement_changed",
+      entityType: "rental",
+      entityId: rentalId,
+      beforeData: { insurance_arrangement: rental.insurance_arrangement, agreed_weekly_rate_usd: rental.agreed_weekly_rate_usd },
+      afterData: { insurance_arrangement: arrangement, agreed_weekly_rate_usd: weekly.amount },
+      source: "staff",
+    });
+    revalidatePath("/staff/pickups");
+    return { success: true, newWeeklyRate: weekly.amount };
+  }
+
+  // Daily plan: the whole term was priced up front, so only a rental that
+  // hasn't started can be re-priced.
+  if (rental.status !== "scheduled") {
+    return { success: false, error: "A daily rental that has already started can't be re-priced here." };
+  }
+  if (!rental.booking_id) return { success: false, error: "No booking found for this rental." };
+  const { data: booking } = await supabase
+    .from("booking")
+    .select("id, pickup_at, return_at")
+    .eq("id", rental.booking_id)
+    .maybeSingle();
+  if (!booking) return { success: false, error: "Booking not found." };
+  const window = validateRentalWindow(new Date(booking.pickup_at), new Date(booking.return_at));
+  if (!window.ok) return { success: false, error: window.error };
+
+  const requoted = await requoteDaily(supabase, rental.tenant_id, window.days, arrangement);
+  if (requoted === null) return { success: false, error: "Couldn't compute the daily price. Check the Pricing page." };
+
+  const { error: bookingError } = await supabase.from("booking").update({ quoted_amount: requoted }).eq("id", booking.id);
+  if (bookingError) return { success: false, error: "Couldn't update the quote. Nothing was changed." };
+  const { error: rentalError } = await supabase.from("rental").update({ insurance_arrangement: arrangement }).eq("id", rentalId);
+  if (rentalError) return { success: false, error: "The quote was updated but the rental record wasn't. Please contact support." };
+
+  void logAuditEvent({
+    tenantId: rental.tenant_id,
+    action: "rental.insurance_arrangement_changed",
+    entityType: "rental",
+    entityId: rentalId,
+    beforeData: { insurance_arrangement: rental.insurance_arrangement },
+    afterData: { insurance_arrangement: arrangement, quoted_amount: requoted },
+    source: "staff",
+  });
+  revalidatePath("/staff/pickups");
   return { success: true };
 }

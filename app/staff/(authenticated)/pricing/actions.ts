@@ -3,10 +3,20 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
+import { resolveDeposit, DEPOSIT_MIN_USD, DEPOSIT_MAX_USD } from "@/lib/rental-rate";
 
 export type PricingRules = {
   mileage_policy: string;
-  deposit_weeks: number;
+  deposit_weeks?: number; // legacy, ignored: the deposit is now a fixed amount (see deposit)
+  deposit: {
+    amount_usd: number | null;
+    approved: boolean;
+  };
+  insurance: {
+    insured_discount_pct: number | null;
+    uninsured_weekly_deduction_usd: number | null;
+    approved: boolean;
+  };
   daily: {
     first_tier_days: number;
     first_tier_total_usd: number;
@@ -38,7 +48,15 @@ export async function getPricingRules(): Promise<PricingRules | null> {
     .eq("immutable", false)
     .maybeSingle();
 
-  return (data?.rules as PricingRules) ?? null;
+  if (!data?.rules) return null;
+  // Older policy rows predate the deposit/insurance sections; fill safe,
+  // UNAPPROVED defaults so the form renders and nothing is silently priced.
+  const r = data.rules as Partial<PricingRules> & Record<string, any>;
+  return {
+    ...(r as PricingRules),
+    deposit: r.deposit ?? { amount_usd: null, approved: false },
+    insurance: r.insurance ?? { insured_discount_pct: 22, uninsured_weekly_deduction_usd: null, approved: false },
+  };
 }
 
 // Permission-gated at the database level (migration 0038's
@@ -47,6 +65,30 @@ export async function getPricingRules(): Promise<PricingRules | null> {
 // it.
 export async function updatePricingRules(rules: PricingRules): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+
+  // Server-side validation (the form is not a trust boundary).
+  const dep = rules.deposit;
+  if (dep?.approved) {
+    const v = resolveDeposit(dep);
+    if (!v.ok) return { success: false, error: v.error };
+  } else if (dep?.amount_usd != null && !(dep.amount_usd >= DEPOSIT_MIN_USD && dep.amount_usd <= DEPOSIT_MAX_USD)) {
+    return { success: false, error: `The deposit must be between $${DEPOSIT_MIN_USD} and $${DEPOSIT_MAX_USD}.` };
+  }
+  const ins = rules.insurance;
+  if (ins) {
+    if (ins.insured_discount_pct != null && !(ins.insured_discount_pct >= 0 && ins.insured_discount_pct < 100)) {
+      return { success: false, error: "The insured discount must be between 0 and 99 percent." };
+    }
+    if (ins.uninsured_weekly_deduction_usd != null && !(ins.uninsured_weekly_deduction_usd >= 0)) {
+      return { success: false, error: "The weekly insurance deduction can't be negative." };
+    }
+    if (ins.approved && (ins.insured_discount_pct == null || ins.uninsured_weekly_deduction_usd == null)) {
+      return { success: false, error: "Set both the insured discount and the weekly insurance deduction before approving insurance pricing." };
+    }
+    if (ins.approved && rules.weekly_rate_usd != null && ins.uninsured_weekly_deduction_usd != null && ins.uninsured_weekly_deduction_usd >= rules.weekly_rate_usd) {
+      return { success: false, error: "The weekly insurance deduction must be less than the weekly rate." };
+    }
+  }
 
   const { data: existing } = await supabase
     .from("policy_version")
