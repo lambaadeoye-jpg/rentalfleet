@@ -25,19 +25,21 @@ export const N8N_WEBHOOK_PATHS = {
   newLeadCallTrigger: "fleet-rental-new-lead-call-trigger",
   inboxSendReply: "fleet-rental-inbox-send-reply",
   inboxNewMessageAlert: "fleet-rental-inbox-new-message-alert",
+  // Sends one outreach email (welcome/nudge/help). Fired by the outreach dispatcher.
+  outreachEmail: "fleet-rental-outreach-email",
 } as const;
 
 export async function fireN8nWebhook(
   path: (typeof N8N_WEBHOOK_PATHS)[keyof typeof N8N_WEBHOOK_PATHS],
   payload: Record<string, unknown>
-): Promise<void> {
+): Promise<boolean> {
   if (!N8N_BASE_URL) {
     // Not configured yet -- expected during initial setup before the n8n
     // workflows exist. Log once per call rather than throw, so the
     // calling action (lead submission, application decision) always
     // succeeds regardless of automation setup state.
     console.warn(`[n8n webhook] N8N_WEBHOOK_BASE_URL not set -- skipping webhook to ${path}`);
-    return;
+    return false;
   }
 
   try {
@@ -55,11 +57,14 @@ export async function fireN8nWebhook(
 
     if (!response.ok) {
       console.error(`[n8n webhook] ${path} returned ${response.status}`);
+      return false;
     }
+    return true;
   } catch (error) {
     // Network error, timeout, DNS failure -- all swallowed here
     // deliberately. See file header: this must never surface to the user
     // or block the real action.
     console.error(`[n8n webhook] Failed to call ${path}:`, error);
+    return false;
   }
 }

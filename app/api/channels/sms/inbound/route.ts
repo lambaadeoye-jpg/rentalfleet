@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
+import { parseInboundKeyword, HELP_REPLY, renderTemplate } from "@/lib/outreach-rules";
 
 // Twilio POSTs here the moment someone texts the business number. This is
 // third-party-initiated, not an internal call, so it's authenticated with
@@ -79,19 +80,43 @@ export async function POST(request: Request) {
   const matchedCustomer = top?.kind === "customer" ? { id: top.id } : null;
   const leadId: string | null = top?.kind === "lead" ? top.id : null;
 
+  // Opt-out and re-subscribe keywords. Twilio's own default handling already
+  // sends the STOP/START confirmation texts, so we only record the state
+  // (which also cancels every queued follow-up for that number).
+  const keyword = parseInboundKeyword(messageBody ?? "");
+  if (keyword === "stop") {
+    const { error: optErr } = await supabase.rpc("record_opt_out", { p_tenant_id: tenantRow.id, p_phone: fromPhone });
+    if (optErr) console.error("[sms-inbound] record_opt_out failed:", optErr);
+  } else if (keyword === "start") {
+    const { error: optErr } = await supabase.rpc("clear_opt_out", { p_tenant_id: tenantRow.id, p_phone: fromPhone });
+    if (optErr) console.error("[sms-inbound] clear_opt_out failed:", optErr);
+  }
+
   const { error: insertError } = await supabase.from("communication_event").insert({
     tenant_id: tenantRow.id,
     customer_id: matchedCustomer?.id ?? null,
     lead_id: leadId,
     channel: "sms",
     direction: "inbound",
-    event_type: "message",
+    // YES / CHANGE show up in the Inbox as a callback request for staff.
+    event_type: keyword === "yes" || keyword === "change" ? "callback_request" : "message",
     external_reference: messageSid,
     payload: { from: fromPhone, body: messageBody ?? "" },
   });
 
   if (insertError) {
     console.error("[sms-inbound] Failed to log communication_event:", insertError);
+  }
+
+  // Opt-out bookkeeping needs no staff alert. HELP gets a reply if a support
+  // contact is configured (otherwise Twilio's default HELP reply applies).
+  if (keyword === "stop" || keyword === "start") {
+    return new NextResponse("<Response></Response>", { status: 200, headers: { "Content-Type": "text/xml" } });
+  }
+  if (keyword === "help" && process.env.SUPPORT_PHONE && process.env.SUPPORT_EMAIL) {
+    const msg = renderTemplate(HELP_REPLY, { support_phone: process.env.SUPPORT_PHONE, support_email: process.env.SUPPORT_EMAIL });
+    const esc = msg.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return new NextResponse(`<Response><Message>${esc}</Message></Response>`, { status: 200, headers: { "Content-Type": "text/xml" } });
   }
 
   // Staff alert goes through n8n, same as every other notification in

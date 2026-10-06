@@ -6,3 +6,11 @@ export function isValidUsPhone(p: string): boolean {
   const d = p.replace(/\D/g, "");
   return d.length === 10 || (d.length === 11 && d[0] === "1");
 }
+
+/** "+1XXXXXXXXXX" for a valid US number, else null. */
+export function toE164(p: string): string | null {
+  const d = (p ?? "").replace(/\D/g, "");
+  if (d.length === 10) return `+1${d}`;
+  if (d.length === 11 && d[0] === "1") return `+${d}`;
+  return null;
+}
