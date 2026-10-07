@@ -35,6 +35,12 @@ describe("calculateDailyRentalPrice", () => {
     expect(calculateDailyRentalPrice(14, APPROVED_RULES)).toBe(1034);
   });
 
+  it("uses the current $222 first-tier price: 3 days = $222, 7 days = $518", () => {
+    const current = { ...APPROVED_RULES, first_tier_total_usd: 222 };
+    expect(calculateDailyRentalPrice(3, current)).toBe(222);
+    expect(calculateDailyRentalPrice(7, current)).toBe(518);
+  });
+
   it("returns null when rules are not approved", () => {
     expect(calculateDailyRentalPrice(7, { ...APPROVED_RULES, approved: false })).toBeNull();
   });

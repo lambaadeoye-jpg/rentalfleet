@@ -17,6 +17,8 @@ export type DailyPricingRules = {
 // days, then a per-day rate after that. The 7-day / $516 example from
 // the spec ($220 for days 1-3, then 4 x $74 for days 4-7) is exactly
 // calculateDailyRentalPrice(7, { first_tier_days: 3, first_tier_total_usd: 220, per_day_after_usd: 74, approved: true }).
+// The live first-tier total is policy-driven and was raised to $222 (7 days = $518); this example is the
+// original spec figure, kept as a fixed regression case.
 //
 // Returns null when rules are missing or not yet approved -- the same
 // "don't invent the number" discipline applied throughout this build,
