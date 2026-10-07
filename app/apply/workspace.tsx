@@ -4,8 +4,8 @@ import { useState } from "react";
 import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone, Mail, X, Users, Plus, Trash2 } from "lucide-react";
 import DocumentUpload from "./document-upload";
 import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/site-config";
-import {
 import LegalLinks from "@/app/legal-links";
+import {
   type ApplicationData,
   savePersonalStep,
   saveLicenseStep,
