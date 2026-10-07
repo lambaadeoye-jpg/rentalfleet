@@ -8,6 +8,9 @@
 export const PHONE_DISPLAY = "(615) 555-0100";
 export const PHONE_TEL = "+16155550100";
 
+// Renter-facing inbox: Reply-To on renter emails, privacy requests, HELP text. Mail still sends from noreply.
+export const SUPPORT_EMAIL = "support@rentzivo.com";
+
 // Adopted from Kali's Luxury & Exotics (a direct Nashville rideshare-rental
 // competitor) during the competitive review -- a deliberate decision, not a
 // placeholder. Revisit if your own insurance underwriting requires
