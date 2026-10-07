@@ -1,3 +1,4 @@
+import { unsubscribeUrl } from "@/lib/unsubscribe";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
     fireCall: (leadId) => fireN8nWebhook(N8N_WEBHOOK_PATHS.newLeadCallTrigger, { leadId, source: "outreach_dispatcher" }),
     fireEmail: (payload) => fireN8nWebhook(N8N_WEBHOOK_PATHS.outreachEmail, payload),
     applyLink: `${base}/apply`,
+    unsubscribeUrl: (email) => unsubscribeUrl(base, email),
     now: new Date(),
   };
 

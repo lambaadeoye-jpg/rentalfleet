@@ -33,6 +33,8 @@ export type Deps = {
   fireCall: (leadId: string) => Promise<boolean>;
   fireEmail: (payload: Record<string, unknown>) => Promise<boolean>;
   applyLink: string;
+  /** Builds the one-click unsubscribe link for an address (null if unsigned). */
+  unsubscribeUrl?: (email: string) => string | null;
   now: Date;
 };
 
@@ -94,6 +96,7 @@ export async function processRow(row: ClaimedRow, deps: Deps): Promise<Outcome> 
     to: row.email,
     firstName: (row.first_name ?? "").trim(),
     applyLink: deps.applyLink,
+    unsubscribeUrl: row.email && deps.unsubscribeUrl ? deps.unsubscribeUrl(row.email) : null,
   });
   return ok ? { kind: "sent" } : fail("email_trigger_failed");
 }
