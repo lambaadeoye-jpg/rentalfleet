@@ -48,6 +48,8 @@ $$;
 create or replace function trg_notice_refund_insert() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
+  -- A deposit return after a finished rental is not a cancellation.
+  if new.reason = 'rental_ended' then return new; end if;
   perform _queue_renter_notice(new.tenant_id, new.customer_id, new.rental_id, 'cancelled',
     jsonb_build_object('total_refund_cents', new.total_refund_cents, 'status', new.status), 'cancelled:' || new.id);
   return new;
@@ -62,7 +64,7 @@ language plpgsql security definer set search_path = public as $$
 begin
   if new.status = 'succeeded' and old.status is distinct from 'succeeded' and new.total_refund_cents > 0 then
     perform _queue_renter_notice(new.tenant_id, new.customer_id, new.rental_id, 'refund_sent',
-      jsonb_build_object('total_refund_cents', new.total_refund_cents, 'manual_cents', new.manual_cents), 'refund_sent:' || new.id);
+      jsonb_build_object('total_refund_cents', new.total_refund_cents, 'manual_cents', new.manual_cents, 'reason', new.reason), 'refund_sent:' || new.id);
   end if;
   return new;
 end;

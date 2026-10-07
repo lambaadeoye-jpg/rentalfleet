@@ -8,6 +8,7 @@ import DocumentPanel from "./document-panel";
 import AgreementCard from "./agreement-card";
 import PaymentCard from "./payment-card";
 import CancelCard from "./cancel-card";
+import DepositCard from "./deposit-card";
 import { getPaymentStatus } from "../payment-actions";
 import { getAgreementStatus } from "../agreement-actions";
 
@@ -152,6 +153,7 @@ export default async function ApplicationDetailPage({
       {existingRental && agreementStatus && <AgreementCard rentalId={existingRental.id} status={agreementStatus} />}
       {existingRental && paymentStatus && <PaymentCard rentalId={existingRental.id} status={paymentStatus} />}
       {existingRental && ["approved", "scheduled"].includes(existingRental.status) && <CancelCard rentalId={existingRental.id} />}
+      {existingRental && ["returned", "closed"].includes(existingRental.status) && <DepositCard rentalId={existingRental.id} />}
 
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 12 }}>Decision</h2>

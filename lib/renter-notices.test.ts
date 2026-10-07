@@ -25,6 +25,9 @@ describe("noticeBody", () => {
     expect(noticeBody("refund_sent", { total_refund_cents: 9000, manual_cents: 9000 }, null)).not.toContain("business days");
     expect(noticeBody("refund_sent", { total_refund_cents: 0 }, null)).toBeNull();
   });
+  it("deposit return after a finished rental says deposit", () => {
+    expect(noticeBody("refund_sent", { total_refund_cents: 45000, manual_cents: 0, reason: "rental_ended" }, null)).toContain("deposit refund of $450.00");
+  });
   it("payment receipt splits rent and deposit", () => {
     const t = noticeBody("payment_received", { rent_cents: 45000, deposit_cents: 45000 }, null)!;
     expect(t).toContain("$900.00");

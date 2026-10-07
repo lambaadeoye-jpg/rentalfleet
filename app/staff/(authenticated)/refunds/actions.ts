@@ -76,3 +76,36 @@ export async function markManualRefundDone(refundId: string, note: string): Prom
   revalidatePath("/staff/refunds");
   return { success: true };
 }
+
+export type DepositDue = { rentalId: string; customerName: string; heldCents: number; refundableCents: number; applicationId: string | null; returnedAt: string | null };
+
+/** Returned rentals whose deposit is still held and has no refund yet: the "give it back" to-do list. */
+export async function getDepositsDue(): Promise<DepositDue[]> {
+  const supabase = await createClient();
+  const { data: deposits } = await supabase
+    .from("deposit")
+    .select("rental_id, amount_collected, refundable_amount, rental:rental_id(customer_id, status, actual_return_at, customer:customer_id(first_name, last_name))")
+    .eq("status", "held")
+    .limit(200);
+  const returned = (deposits ?? []).filter((d: any) => ["returned", "closed"].includes(d.rental?.status));
+  if (returned.length === 0) return [];
+  const rentalIds = returned.map((d: any) => d.rental_id);
+  const customerIds = Array.from(new Set(returned.map((d: any) => d.rental?.customer_id).filter(Boolean)));
+  const [{ data: settled }, { data: apps }] = await Promise.all([
+    supabase.from("refund").select("rental_id").in("rental_id", rentalIds),
+    supabase.from("application").select("id, customer_id, created_at").in("customer_id", customerIds).order("created_at", { ascending: false }),
+  ]);
+  const done = new Set((settled ?? []).map((r: any) => r.rental_id));
+  const appByCustomer = new Map<string, string>();
+  for (const a of apps ?? []) if (!appByCustomer.has(a.customer_id)) appByCustomer.set(a.customer_id, a.id);
+  return returned
+    .filter((d: any) => !done.has(d.rental_id))
+    .map((d: any) => ({
+      rentalId: d.rental_id,
+      customerName: d.rental?.customer ? `${d.rental.customer.first_name} ${d.rental.customer.last_name}` : "Unknown",
+      heldCents: Math.round(Number(d.amount_collected) * 100),
+      refundableCents: Math.round(Number(d.refundable_amount ?? d.amount_collected) * 100),
+      applicationId: appByCustomer.get(d.rental?.customer_id) ?? null,
+      returnedAt: d.rental?.actual_return_at ?? null,
+    }));
+}

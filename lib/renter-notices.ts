@@ -42,6 +42,7 @@ export function noticeBody(kind: NoticeKind, data: Record<string, unknown> | nul
       const manual = Number(d.manual_cents ?? 0);
       if (!(total > 0)) return null;
       const timing = manual === 0 ? " Banks usually take 5 to 10 business days to show it." : "";
+      if (d.reason === "rental_ended") return `Zivo: Your deposit refund of ${dollars(total)} has been issued.${timing}${help} ${STOP}`;
       return `Zivo: Your refund of ${dollars(total)} has been issued.${timing}${help} ${STOP}`;
     }
     case "payment_received": {

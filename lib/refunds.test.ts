@@ -38,3 +38,22 @@ describe("rules agree with the database cases", () => {
   it("no-show / failed requirement: $65, $435", () => { expect(run("no_show", 0).feeUsd).toBe(65); expect(run("requirement_failed", 0).feeUsd).toBe(65); });
   it("Zivo / fraud: no fee, $500", () => { expect(run("zivo_cancelled", 1).feeUsd).toBe(0); expect(run("fraud_or_identity", 1).feeUsd).toBe(0); });
 });
+
+import { parseDepositReturn, depositReturnSummary, settleErrorMessage } from "./refunds";
+describe("deposit return", () => {
+  it("summarises the amount and deductions", () => {
+    const d = parseDepositReturn({ refund_id: null, deposit_refund_cents: 35000, deductions_cents: 10000, manual_cents: 0, status: "pending_approval", needs_admin: true })!;
+    expect(depositReturnSummary(d)).toContain("$350.00");
+    expect(depositReturnSummary(d)).toContain("$100.00 of approved deductions");
+    expect(depositReturnSummary(d)).toContain("Weekly rent already paid is not refunded");
+  });
+  it("says so when nothing is left", () => {
+    const d = parseDepositReturn({ deposit_refund_cents: 0, deductions_cents: 45000, manual_cents: 0, status: "no_refund_due", needs_admin: false })!;
+    expect(depositReturnSummary(d)).toContain("no deposit left");
+  });
+  it("maps database errors to plain words", () => {
+    expect(settleErrorMessage("pending_charges")).toContain("Charges page");
+    expect(settleErrorMessage("not_returned")).toContain("dropoff");
+    expect(settleErrorMessage("weird")).toBe("Couldn't settle the deposit. Please try again.");
+  });
+});

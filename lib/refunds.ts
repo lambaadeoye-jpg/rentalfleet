@@ -61,6 +61,7 @@ export const REASON_LABELS: Record<string, string> = {
   requirement_failed: "Failed a pickup requirement",
   zivo_cancelled: "Zivo cancelled / no car ready",
   fraud_or_identity: "Fraud or identity problem",
+  rental_ended: "Deposit return (rental ended)",
 };
 
 export function cancelErrorMessage(message: string | undefined | null): string {
@@ -95,4 +96,34 @@ export function settlementSummary(s: Settlement): string {
   if (s.totalRefundCents === 0 && s.feeCents === 0) return "Nothing has been paid on this rental, so there is nothing to refund.";
   const fee = s.feeCents > 0 ? `A ${usd(s.feeCents)} ${s.feeKind === "early" ? "cancellation" : "late-cancellation"} fee is kept from the rent. ` : "No fee applies. ";
   return `${fee}${usd(s.totalRefundCents)} goes back to the original card${s.depositRefundCents > 0 ? `, including the ${usd(s.depositRefundCents)} deposit in full` : ""}.`;
+}
+
+// ---- Deposit return after a finished rental (migration 0082) ----
+
+export type DepositReturn = {
+  refundId: string | null; depositRefundCents: number; deductionsCents: number; manualCents: number; status: string; needsAdmin: boolean;
+};
+
+export function parseDepositReturn(row: any): DepositReturn | null {
+  if (!row) return null;
+  return {
+    refundId: row.refund_id ?? null, depositRefundCents: row.deposit_refund_cents, deductionsCents: row.deductions_cents,
+    manualCents: row.manual_cents, status: row.status, needsAdmin: row.needs_admin,
+  };
+}
+
+export function depositReturnSummary(d: DepositReturn): string {
+  if (d.depositRefundCents === 0) return "There is no deposit left to return" + (d.deductionsCents > 0 ? ` (${usd(d.deductionsCents)} was deducted).` : ".");
+  const ded = d.deductionsCents > 0 ? ` after ${usd(d.deductionsCents)} of approved deductions` : "";
+  return `${usd(d.depositRefundCents)} of the deposit goes back to the renter${ded}. Weekly rent already paid is not refunded.`;
+}
+
+export function settleErrorMessage(message: string | undefined | null): string {
+  const m = message ?? "";
+  if (m.includes("not_returned")) return "Confirm the vehicle dropoff first. The deposit can only be returned once the rental is returned.";
+  if (m.includes("already_settled")) return "The deposit for this rental has already been settled. See the Refunds page.";
+  if (m.includes("pending_charges")) return "A charge on this rental is still waiting for approval. Approve or reject it on the Charges page first, so it can come out of the deposit.";
+  if (m.includes("Permission denied")) return "You don't have permission to return deposits.";
+  if (m.includes("rental_not_found")) return "Rental not found.";
+  return "Couldn't settle the deposit. Please try again.";
 }
