@@ -1,0 +1,71 @@
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
+import { decideNotice, type NoticeRow } from "@/lib/renter-notices";
+import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
+
+// Called every few minutes by an n8n Schedule trigger (never by a browser). Sends the texts queued by the database
+// (cancellation, refund issued, payment received, weekly rent charged / failed) exactly once each.
+//
+// Safe by default: with no Twilio credentials or during quiet hours a notice goes back in the queue and is tried on the
+// next run; the database drops anything older than 48 hours, so switching Twilio on later never sends stale news.
+// A failed send is NOT retried (a duplicate text is worse than a missed one); staff can see it in the notice list.
+
+type Claimed = NoticeRow & { id: string; tenant_id: string; customer_id: string; rental_id: string | null };
+
+export async function POST(request: Request) {
+  const secret = request.headers.get("x-automation-secret");
+  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!serviceRoleKey || !supabaseUrl) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
+  const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
+
+  const { data: claimed, error } = await supabase.rpc("claim_renter_notices", { p_limit: 25 });
+  if (error) {
+    console.error("[renter-notices] claim failed:", error.message);
+    return NextResponse.json({ error: "Claim failed" }, { status: 500 });
+  }
+
+  const support = (process.env.SUPPORT_PHONE || "").trim() || null;
+  const smsConfigured = twilioConfigured();
+  const counts = { sent: 0, skipped: 0, deferred: 0, failed: 0 };
+
+  for (const row of (claimed ?? []) as Claimed[]) {
+    try {
+      const decision = decideNotice(row, new Date(), smsConfigured, support);
+      if (decision.action === "skip") {
+        counts.skipped++;
+        await supabase.from("renter_notice").update({ status: "skipped", error: decision.reason }).eq("id", row.id);
+        continue;
+      }
+      if (decision.action === "defer") {
+        counts.deferred++;
+        await supabase.from("renter_notice").update({ status: "queued", claimed_at: null }).eq("id", row.id).eq("status", "sending");
+        continue;
+      }
+      const res = await sendViaTwilio(decision.to, decision.body);
+      if (!res.ok) {
+        counts.failed++;
+        await supabase.from("renter_notice").update({ status: "failed", error: res.error ?? "sms_failed" }).eq("id", row.id);
+        continue;
+      }
+      counts.sent++;
+      await supabase.from("renter_notice").update({
+        status: "sent", sent_at: new Date().toISOString(), provider_message_id: res.id ?? null, error: null,
+      }).eq("id", row.id);
+      await supabase.from("communication_event").insert({
+        tenant_id: row.tenant_id, customer_id: row.customer_id,
+        channel: "sms", direction: "outbound", event_type: "message",
+        external_reference: res.id ?? null,
+        payload: { to: row.phone, body: decision.body, automated: true, step: `notice_${row.kind}` },
+      });
+    } catch (e) {
+      counts.failed++;
+      console.error("[renter-notices] row failed:", (e as Error).message);
+      await supabase.from("renter_notice").update({ status: "failed", error: `exception: ${(e as Error).message}`.slice(0, 200) }).eq("id", row.id);
+    }
+  }
+  return NextResponse.json({ success: true, claimed: (claimed ?? []).length, ...counts, smsConfigured });
+}
