@@ -58,7 +58,7 @@ export function renderTemplate(t: string, vars: Record<string, string>): string 
 export type InboundKeyword = "stop" | "start" | "help" | "yes" | "change" | null;
 
 const STOP_WORDS = new Set(["stop", "stopall", "unsubscribe", "cancel", "end", "quit", "revoke", "optout"]);
-const STOP_PHRASES =
+export const STOP_PHRASES =
   /\b(stop (texting|messaging|calling|contacting)|do not (text|call|contact)|don'?t (text|call|contact)|leave me alone|remove me|take me off|opt[ -]?out|no more (texts|messages|calls))\b/i;
 
 /** When unsure, an opt-out wins: honoring a stop we didn't need is cheap. */
