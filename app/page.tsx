@@ -105,9 +105,6 @@ export default async function Home() {
               <a href="#apply" className="button-primary">
                 Find My Car
               </a>
-              <a href="/apply" className="button-secondary">
-                Continue My Application
-              </a>
             </div>
             <div className="benefit-strip">
               <span>Unlimited mileage</span>
@@ -544,9 +541,6 @@ export default async function Home() {
             <a href="#apply" className="button-primary">
               Find My Car
             </a>
-            <a href="/apply" className="button-secondary">
-              Continue My Application
-            </a>
           </div>
           <p className="muted-text" style={{ color: "rgba(255,255,255,0.6)", marginTop: 20, fontSize: 14 }}>
             No credit check. No commitment to apply. Takes about a minute.
@@ -564,6 +558,9 @@ export default async function Home() {
             <a href={`tel:${PHONE_TEL}`} style={{ color: "rgba(255,255,255,0.8)" }}>
               {PHONE_DISPLAY}
             </a>
+          </p>
+          <p style={{ margin: "0 0 8px" }}>
+            Already started? <a href="/apply">Continue your application</a>
           </p>
           <p style={{ margin: 0 }}>
             <a href="/terms">Terms</a> · <a href="/privacy">Privacy Policy</a>
