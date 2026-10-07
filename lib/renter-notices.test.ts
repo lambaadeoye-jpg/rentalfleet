@@ -58,3 +58,47 @@ describe("decideNotice", () => {
     expect(decideNotice(row(), NIGHT, true, null)).toEqual({ action: "defer", reason: "quiet_hours" });
   });
 });
+
+describe("check-ins and referral ask", () => {
+  const ctx = { siteUrl: "https://rentzivo.com/", firstName: "Ann", referralCode: "ABCD2345" };
+  it("check-ins point to the portal and promise nothing about timing", () => {
+    for (const k of ["checkin_day1", "checkin_day3"] as const) {
+      const t = noticeBody(k, {}, null, ctx)!;
+      expect(t).toContain("Hi Ann,");
+      expect(t).toContain("https://rentzivo.com/portal");
+      expect(t).toContain("Reply STOP");
+      expect(t).not.toMatch(/within \d+ ?(hours|days)|guarantee|deposit/i);
+    }
+  });
+  it("referral ask carries the renter's own link, and nothing without a code", () => {
+    expect(noticeBody("referral_ask", {}, null, ctx)).toContain("https://rentzivo.com/?ref=ABCD2345");
+    expect(noticeBody("referral_ask", {}, null, { ...ctx, referralCode: "" })).toBeNull();
+    expect(noticeBody("referral_ask", {}, null, { ...ctx, referralCode: null })).toBeNull();
+  });
+  it("every new text fits in two segments", () => {
+    for (const k of ["checkin_day1", "checkin_day3", "referral_ask"] as const) {
+      expect(noticeBody(k, {}, null, ctx)!.length).toBeLessThanOrEqual(306);
+    }
+  });
+  it("check-ins are skipped unless the rental is still running", () => {
+    expect(decideNotice(row({ kind: "checkin_day1", rental_status: "active" }), NOON, true, null).action).toBe("send");
+    expect(decideNotice(row({ kind: "checkin_day3", rental_status: "extended" }), NOON, true, null).action).toBe("send");
+    for (const st of ["returned", "cancelled", "closed", null, undefined]) {
+      expect(decideNotice(row({ kind: "checkin_day1", rental_status: st }), NOON, true, null))
+        .toEqual({ action: "skip", reason: "rental_not_active" });
+    }
+  });
+  it("the referral ask needs recorded consent and an active rental", () => {
+    const base = { kind: "referral_ask" as const, rental_status: "active", referral_code: "ABCD2345" };
+    expect(decideNotice(row({ ...base, has_consent: false }), NOON, true, null)).toEqual({ action: "skip", reason: "no_marketing_consent" });
+    expect(decideNotice(row({ ...base, has_consent: true }), NOON, true, null).action).toBe("send");
+    expect(decideNotice(row({ ...base, has_consent: true, rental_status: "returned" }), NOON, true, null))
+      .toEqual({ action: "skip", reason: "rental_not_active" });
+    expect(decideNotice(row({ ...base, has_consent: true, referral_code: null }), NOON, true, null))
+      .toEqual({ action: "skip", reason: "nothing_to_say" });
+  });
+  it("check-ins still wait for quiet hours instead of being dropped", () => {
+    expect(decideNotice(row({ kind: "checkin_day1", rental_status: "active" }), NIGHT, true, null))
+      .toEqual({ action: "defer", reason: "quiet_hours" });
+  });
+});

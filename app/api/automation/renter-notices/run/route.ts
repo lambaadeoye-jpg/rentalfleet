@@ -29,12 +29,13 @@ export async function POST(request: Request) {
   }
 
   const support = (process.env.SUPPORT_PHONE || "").trim() || null;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://rentzivo.com";
   const smsConfigured = twilioConfigured();
   const counts = { sent: 0, skipped: 0, deferred: 0, failed: 0 };
 
   for (const row of (claimed ?? []) as Claimed[]) {
     try {
-      const decision = decideNotice(row, new Date(), smsConfigured, support);
+      const decision = decideNotice(row, new Date(), smsConfigured, support, { siteUrl });
       if (decision.action === "skip") {
         counts.skipped++;
         await supabase.from("renter_notice").update({ status: "skipped", error: decision.reason }).eq("id", row.id);

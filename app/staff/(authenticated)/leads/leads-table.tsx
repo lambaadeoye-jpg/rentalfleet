@@ -12,6 +12,7 @@ type Lead = {
   stage: string;
   source: string | null;
   created_at: string;
+  details_completed_at?: string | null;
   platforms: string[];
 };
 
@@ -66,6 +67,9 @@ export default function LeadsTable({ leads, stages }: { leads: Lead[]; stages: s
             <tr key={lead.id} style={{ borderBottom: "1px solid var(--border)" }}>
               <td style={{ padding: "12px 16px", fontWeight: 600 }}>
                 {lead.first_name} {lead.last_name}
+                {lead.details_completed_at === null && (
+                  <div className="muted-text" style={{ fontSize: 11, fontWeight: 400 }}>Step 2 not finished</div>
+                )}
               </td>
               <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
                 <div>{lead.phone}</div>

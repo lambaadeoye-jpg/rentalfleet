@@ -27,6 +27,11 @@ export const N8N_WEBHOOK_PATHS = {
   inboxNewMessageAlert: "fleet-rental-inbox-new-message-alert",
   // Sends one outreach email (welcome/nudge/help). Fired by the outreach dispatcher.
   outreachEmail: "fleet-rental-outreach-email",
+  // Application lifecycle events (started, submitted, each document upload). The approve/decline event is
+  // applicationDecision above. Receivers in n8n are optional: with none listening these are harmless no-ops.
+  applicationStarted: "fleet-rental-application-started",
+  applicationSubmitted: "fleet-rental-application-submitted",
+  applicationDocumentUploaded: "fleet-rental-application-document-uploaded",
 } as const;
 
 export async function fireN8nWebhook(

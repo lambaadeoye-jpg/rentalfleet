@@ -7,6 +7,8 @@ import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { sanitizeAttribution, deriveSource, type Attribution } from "@/lib/attribution";
 import { CONTACT_CONSENT_TEXT, CONTACT_CONSENT_VERSION } from "@/lib/contact-consent";
 import { isValidEmail, isValidUsPhone } from "@/lib/contact-validation";
+import { validateStep1, validateStep2, cleanStep2 } from "@/lib/lead-steps";
+import { generateUploadToken, hashUploadToken } from "@/lib/upload-token";
 
 export type SubmitLeadResult =
   | { success: true }
@@ -225,5 +227,190 @@ export async function submitLead(formData: {
     // etc.) that isn't one of the typed Postgrest error paths above --
     // guarantees the caller always gets a real result, never a hang.
     return { success: false, error: "Something went wrong. Please try again in a moment." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Two-step lead form (migration 0084)
+// ---------------------------------------------------------------------------
+
+export type Step1Result =
+  | { success: true; leadId: string; token: string }
+  | { success: false; error: string };
+
+/**
+ * Step 1: saves the lead the moment they give name, mobile, email, platform, need-by date and (optionally) consent.
+ * A lead who stops here is still a real lead, so outreach starts now. The last name is saved empty and filled in at
+ * step 2. Returns a one-time token; only its hash is stored. Same discipline as submitLead: never throws, no
+ * read-back (anon has no SELECT), id generated here.
+ */
+export async function submitLeadStep1(formData: {
+  firstName: string;
+  phone: string;
+  email: string;
+  otherPlatformDetail: string;
+  pickupDate: string | null;
+  gigPlatformIds: string[];
+  referralCode?: string;
+  contactConsent?: boolean;
+  attribution?: Attribution;
+}): Promise<Step1Result> {
+  try {
+    const invalid = validateStep1(formData);
+    if (invalid) return { success: false, error: invalid };
+    const firstName = formData.firstName.trim();
+    const phone = formData.phone.trim();
+    const email = formData.email.trim();
+
+    const attribution = sanitizeAttribution(formData.attribution);
+    const source = deriveSource(attribution, "homepage");
+
+    const consented = formData.contactConsent === true;
+    let consentIp: string | null = null;
+    let consentUa: string | null = null;
+    if (consented) {
+      try {
+        const h = await headers();
+        consentIp = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim().slice(0, 64) || null;
+        consentUa = (h.get("user-agent") ?? "").slice(0, 300) || null;
+      } catch {
+        // Header access failing must not lose the lead.
+      }
+    }
+
+    const supabase = createPublicClient();
+    const { data: tenant, error: tenantError } = await supabase
+      .from("tenant").select("id").eq("status", "active").limit(1).maybeSingle();
+    if (tenantError || !tenant) {
+      return { success: false, error: "Something went wrong on our end. Please try again shortly." };
+    }
+
+    // Watch-list check on what we have (name is first name only until step 2, which re-checks).
+    let redFlagMatched = false;
+    let redFlagMatchType: string | null = null;
+    const { data: redFlagResult } = await supabase.rpc("check_red_flag", {
+      p_tenant_id: tenant.id, p_phone: phone, p_email: email, p_first_name: firstName, p_last_name: "",
+    });
+    if (redFlagResult && redFlagResult.length > 0) {
+      redFlagMatched = redFlagResult[0].matched;
+      redFlagMatchType = redFlagResult[0].match_type;
+    }
+
+    const leadId = randomUUID();
+    const { token, hash } = generateUploadToken();
+
+    const { error: insertError } = await supabase.from("lead").insert({
+      id: leadId,
+      tenant_id: tenant.id,
+      first_name: firstName,
+      last_name: "",
+      phone,
+      email,
+      pickup_date: formData.pickupDate || null,
+      red_flag_matched: redFlagMatched,
+      red_flag_match_type: redFlagMatchType,
+      source,
+      stage: "new",
+      details_token_hash: hash,
+      utm_source: attribution.utmSource ?? null,
+      utm_medium: attribution.utmMedium ?? null,
+      utm_campaign: attribution.utmCampaign ?? null,
+      utm_content: attribution.utmContent ?? null,
+      utm_term: attribution.utmTerm ?? null,
+      click_id: attribution.clickId ?? null,
+      landing_path: attribution.landingPath ?? null,
+      referrer: attribution.referrer ?? null,
+      contact_consent_at: consented ? new Date().toISOString() : null,
+      contact_consent_text: consented ? CONTACT_CONSENT_TEXT : null,
+      contact_consent_version: consented ? CONTACT_CONSENT_VERSION : null,
+      consent_ip: consentIp,
+      consent_user_agent: consentUa,
+      driving_for: formData.otherPlatformDetail.trim() || null,
+    });
+    if (insertError) {
+      return { success: false, error: "We couldn't submit your request. Please try again." };
+    }
+
+    if (formData.gigPlatformIds.length > 0) {
+      // Best-effort: the lead itself already landed even if this fails.
+      await supabase.from("lead_gig_platform").insert(
+        formData.gigPlatformIds.map((gig_platform_id) => ({ tenant_id: tenant.id, lead_id: leadId, gig_platform_id })),
+      );
+    }
+
+    if (formData.referralCode?.trim()) {
+      try {
+        await supabase.rpc("link_referral", { p_referral_code: formData.referralCode.trim(), p_lead_id: leadId });
+      } catch {
+        // A bad code must never fail the lead.
+      }
+    }
+
+    void fireN8nWebhook(N8N_WEBHOOK_PATHS.newLead, {
+      leadId,
+      firstName,
+      lastName: "",
+      phone,
+      email,
+      platformIds: formData.gigPlatformIds,
+      hasDriversLicense: null,
+      drivingStatus: null,
+      urgency: null,
+      redFlagMatched,
+      redFlagMatchType,
+      source,
+      utmSource: attribution.utmSource ?? null,
+      utmMedium: attribution.utmMedium ?? null,
+      utmCampaign: attribution.utmCampaign ?? null,
+      landingPath: attribution.landingPath ?? null,
+      contactConsent: consented,
+      referralCode: formData.referralCode?.trim() || null,
+      formStep: 1,
+    });
+
+    return { success: true, leadId, token };
+  } catch {
+    return { success: false, error: "Something went wrong. Please try again in a moment." };
+  }
+}
+
+export type Step2Result = { success: true } | { success: false; error: string; requestSaved: boolean };
+
+/** Step 2: last name and the rest. Works only with the step-1 token, once, within 7 days. */
+export async function completeLeadStep2(input: {
+  leadId: string;
+  token: string;
+  lastName: string;
+  preferredCategoryId: string | null;
+  rentalOption?: string | null;
+  urgency?: string | null;
+  additionalInfo?: string | null;
+  heardAbout?: string | null;
+}): Promise<Step2Result> {
+  try {
+    const invalid = validateStep2(input);
+    if (invalid) return { success: false, error: invalid, requestSaved: true };
+    if (!input.leadId || !input.token) {
+      return { success: false, error: "We couldn't save those details, but your request is saved.", requestSaved: true };
+    }
+    const c = cleanStep2(input);
+    const supabase = createPublicClient();
+    const { data, error } = await supabase.rpc("complete_lead_details", {
+      p_lead_id: input.leadId,
+      p_token_hash: hashUploadToken(input.token),
+      p_last_name: c.lastName,
+      p_category_id: input.preferredCategoryId || null,
+      p_rental_option: c.rentalOption,
+      p_urgency: c.urgency,
+      p_other_platform: null,
+      p_notes: c.additionalInfo,
+      p_heard_about: c.heardAbout,
+    });
+    if (error || data !== true) {
+      return { success: false, error: "We couldn't save those last details, but your request is saved and we'll follow up.", requestSaved: true };
+    }
+    return { success: true };
+  } catch {
+    return { success: false, error: "We couldn't save those last details, but your request is saved and we'll follow up.", requestSaved: true };
   }
 }

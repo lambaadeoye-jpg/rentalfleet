@@ -11,7 +11,7 @@ export default async function LeadsPage() {
   // signed-in staff member's own tenant automatically.
   const { data: leads } = await supabase
     .from("lead")
-    .select("id, first_name, last_name, email, phone, stage, source, created_at")
+    .select("id, first_name, last_name, email, phone, stage, source, created_at, details_completed_at")
     .order("created_at", { ascending: false });
 
   const { data: platformLinks } = await supabase

@@ -3,6 +3,7 @@
 import { randomBytes } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashUploadToken } from "@/lib/upload-token";
+import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import {
   UPLOAD_TOKEN_RE, checkUpload, isUploadDocumentType, extensionFor, mimeFor, uploadErrorMessage, MAX_UPLOAD_BYTES,
 } from "@/lib/upload-validation";
@@ -53,5 +54,6 @@ export async function uploadViaToken(
     await admin.storage.from("applicant-documents").remove([path]);
     return { success: false, error: uploadErrorMessage(recordError.message) };
   }
+  void fireN8nWebhook(N8N_WEBHOOK_PATHS.applicationDocumentUploaded, { customerId: req.customer_id, documentType, via: "upload_link" });
   return { success: true };
 }

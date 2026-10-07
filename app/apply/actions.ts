@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { generateReferralCode } from "@/lib/referral-code";
+import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 
 // ---------------------------------------------------------------------------
 // AUTH: anonymous-first entry. Starting the application no longer requires
@@ -207,6 +208,12 @@ export async function getOrCreateApplication(): Promise<
     }
     applicationId = newApplication.id;
     applicationStatus = newApplication.status;
+    // Fire-and-forget: tells automation a new applicant has begun (never blocks or fails the application).
+    void fireN8nWebhook(N8N_WEBHOOK_PATHS.applicationStarted, {
+      applicationId,
+      customerId,
+      customerEmail: user.email ?? null,
+    });
   }
 
   const { data: customer } = await supabase
@@ -401,6 +408,8 @@ export async function uploadApplicantDocument(
 
   if (recordError) return { success: false, error: "Upload saved but couldn't be recorded. Contact support." };
 
+  void fireN8nWebhook(N8N_WEBHOOK_PATHS.applicationDocumentUploaded, { customerId, documentType, via: "application" });
+
   return { success: true };
 }
 
@@ -584,5 +593,26 @@ export async function submitApplication(
     .eq("id", applicationId);
 
   if (error) return { success: false, error: "Couldn't submit. Please try again." };
+
+  // Best-effort: tell automation the application is in. Details are read after the save, so a lookup problem
+  // never affects the submission itself.
+  try {
+    const { data: app } = await supabase
+      .from("application")
+      .select("customer_id, customer:customer_id(first_name, last_name, phone, email)")
+      .eq("id", applicationId)
+      .maybeSingle();
+    const c = app?.customer as { first_name: string | null; last_name: string | null; phone: string | null; email: string | null } | null | undefined;
+    void fireN8nWebhook(N8N_WEBHOOK_PATHS.applicationSubmitted, {
+      applicationId,
+      customerId: app?.customer_id ?? null,
+      customerFirstName: c?.first_name ?? null,
+      customerLastName: c?.last_name ?? null,
+      customerPhone: c?.phone ?? null,
+      customerEmail: c?.email ?? null,
+    });
+  } catch {
+    // Swallowed deliberately: see above.
+  }
   return { success: true };
 }

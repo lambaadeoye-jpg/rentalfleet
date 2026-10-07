@@ -4,19 +4,42 @@ export const dynamic = "force-dynamic";
 
 const RANGES = [7, 30, 90];
 
-export default async function FunnelPage({ searchParams }: { searchParams: Promise<{ days?: string }> }) {
+const GROUPS = [
+  { key: "source", label: "Channel" },
+  { key: "campaign", label: "Campaign" },
+  { key: "heard_about", label: "\"How did you hear about us?\"" },
+] as const;
+
+type SourceRow = {
+  label: string; leads_count: number; step2_count: number; applied_count: number; approved_count: number;
+  signed_count: number; paid_count: number; picked_up_count: number;
+};
+
+function pct(n: number, d: number): string {
+  return d > 0 ? `${Math.round((n / d) * 100)}%` : "–";
+}
+
+export default async function FunnelPage({ searchParams }: { searchParams: Promise<{ days?: string; by?: string }> }) {
   const sp = await searchParams;
   const parsed = Number(sp.days);
   const days = RANGES.includes(parsed) ? parsed : 30;
+  const by = GROUPS.some((g) => g.key === sp.by) ? (sp.by as string) : "source";
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("funnel_summary", { p_days: days });
+  const [{ data, error }, { data: srcData, error: srcError }] = await Promise.all([
+    supabase.rpc("funnel_summary", { p_days: days }),
+    supabase.rpc("funnel_by_source", { p_days: days, p_group: by }),
+  ]);
+  const srcRows = ((srcData ?? []) as SourceRow[]).map((r) => ({
+    label: r.label, leads: Number(r.leads_count), step2: Number(r.step2_count), applied: Number(r.applied_count),
+    approved: Number(r.approved_count), signed: Number(r.signed_count), paid: Number(r.paid_count), pickedUp: Number(r.picked_up_count),
+  }));
   const rows = ((data ?? []) as { stage_order: number; stage: string; leads_count: number }[]).map((r) => ({
     order: Number(r.stage_order), stage: r.stage, count: Number(r.leads_count),
   }));
   const top = rows[0]?.count ?? 0;
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 820 }}>
+    <div style={{ padding: "32px 40px", maxWidth: 980 }}>
       <h1 style={{ fontSize: 22, marginBottom: 4 }}>Funnel</h1>
       <p className="muted-text" style={{ marginBottom: 16 }}>
         Of the leads created in the period, how many reached each step. Steps are counted per person, so someone who skips
@@ -24,7 +47,7 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
       </p>
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {RANGES.map((d) => (
-          <a key={d} href={`/staff/funnel?days=${d}`} className="btn"
+          <a key={d} href={`/staff/funnel?days=${d}&by=${by}`} className="btn"
             style={{ fontWeight: d === days ? 700 : 400, textDecoration: d === days ? "underline" : "none" }}>
             Last {d} days
           </a>
@@ -55,6 +78,51 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
               </div>
             );
           })}
+        </div>
+      )}
+
+      <h2 style={{ fontSize: 18, margin: "36px 0 4px" }}>By source</h2>
+      <p className="muted-text" style={{ marginBottom: 12 }}>
+        Where leads came from and how far each group got. Small groups swing a lot: judge a source on at least 20 to 30 leads.
+      </p>
+      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+        {GROUPS.map((g) => (
+          <a key={g.key} href={`/staff/funnel?days=${days}&by=${g.key}`} className="btn"
+            style={{ fontWeight: g.key === by ? 700 : 400, textDecoration: g.key === by ? "underline" : "none" }}>
+            {g.label}
+          </a>
+        ))}
+      </div>
+      {srcError ? (
+        <p>Couldn&apos;t load the source breakdown. Please try again.</p>
+      ) : srcRows.length === 0 ? (
+        <p className="muted-text">No leads in this period yet.</p>
+      ) : (
+        <div className="card" style={{ padding: 0, overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+            <thead>
+              <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
+                {["", "Leads", "Finished step 2", "Applied", "Approved", "Signed", "Paid", "Picked up", "Lead → picked up"].map((h) => (
+                  <th key={h} style={{ padding: "10px 14px", fontSize: 12, fontWeight: 700 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {srcRows.map((r) => (
+                <tr key={r.label} style={{ borderBottom: "1px solid var(--border)" }}>
+                  <td style={{ padding: "10px 14px", fontWeight: 600 }}>{r.label}</td>
+                  <td style={{ padding: "10px 14px" }}>{r.leads}</td>
+                  <td style={{ padding: "10px 14px" }}>{r.step2} <span className="muted-text">({pct(r.step2, r.leads)})</span></td>
+                  <td style={{ padding: "10px 14px" }}>{r.applied} <span className="muted-text">({pct(r.applied, r.leads)})</span></td>
+                  <td style={{ padding: "10px 14px" }}>{r.approved}</td>
+                  <td style={{ padding: "10px 14px" }}>{r.signed}</td>
+                  <td style={{ padding: "10px 14px" }}>{r.paid}</td>
+                  <td style={{ padding: "10px 14px" }}>{r.pickedUp}</td>
+                  <td style={{ padding: "10px 14px", fontWeight: 600 }}>{pct(r.pickedUp, r.leads)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
