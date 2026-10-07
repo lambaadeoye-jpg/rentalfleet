@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, type FormEvent } from "react";
+import { useState, useRef, useEffect, useId, type FormEvent } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { submitLeadStep1, completeLeadStep2 } from "./actions";
@@ -23,6 +23,7 @@ export default function LeadForm({
   /** Recorded as the button when the visitor used the form without clicking any button first. */
   ctaDefault?: string;
 }) {
+  const uid = useId(); // two forms render on the homepage; keep field ids unique
   const [submitted, setSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
   // Step 1 saves the lead right away; step 2 finishes it using this one-time token.
@@ -177,14 +178,14 @@ export default function LeadForm({
         </p>
 
         <div className="field">
-          <label htmlFor="lastName">Last name *</label>
-          <input id="lastName" name="lastName" required autoComplete="family-name" />
+          <label htmlFor={`${uid}-lastName`}>Last name *</label>
+          <input id={`${uid}-lastName`} name="lastName" required autoComplete="family-name" />
         </div>
 
         <div className="form-row">
           <div className="field">
-            <label htmlFor="preferredCategoryId">Preferred vehicle category</label>
-            <select id="preferredCategoryId" name="preferredCategoryId" defaultValue="">
+            <label htmlFor={`${uid}-preferredCategoryId`}>Preferred vehicle category</label>
+            <select id={`${uid}-preferredCategoryId`} name="preferredCategoryId" defaultValue="">
               <option value="">No preference</option>
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -194,8 +195,8 @@ export default function LeadForm({
             </select>
           </div>
           <div className="field">
-            <label htmlFor="urgency">How soon do you need a car?</label>
-            <select id="urgency" name="urgency" defaultValue="">
+            <label htmlFor={`${uid}-urgency`}>How soon do you need a car?</label>
+            <select id={`${uid}-urgency`} name="urgency" defaultValue="">
               <option value="">Select one</option>
               <option value="today">Today</option>
               <option value="this_week">This week</option>
@@ -220,8 +221,8 @@ export default function LeadForm({
         </div>
 
         <div className="field">
-          <label htmlFor="heardAbout">How did you hear about us? (optional)</label>
-          <select id="heardAbout" name="heardAbout" defaultValue="">
+          <label htmlFor={`${uid}-heardAbout`}>How did you hear about us? (optional)</label>
+          <select id={`${uid}-heardAbout`} name="heardAbout" defaultValue="">
             <option value="">Select one</option>
             {HEARD_ABOUT_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -232,8 +233,8 @@ export default function LeadForm({
         </div>
 
         <div className="field">
-          <label htmlFor="additionalInfo">Additional information (optional)</label>
-          <textarea id="additionalInfo" name="additionalInfo" rows={3} />
+          <label htmlFor={`${uid}-additionalInfo`}>Additional information (optional)</label>
+          <textarea id={`${uid}-additionalInfo`} name="additionalInfo" rows={3} />
         </div>
 
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
@@ -264,18 +265,18 @@ export default function LeadForm({
 
       <div className="form-row">
         <div className="field">
-          <label htmlFor="firstName">First name *</label>
-          <input id="firstName" name="firstName" required autoComplete="given-name" />
+          <label htmlFor={`${uid}-firstName`}>First name *</label>
+          <input id={`${uid}-firstName`} name="firstName" required autoComplete="given-name" />
         </div>
         <div className="field">
-          <label htmlFor="phone">Mobile phone number *</label>
-          <input id="phone" name="phone" type="tel" required autoComplete="tel" />
+          <label htmlFor={`${uid}-phone`}>Mobile phone number *</label>
+          <input id={`${uid}-phone`} name="phone" type="tel" required autoComplete="tel" />
         </div>
       </div>
 
       <div className="field">
-        <label htmlFor="email">Email *</label>
-        <input id="email" name="email" type="email" required autoComplete="email" />
+        <label htmlFor={`${uid}-email`}>Email *</label>
+        <input id={`${uid}-email`} name="email" type="email" required autoComplete="email" />
       </div>
 
       <div className="field">
@@ -302,8 +303,8 @@ export default function LeadForm({
       </div>
 
       <div className="field">
-        <label htmlFor="pickupDate">Desired start date</label>
-        <input id="pickupDate" name="pickupDate" type="date" />
+        <label htmlFor={`${uid}-pickupDate`}>Desired start date</label>
+        <input id={`${uid}-pickupDate`} name="pickupDate" type="date" />
       </div>
 
       <label className="checkbox-item" style={{ alignItems: "flex-start", marginBottom: 14, fontSize: 13 }}>

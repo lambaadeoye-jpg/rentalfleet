@@ -5,6 +5,7 @@ import CtaTracker from "./cta-tracker";
 import { Suspense } from "react";
 import LeadForm from "./lead-form";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
+import { SERVICE_AREA_CITIES } from "@/lib/service-areas";
 import {
   Gauge,
   ShieldCheck,
@@ -66,6 +67,57 @@ export default async function Home() {
 
   const brandName = tenant?.name ?? "Fleet Rental";
 
+  // FAQ content lives in one list so the visible answers and the FAQPage structured data can never drift apart.
+  const faqs: { q: string; a: string; schema?: boolean }[] = [
+    { q: "Do you offer monthly rentals?", a: "No. We do not offer a monthly rental plan." },
+    { q: "What's the minimum rental period?", a: "The minimum rental period is one week, so every rental is a weekly rental or longer." },
+    {
+      q: "How does daily pricing work?",
+      a:
+        (pricing
+          ? `The daily option is $${pricing.total} for the first ${pricing.days} days, followed by $${pricing.perDay}/day after the first ${pricing.days} days. `
+          : "Daily pricing is shown during rental selection. ") + "A one-week minimum rental applies.",
+    },
+    {
+      q: "Do I need my own insurance?",
+      a: "Not if you don't have any. Bring your own coverage if you have it. If you don't, insurance is included with your rental. Either way, you'll be covered before you drive.",
+    },
+    { q: "Is mileage limited?", a: "Unlimited mileage is included." },
+    { q: "What's the minimum age to rent?", a: `You must be at least ${MINIMUM_AGE} years old with a valid driver's license.` },
+    {
+      q: "Do you run a credit check?",
+      a: "We don't use a traditional credit check as part of our rental process. Other eligibility, identity, driving, insurance, payment, and screening requirements may apply.",
+    },
+    {
+      q: "Where do I pick up the car?",
+      a: "Pickup is in Nashville and Murfreesboro. We confirm the exact location and time with you once you're approved.",
+    },
+    { q: "Do I pick the exact car?", a: "You select a vehicle category. We assign an available vehicle within that category." },
+    {
+      q: "Can I finish my application later?",
+      a: "Yes. Your application can be saved and continued online. Email and SMS reminders can provide a secure link back to your application.",
+    },
+    { q: "How do I get support during my rental?", a: "Customer support is initiated through the customer portal." },
+    {
+      q: "Can I apply or ask questions by phone instead of online?",
+      a: `Yes — call ${PHONE_DISPLAY} and we can walk you through availability, pricing, and the application process directly.`,
+      schema: PHONE_IS_LIVE, // don't publish the placeholder number into search results
+    },
+    {
+      q: "Can I use this rental for DoorDash, Uber Eats, or Instacart?",
+      a: "Yes. Our vehicles are intended for drivers working across major rideshare, delivery, courier, and independent-driving platforms, subject to applicable platform, vehicle, driver, insurance, and local requirements.",
+    },
+    {
+      q: "Do I need a specific vehicle for Instacart or Amazon Flex?",
+      a: "Vehicle requirements vary by platform. You select a category and we assign an available vehicle within it — our team can help confirm what a given platform currently requires as part of your application.",
+    },
+    {
+      q: "Can I drive for more than one platform with the same rental?",
+      a: "Yes — our vehicles aren't limited to a single platform. Many drivers run rideshare, delivery, and courier apps on the same vehicle, subject to each platform's own requirements.",
+    },
+  ];
+
+
   return (
     <>
       {/* AutoRental structured data (schema.org) -- tells search engines
@@ -82,14 +134,26 @@ export default async function Home() {
             "@type": "AutoRental",
             name: brandName,
             description:
-              "Vehicle rentals for rideshare, delivery, courier, and independent-driving work in Nashville and Murfreesboro, Tennessee.",
+              "Weekly and daily car rentals for rideshare, delivery, courier, and independent-driving work in Nashville, Tennessee.",
             url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rentzivo.com",
             ...(PHONE_IS_LIVE ? { telephone: PHONE_TEL } : {}),
-            areaServed: {
+            areaServed: ["Nashville", "Murfreesboro"].map((name) => ({
               "@type": "City",
-              name: "Nashville",
+              name,
               containedInPlace: { "@type": "State", name: "Tennessee" },
-            },
+            })),
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: faqs
+              .filter((f) => f.schema !== false)
+              .map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
           }),
         }}
       />
@@ -102,6 +166,8 @@ export default async function Home() {
           src="/images/hero-road-sunset.jpg"
           alt="Sedan on a highway at sunset — a rideshare and delivery-ready vehicle for gig drivers"
           className="hero-bg-image"
+          fetchPriority="high"
+          decoding="async"
         />
         <div className="container">
           <nav className="nav-bar">
@@ -128,12 +194,16 @@ export default async function Home() {
 
           <div className="hero-content hero-grid">
             <div className="hero-copy">
-              <div className="eyebrow">Pickup in Nashville &amp; Murfreesboro</div>
+              <div className="eyebrow">Gig, Rideshare &amp; Delivery Car Rentals in Nashville</div>
               <h1>Car rentals for rideshare &amp; delivery drivers.</h1>
               <p className="hero-sub">
                 {pricing
                   ? `$${pricing.total} for your first ${pricing.days} days, then $${pricing.perDay}/day.`
                   : "Reliable, fuel-efficient cars for working drivers."}
+              </p>
+              <p className="hero-keywords">
+                Weekly and daily car rentals for Uber, Lyft, DoorDash, Instacart and Amazon Flex
+                drivers in Nashville, TN.
               </p>
               <div className="benefit-strip">
                 <span>Unlimited mileage</span>
@@ -313,8 +383,8 @@ export default async function Home() {
             </div>
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
-            Unlimited mileage included on every rental. Insurance is included if you don&apos;t have your
-            own. We do not offer a monthly rental plan.
+            Unlimited mileage included on every rental. Rentals start at one week, then continue day by day.
+            Insurance is included if you don&apos;t have your own. We do not offer a monthly rental plan.
           </p>
           <SectionCta name="after_pricing" label="Check Availability" />
         </div>
@@ -457,16 +527,19 @@ export default async function Home() {
               "Hillsboro Village",
               "Goodlettsville",
               "Nolensville",
-            ].map((area) => (
-                <span
-                  key={area}
-                  className="platform-pill"
-                  style={{ background: "var(--cloud)", border: "1px solid var(--border)", color: "var(--text)" }}
-                >
+            ].map((area) => {
+              const pill = { background: "var(--cloud)", border: "1px solid var(--border)", color: "var(--text)" };
+              const city = SERVICE_AREA_CITIES.find((c) => c.displayName === area);
+              return city ? (
+                <a key={area} href={`/${city.slug}`} className="platform-pill" style={{ ...pill, textDecoration: "none", fontWeight: 600 }}>
+                  {area}
+                </a>
+              ) : (
+                <span key={area} className="platform-pill" style={pill}>
                   {area}
                 </span>
-              )
-            )}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -476,100 +549,12 @@ export default async function Home() {
         <div className="container" style={{ maxWidth: 720 }}>
           <h2 className="section-title">Frequently asked questions</h2>
           <div style={{ marginTop: 24 }}>
-            <details className="faq-item">
-              <summary>Do you offer monthly rentals?</summary>
-              <p>No. We do not offer a monthly rental plan.</p>
-            </details>
-            <details className="faq-item">
-              <summary>What&apos;s the minimum rental period?</summary>
-              <p>The minimum rental period is one week.</p>
-            </details>
-            <details className="faq-item">
-              <summary>How does daily pricing work?</summary>
-              <p>
-                {pricing
-                  ? `The daily option is $${pricing.total} for the first ${pricing.days} days, followed by $${pricing.perDay}/day after the first ${pricing.days} days. `
-                  : "Daily pricing is shown during rental selection. "}
-                A one-week minimum rental applies.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>Do I need my own insurance?</summary>
-              <p>
-                Not if you don&apos;t have any. Bring your own coverage if you have it. If you
-                don&apos;t, insurance is included with your rental. Either way, you&apos;ll be
-                covered before you drive.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>Is mileage limited?</summary>
-              <p>Unlimited mileage is included.</p>
-            </details>
-            <details className="faq-item">
-              <summary>What&apos;s the minimum age to rent?</summary>
-              <p>You must be at least {MINIMUM_AGE} years old with a valid driver&apos;s license.</p>
-            </details>
-            <details className="faq-item">
-              <summary>Do you run a credit check?</summary>
-              <p>
-                We don&apos;t use a traditional credit check as part of our rental process.
-                Other eligibility, identity, driving, insurance, payment, and screening
-                requirements may apply.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>Where do I pick up the car?</summary>
-              <p>
-                Pickup is in Nashville and Murfreesboro. We confirm the exact location and time
-                with you once you&apos;re approved.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>Do I pick the exact car?</summary>
-              <p>You select a vehicle category. We assign an available vehicle within that category.</p>
-            </details>
-            <details className="faq-item">
-              <summary>Can I finish my application later?</summary>
-              <p>
-                Yes. Your application can be saved and continued online. Email and SMS
-                reminders can provide a secure link back to your application.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>How do I get support during my rental?</summary>
-              <p>Customer support is initiated through the customer portal.</p>
-            </details>
-            <details className="faq-item">
-              <summary>Can I apply or ask questions by phone instead of online?</summary>
-              <p>
-                Yes — call {PHONE_DISPLAY} and we can walk you through availability, pricing,
-                and the application process directly.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>Can I use this rental for DoorDash, Uber Eats, or Instacart?</summary>
-              <p>
-                Yes. Our vehicles are intended for drivers working across major rideshare,
-                delivery, courier, and independent-driving platforms, subject to applicable
-                platform, vehicle, driver, insurance, and local requirements.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>Do I need a specific vehicle for Instacart or Amazon Flex?</summary>
-              <p>
-                Vehicle requirements vary by platform. You select a category and we assign an
-                available vehicle within it — our team can help confirm what a given platform
-                currently requires as part of your application.
-              </p>
-            </details>
-            <details className="faq-item">
-              <summary>Can I drive for more than one platform with the same rental?</summary>
-              <p>
-                Yes — our vehicles aren&apos;t limited to a single platform. Many drivers run
-                rideshare, delivery, and courier apps on the same vehicle, subject to each
-                platform&apos;s own requirements.
-              </p>
-            </details>
+            {faqs.map((f) => (
+              <details className="faq-item" key={f.q}>
+                <summary>{f.q}</summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>

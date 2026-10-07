@@ -11,7 +11,7 @@ import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 
 const SITE_URL = "https://rentzivo.com";
-const TITLE = "Zivo | Gig Worker & Rideshare Car Rental — Get a Car. Get to Work. Get Moving.";
+const TITLE = "Gig Driver & Rideshare Car Rentals in Nashville | Zivo";
 const DESCRIPTION =
   "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville. No credit check, insurance included if you don't have your own.";
 

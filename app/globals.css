@@ -202,6 +202,14 @@ label {
   line-height: 1.5;
 }
 
+.hero-keywords {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.78);
+  max-width: 560px;
+  margin: -16px 0 24px;
+  line-height: 1.5;
+}
+
 .cta-row {
   display: flex;
   gap: 12px;

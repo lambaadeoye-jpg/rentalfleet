@@ -22,13 +22,14 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const city = getCityBySlug(citySlug);
   if (!city) return {};
 
-  const title = `Rideshare & Delivery Car Rental in ${city.displayName}, TN | Zivo`;
+  // The root layout's title template appends " | Zivo", so the page title omits it.
+  const title = `Rideshare & Delivery Car Rental in ${city.displayName}, TN`;
   return {
     title,
     description: city.metaDescription,
     alternates: { canonical: `/${city.slug}` },
     openGraph: {
-      title,
+      title: `${title} | Zivo`,
       description: city.metaDescription,
       url: `https://rentzivo.com/${city.slug}`,
       siteName: "Zivo",
@@ -135,6 +136,27 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
               </p>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section style={{ padding: "40px 20px 0", textAlign: "center" }}>
+        <div style={{ maxWidth: 640, margin: "0 auto" }}>
+          <h2 className="section-title" style={{ marginBottom: 12 }}>Pickup in {city.displayName}</h2>
+          <p className="muted-text" style={{ fontSize: 16 }}>
+            {city.localBlurb}
+            {city.nearby?.length ? ` We also serve nearby ${city.nearby.join(" and ")}.` : ""}
+          </p>
+          <p className="muted-text" style={{ fontSize: 15, marginTop: 12 }}>
+            Also available in:{" "}
+            {SERVICE_AREA_CITIES.filter((c) => c.slug !== city.slug).map((c, i) => (
+              <span key={c.slug}>
+                {i > 0 ? ", " : ""}
+                <a href={`/${c.slug}`}>{c.displayName}</a>
+              </span>
+            ))}
+            {" · "}
+            <a href="/">All of Middle Tennessee</a>
+          </p>
         </div>
       </section>
 
