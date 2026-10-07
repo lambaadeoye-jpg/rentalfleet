@@ -38,11 +38,11 @@ export default function CustomerSearch({
       </div>
 
       <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
+            <tr>
               {["Name", "Email", "Phone", "Status"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 }}>
+                <th key={h}>
                   {h}
                 </th>
               ))}
@@ -55,12 +55,12 @@ export default function CustomerSearch({
                 onClick={() => router.push(`/staff/customers/${c.id}`)}
                 style={{ borderBottom: "1px solid var(--border)", cursor: "pointer" }}
               >
-                <td style={{ padding: "12px 16px", fontWeight: 600 }}>
+                <td className="cell-strong">
                   {c.firstName} {c.lastName}
                 </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{c.email ?? "—"}</td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{c.phone ? formatPhone(c.phone) : "—"}</td>
-                <td style={{ padding: "12px 16px" }}>{sentenceCase(c.status)}</td>
+                <td className="cell-muted">{c.email ?? "—"}</td>
+                <td className="cell-muted">{c.phone ? formatPhone(c.phone) : "—"}</td>
+                <td>{sentenceCase(c.status)}</td>
               </tr>
             ))}
             {customers.length === 0 && (

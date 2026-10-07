@@ -44,7 +44,7 @@ export default function RecoveryList({
   return (
     <div style={{ maxWidth: 760 }}>
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Open a recovery case</h2>
+        <h2 className="card-title">Open a recovery case</h2>
         <label className="field">
           <span style={{ fontSize: 13, fontWeight: 600 }}>Rental</span>
           <select value={rentalId} onChange={(e) => setRentalId(e.target.value)}>
@@ -70,7 +70,7 @@ export default function RecoveryList({
         </button>
       </div>
 
-      <h2 style={{ fontSize: 16, marginBottom: 12 }}>Cases</h2>
+      <h2 className="card-title">Cases</h2>
       {!initialCases.length && <p className="muted-text" style={{ fontSize: 14 }}>No recovery cases yet.</p>}
       {initialCases.map((c) => (
         <Link key={c.id} href={`/staff/recovery/${c.id}`} style={{ textDecoration: "none", color: "inherit" }}>

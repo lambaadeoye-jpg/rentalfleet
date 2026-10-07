@@ -40,8 +40,8 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
   const top = rows[0]?.count ?? 0;
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 980 }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Funnel</h1>
+    <div className="page" style={{ maxWidth: 980 }}>
+      <h1 className="page-title">Funnel</h1>
       <p className="muted-text" style={{ marginBottom: 16 }}>
         Of the leads created in the period, how many reached each step. Steps are counted per person, so someone who skips
         ahead still counts at every step they reached.
@@ -98,9 +98,9 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
         <p className="muted-text">No leads in this period yet.</p>
       ) : (
         <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+          <table className="data-table">
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
+              <tr>
                 {["", "Leads", "Finished step 2", "Applied", "Approved", "Signed", "Paid", "Picked up", "Lead → picked up"].map((h) => (
                   <th key={h} style={{ padding: "10px 14px", fontSize: 12, fontWeight: 700 }}>{h}</th>
                 ))}
@@ -108,7 +108,7 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
             </thead>
             <tbody>
               {srcRows.map((r) => (
-                <tr key={r.label} style={{ borderBottom: "1px solid var(--border)" }}>
+                <tr key={r.label}>
                   <td style={{ padding: "10px 14px", fontWeight: 600 }}>{r.label}</td>
                   <td style={{ padding: "10px 14px" }}>{r.leads}</td>
                   <td style={{ padding: "10px 14px" }}>{r.step2} <span className="muted-text">({pct(r.step2, r.leads)})</span></td>

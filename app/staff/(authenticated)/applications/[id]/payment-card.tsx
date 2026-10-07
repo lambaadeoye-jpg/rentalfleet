@@ -26,7 +26,7 @@ export default function PaymentCard({ rentalId, status }: { rentalId: string; st
 
   return (
     <div className="card" style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 12 }}>Card payment</h2>
+      <h2 className="card-title">Card payment</h2>
       {status.paid ? (
         <>
           <p style={{ fontWeight: 600, color: "var(--signal-green, #16a34a)" }}>

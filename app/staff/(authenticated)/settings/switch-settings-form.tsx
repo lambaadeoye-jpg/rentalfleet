@@ -25,7 +25,7 @@ export default function SwitchSettingsForm({ initial }: { initial: SwitchState[]
 
   return (
     <div className="card" id="automation-switches" style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 6 }}>Automation switches</h2>
+      <h2 className="card-title card-title--tight">Automation switches</h2>
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 12 }}>
         Each switch saves as soon as you click it. Turning one off takes effect immediately.
       </p>

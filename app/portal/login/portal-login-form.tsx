@@ -28,7 +28,7 @@ export default function PortalLoginForm({ inactiveTimeout }: { inactiveTimeout: 
     return (
       <div className="card" style={{ maxWidth: 420, margin: "80px auto", textAlign: "center", padding: 40 }}>
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
-        <h1 style={{ fontSize: 24, marginBottom: 8 }}>Check your email</h1>
+        <h1 className="page-title" style={{ marginBottom: 8 }}>Check your email</h1>
         <p className="muted-text">
           We sent a secure sign-in link to <strong>{email}</strong>.
         </p>
@@ -40,7 +40,7 @@ export default function PortalLoginForm({ inactiveTimeout }: { inactiveTimeout: 
     <div style={{ maxWidth: 420, margin: "80px auto", padding: "0 24px" }}>
       <form onSubmit={handleSubmit} className="card">
         <Mail size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
-        <h1 style={{ fontSize: 24, marginBottom: 4 }}>Sign in to your account</h1>
+        <h1 className="page-title">Sign in to your account</h1>
         {inactiveTimeout && (
           <p style={{ fontSize: 13, color: "var(--warning, #b45309)", marginBottom: 12 }}>
             You were signed out after a period of inactivity. Sign in again to continue.

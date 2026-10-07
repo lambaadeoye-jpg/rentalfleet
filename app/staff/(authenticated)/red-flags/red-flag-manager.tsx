@@ -62,7 +62,7 @@ export default function RedFlagManager({
   return (
     <div style={{ maxWidth: 720 }}>
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Add an entry</h2>
+        <h2 className="card-title">Add an entry</h2>
         <div className="form-row">
           <label className="field">
             <span style={{ fontSize: 13, fontWeight: 600 }}>First name</span>
@@ -111,7 +111,7 @@ export default function RedFlagManager({
         </div>
       )}
 
-      <h2 style={{ fontSize: 16, marginBottom: 12 }}>Active entries</h2>
+      <h2 className="card-title">Active entries</h2>
       {activeEntries.length === 0 && <p className="muted-text" style={{ fontSize: 14, marginBottom: 20 }}>None yet.</p>}
       {activeEntries.map((e) => (
         <div key={e.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>

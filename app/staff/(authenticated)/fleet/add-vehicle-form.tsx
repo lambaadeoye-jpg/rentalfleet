@@ -49,7 +49,7 @@ export default function AddVehicleForm({ categories }: { categories: Category[] 
 
   return (
     <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 600 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 16 }}>Add a vehicle</h2>
+      <h2 className="card-title" style={{ marginBottom: 16 }}>Add a vehicle</h2>
 
       <label className="field">
         <span style={{ fontSize: 13, fontWeight: 600 }}>Category</span>

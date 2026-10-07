@@ -34,7 +34,7 @@ export default function CategoryList({ initialCategories }: { initialCategories:
   return (
     <div style={{ maxWidth: 560 }}>
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Add a category</h2>
+        <h2 className="card-title">Add a category</h2>
         <label className="field">
           <span style={{ fontSize: 13, fontWeight: 600 }}>Name</span>
           <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. SUV, Compact" />

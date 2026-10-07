@@ -48,7 +48,7 @@ export default function InviteForm({ roles }: { roles: Role[] }) {
 
   return (
     <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 480 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 16 }}>Invite a staff member</h2>
+      <h2 className="card-title" style={{ marginBottom: 16 }}>Invite a staff member</h2>
 
       <label className="field">
         <span style={{ fontSize: 13, fontWeight: 600 }}>Email</span>

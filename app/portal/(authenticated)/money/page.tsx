@@ -18,12 +18,12 @@ export default async function PortalMoneyPage() {
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 16 }}>Money</h1>
+      <h1 className="page-title" style={{ marginBottom: 16 }}>Money</h1>
 
       <UpdateCardButton />
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Security deposit</h2>
+        <h2 className="card-title">Security deposit</h2>
         {deposits && deposits.length > 0 ? (
           deposits.map((d, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 14 }}>
@@ -37,7 +37,7 @@ export default async function PortalMoneyPage() {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Charges</h2>
+        <h2 className="card-title">Charges</h2>
         {charges && charges.length > 0 ? (
           charges.map((c, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}>
@@ -51,7 +51,7 @@ export default async function PortalMoneyPage() {
       </div>
 
       <div className="card">
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Payment history</h2>
+        <h2 className="card-title">Payment history</h2>
         {payments && payments.length > 0 ? (
           payments.map((p, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}>
@@ -67,7 +67,7 @@ export default async function PortalMoneyPage() {
       </div>
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Documents</h2>
+        <h2 className="card-title">Documents</h2>
         <GeneratedDocumentsList documents={documents} />
       </div>
 

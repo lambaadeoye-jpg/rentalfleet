@@ -65,11 +65,11 @@ export default function InsuranceTable({ rows }: { rows: Row[] }) {
       </div>
 
       <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+        <table className="data-table">
           <thead>
-            <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
+            <tr>
               {["Customer", "Provider", "Expires", "Last verified", "Status"].map((h) => (
-                <th key={h} style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 }}>
+                <th key={h}>
                   {h}
                 </th>
               ))}
@@ -77,21 +77,21 @@ export default function InsuranceTable({ rows }: { rows: Row[] }) {
           </thead>
           <tbody>
             {filtered.map((r) => (
-              <tr key={r.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                <td style={{ padding: "12px 16px", fontWeight: 600 }}>{r.customerName}</td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
+              <tr key={r.id}>
+                <td className="cell-strong">{r.customerName}</td>
+                <td className="cell-muted">
                   {r.provider ?? "—"}
                   {r.policy_reference && (
                     <div style={{ fontSize: 12 }}>{r.policy_reference}</div>
                   )}
                 </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
+                <td className="cell-muted">
                   {r.effective_to ? new Date(r.effective_to).toLocaleDateString() : "—"}
                 </td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
+                <td className="cell-muted">
                   {r.verified_at ? new Date(r.verified_at).toLocaleDateString() : "Never"}
                 </td>
-                <td style={{ padding: "12px 16px" }}>
+                <td>
                   <select
                     value={r.verification_status}
                     disabled={savingId === r.id}

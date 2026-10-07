@@ -21,7 +21,7 @@ export default function UpdateCardButton() {
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Payment card</h2>
+      <h2 className="card-title card-title--tight">Payment card</h2>
       <p className="muted-text" style={{ fontSize: 14, marginBottom: 10 }}>
         Your weekly rent is charged to the card we have on file. Add a new card here if it changed or was declined.
       </p>

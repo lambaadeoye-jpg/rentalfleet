@@ -54,8 +54,8 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
   const totalCharges = (charges ?? []).reduce((sum, c) => sum + Number(c.amount), 0);
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 900 }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>
+    <div className="page" style={{ maxWidth: 900 }}>
+      <h1 className="page-title">
         {customer.first_name} {customer.last_name}
       </h1>
       <p className="muted-text" style={{ marginBottom: 24 }}>
@@ -201,7 +201,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{title}</h2>
+      <h2 className="card-title">{title}</h2>
       <div className="card" style={{ padding: 0 }}>
         {children}
       </div>

@@ -53,7 +53,7 @@ export default function BillingList({ rows }: { rows: BillingRow[] }) {
       {attention.length > 0 && (
         <p style={{ marginBottom: 12 }}><strong>{attention.length}</strong> need attention (failed charge or no saved card).</p>
       )}
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+      <table className="data-table">
         <thead>
           <tr style={{ textAlign: "left" }}>
             <th style={{ padding: "6px 8px" }}>Renter</th><th>Weekly</th><th>Next due</th><th>Weeks paid</th><th>Last charge</th><th></th>

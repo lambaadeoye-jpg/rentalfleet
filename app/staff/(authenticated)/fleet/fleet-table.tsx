@@ -41,11 +41,11 @@ export default function FleetTable({ vehicles }: { vehicles: Vehicle[] }) {
 
   return (
     <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+      <table className="data-table">
         <thead>
-          <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
+          <tr>
             {["Vehicle", "Category", "Plate", "Mileage", "Status"].map((h) => (
-              <th key={h} style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 }}>
+              <th key={h}>
                 {h}
               </th>
             ))}
@@ -53,15 +53,15 @@ export default function FleetTable({ vehicles }: { vehicles: Vehicle[] }) {
         </thead>
         <tbody>
           {rows.map((v) => (
-            <tr key={v.id} style={{ borderBottom: "1px solid var(--border)" }}>
-              <td style={{ padding: "12px 16px", fontWeight: 600 }}>
+            <tr key={v.id}>
+              <td className="cell-strong">
                 {v.year} {v.make} {v.model}
                 {v.vin && <div style={{ fontSize: 12, fontWeight: 400, color: "var(--text-secondary)" }}>{v.vin}</div>}
               </td>
-              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{v.categoryName}</td>
-              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{v.plate ?? "—"}</td>
-              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{v.mileage.toLocaleString()}</td>
-              <td style={{ padding: "12px 16px" }}>
+              <td className="cell-muted">{v.categoryName}</td>
+              <td className="cell-muted">{v.plate ?? "—"}</td>
+              <td className="cell-muted">{v.mileage.toLocaleString()}</td>
+              <td>
                 <select
                   value={v.status}
                   disabled={savingId === v.id}

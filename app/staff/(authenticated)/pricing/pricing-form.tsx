@@ -27,7 +27,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 560 }}>
       {/* DAILY */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Daily Rental</h2>
+        <h2 className="card-title card-title--tight">Daily Rental</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           A locked business rule (V2.1) — shown here for visibility and future flexibility,
           already active.
@@ -70,7 +70,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* WEEKLY */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Weekly Rental</h2>
+        <h2 className="card-title card-title--tight">Weekly Rental</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Not yet approved — no weekly rentals will get a payment schedule until you set a real
           rate and check the box below.
@@ -95,7 +95,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* DEPOSIT */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Refundable deposit</h2>
+        <h2 className="card-title card-title--tight">Refundable deposit</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           One amount for every renter, between $100 and $200. Separate from rent; both are
           collected before pickup. Card only (renter&rsquo;s own name) — no cash.
@@ -122,7 +122,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* INSURANCE */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Insurance pricing (staff only)</h2>
+        <h2 className="card-title card-title--tight">Insurance pricing (staff only)</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Renters with their own insurance get a percentage off the rental fee. Renters without
           insurance buy cover themselves from a provider (Bonzah, RentalCover, ...) and pay
@@ -165,7 +165,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* CANCELLATION AND REFUNDS */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Cancellation &amp; refunds</h2>
+        <h2 className="card-title card-title--tight">Cancellation &amp; refunds</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Money paid before pickup is refunded to the original card. Fees come out of the rent
           only; the deposit is always refunded in full before pickup. After pickup a started
@@ -263,7 +263,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* LATE FEE */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Late fee</h2>
+        <h2 className="card-title card-title--tight">Late fee</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Grace period of 0 means the fee applies starting the day after the due date, per your
           instruction.
@@ -300,7 +300,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* REFERRAL */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Referral bonus</h2>
+        <h2 className="card-title card-title--tight">Referral bonus</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Paid to the referrer once the referred renter completes their first full paid week.
           Requires staff approval before it becomes usable, even once set here.

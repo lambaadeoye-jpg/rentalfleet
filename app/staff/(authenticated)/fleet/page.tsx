@@ -23,10 +23,10 @@ export default async function FleetPage() {
   }));
 
   return (
-    <div style={{ padding: "32px 40px" }}>
+    <div className="page">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <div>
-          <h1 style={{ fontSize: 24, marginBottom: 4 }}>Fleet</h1>
+          <h1 className="page-title">Fleet</h1>
           <p className="muted-text">{vehiclesWithCategory.length} vehicles.</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>

@@ -26,7 +26,7 @@ export default function AgreementCard({ rentalId, status }: { rentalId: string; 
 
   return (
     <div className="card" style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 12 }}>Rental agreement</h2>
+      <h2 className="card-title">Rental agreement</h2>
       {status.signed ? (
         <>
           <p style={{ fontWeight: 600, color: "var(--signal-green, #16a34a)" }}>

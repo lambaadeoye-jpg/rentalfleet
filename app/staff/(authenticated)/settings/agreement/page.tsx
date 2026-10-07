@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function AgreementTemplatePage() {
   const versions = await listAgreementVersions();
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 900 }}>
+    <div className="page" style={{ maxWidth: 900 }}>
       <Link href="/staff/settings" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>← Settings</Link>
       <h1 style={{ fontSize: 24, margin: "8px 0 4px" }}>Rental agreement</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>

@@ -8,8 +8,8 @@ export default async function TeamPage() {
   const [{ staff, invites }, roles] = await Promise.all([getTeamData(), getRoles()]);
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Team</h1>
+    <div className="page">
+      <h1 className="page-title">Team</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         {staff.length} staff member{staff.length === 1 ? "" : "s"}.
       </p>

@@ -7,8 +7,8 @@ export default async function InboxPage() {
   const conversations = await getConversations();
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Inbox</h1>
+    <div className="page">
+      <h1 className="page-title">Inbox</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Messages across every connected channel, in one place. Currently live: SMS.
       </p>

@@ -18,7 +18,7 @@ export default function PaymentSettingsForm({ initial }: { initial: PaymentSetti
 
   return (
     <div className="card" style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 6 }}>Card payments</h2>
+      <h2 className="card-title card-title--tight">Card payments</h2>
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 12 }}>
         {initial.stripeReady
           ? "Stripe is connected. Renters pay the first week plus deposit on a secure Stripe page; their card is saved for weekly rent."

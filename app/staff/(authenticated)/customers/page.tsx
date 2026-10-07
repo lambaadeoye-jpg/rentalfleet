@@ -8,8 +8,8 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
   const customers = await searchCustomers(q ?? "");
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Customers</h1>
+    <div className="page">
+      <h1 className="page-title">Customers</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Search by name, email, or phone. Click through for the full history — CRM, rentals,
         payments, insurance, documents, all in one place.

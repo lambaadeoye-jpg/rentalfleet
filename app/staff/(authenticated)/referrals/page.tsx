@@ -7,8 +7,8 @@ export default async function ReferralsPage() {
   const [referrals, bonusAmount] = await Promise.all([getQualifiedReferrals(), getReferralBonusAmount()]);
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Referrals</h1>
+    <div className="page">
+      <h1 className="page-title">Referrals</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Qualified once the referred renter completes their first full paid week. Approving issues
         a real credit to the referrer’s account.

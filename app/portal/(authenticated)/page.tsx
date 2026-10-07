@@ -33,7 +33,7 @@ export default async function PortalDashboard() {
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>
+      <h1 className="page-title">
         {greeting()}, {customer?.first_name ?? "there"}.
       </h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>

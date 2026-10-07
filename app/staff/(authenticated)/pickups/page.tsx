@@ -9,14 +9,14 @@ export default async function PickupsPage() {
   const [{ pickups, dropoffs }, locations] = await Promise.all([getPickupsAndDropoffs(), getPickupLocations()]);
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 720 }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Pickups &amp; dropoffs</h1>
+    <div className="page" style={{ maxWidth: 720 }}>
+      <h1 className="page-title">Pickups &amp; dropoffs</h1>
       <p className="muted-text" style={{ marginBottom: 24 }}>
         Confirm a vehicle handover or return. Every action here asks you to confirm before it
         actually happens.
       </p>
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+      <h2 className="card-title">
         Ready for pickup ({pickups.length})
         {pickups.some((p) => p.followup.needed) && (
           <span style={{ marginLeft: 8, fontSize: 12, fontWeight: 700, padding: "2px 8px", borderRadius: 999, background: "#fef3c7", color: "#92400e" }}>
@@ -34,7 +34,7 @@ export default async function PickupsPage() {
         </div>
       )}
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+      <h2 className="card-title">
         Active rentals ({dropoffs.length})
       </h2>
       {dropoffs.length === 0 ? (

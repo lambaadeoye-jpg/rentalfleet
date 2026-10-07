@@ -56,7 +56,7 @@ export default function ChargesList({ initialCharges, rentals }: { initialCharge
   return (
     <div style={{ maxWidth: 680 }}>
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Log a charge</h2>
+        <h2 className="card-title">Log a charge</h2>
         <label className="field">
           <span style={{ fontSize: 13, fontWeight: 600 }}>Rental</span>
           <select value={rentalId} onChange={(e) => setRentalId(e.target.value)}>

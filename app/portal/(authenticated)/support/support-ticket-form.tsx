@@ -35,7 +35,7 @@ export default function SupportTicketForm({ initialTickets }: { initialTickets: 
   return (
     <>
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>What do you need help with?</h2>
+        <h2 className="card-title">What do you need help with?</h2>
         <textarea
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
@@ -49,7 +49,7 @@ export default function SupportTicketForm({ initialTickets }: { initialTickets: 
         </button>
       </div>
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Your requests</h2>
+      <h2 className="card-title">Your requests</h2>
       {initialTickets.length === 0 ? (
         <p className="muted-text">No requests yet.</p>
       ) : (

@@ -44,7 +44,7 @@ export default async function ApplicationDetailPage({
 
   if (!application) {
     return (
-      <div style={{ padding: "32px 40px" }}>
+      <div className="page">
         <p className="error-text">Application not found.</p>
         <Link href="/staff/applications" style={{ color: "var(--teal)" }}>
           Back to applications
@@ -106,7 +106,7 @@ export default async function ApplicationDetailPage({
   const isDecided = application.status !== "draft" && application.status !== "submitted" && application.status !== "screening" && application.status !== "review";
 
   return (
-    <div style={{ padding: "32px 40px", maxWidth: 900 }}>
+    <div className="page" style={{ maxWidth: 900 }}>
       <Link href="/staff/applications" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>
         ← Back to Applications
       </Link>
@@ -137,7 +137,7 @@ export default async function ApplicationDetailPage({
       </div>
 
       <div className="card" style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Documents</h2>
+        <h2 className="card-title">Documents</h2>
         <DocumentPanel
           applicationId={application.id}
           docs={documentsWithUrls.map((d) => ({
@@ -158,7 +158,7 @@ export default async function ApplicationDetailPage({
       {existingRental && ["returned", "closed"].includes(existingRental.status) && <DepositCard rentalId={existingRental.id} />}
 
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Decision</h2>
+        <h2 className="card-title">Decision</h2>
         {isDecided ? (
           <div>
             <p style={{ fontWeight: 700, marginBottom: 4 }}>

@@ -92,7 +92,7 @@ export default function RecoveryCaseDetailClient({ recoveryCase }: { recoveryCas
       </div>
 
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Log an expense</h2>
+        <h2 className="card-title">Log an expense</h2>
         <div className="form-row">
           <label className="field">
             <span style={{ fontSize: 13, fontWeight: 600 }}>Type</span>
@@ -121,7 +121,7 @@ export default function RecoveryCaseDetailClient({ recoveryCase }: { recoveryCas
         </button>
       </div>
 
-      <h2 style={{ fontSize: 16, marginBottom: 12 }}>Expenses</h2>
+      <h2 className="card-title">Expenses</h2>
       {!recoveryCase.expenses.length && <p className="muted-text" style={{ fontSize: 14 }}>No expenses logged yet.</p>}
       {recoveryCase.expenses.map((e) => (
         <div key={e.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>

@@ -32,7 +32,7 @@ export default function DepositCard({ rentalId }: { rentalId: string }) {
   if (done) {
     return (
       <div className="card" style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 8 }}>Deposit settled</h2>
+        <h2 className="card-title card-title--tight">Deposit settled</h2>
         <p style={{ fontSize: 14 }}>{depositReturnSummary(done.d)}</p>
         {done.d.status === "pending_approval" && (
           <p className="muted-text" style={{ fontSize: 13, marginTop: 6 }}>This is over the approval limit. An admin needs to approve it on the <Link href="/staff/refunds" style={{ color: "var(--teal)" }}>Refunds</Link> page.</p>
@@ -45,7 +45,7 @@ export default function DepositCard({ rentalId }: { rentalId: string }) {
 
   return (
     <div className="card" style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 8 }}>Return the deposit</h2>
+      <h2 className="card-title card-title--tight">Return the deposit</h2>
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>
         The vehicle has been returned. Returning the deposit sends back what is still refundable after any approved deductions.
         Approve or reject any pending charges first.

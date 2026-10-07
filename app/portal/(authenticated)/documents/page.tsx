@@ -43,7 +43,7 @@ export default async function PortalDocumentsPage() {
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 16 }}>Documents</h1>
+      <h1 className="page-title" style={{ marginBottom: 16 }}>Documents</h1>
 
       {signedWithUrls.map((d) => (
         <a key={d.id} href={d.url ?? "#"} target="_blank" rel="noreferrer" className="card"

@@ -59,7 +59,7 @@ export default function MaintenanceList({
   return (
     <div style={{ maxWidth: 640 }}>
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Log a work order</h2>
+        <h2 className="card-title">Log a work order</h2>
         <label className="field">
           <span style={{ fontSize: 13, fontWeight: 600 }}>Vehicle</span>
           <select value={vehicleId} onChange={(e) => setVehicleId(e.target.value)}>

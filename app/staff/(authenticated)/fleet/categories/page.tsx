@@ -7,8 +7,8 @@ export default async function CategoriesPage() {
   const categories = await getVehicleCategories();
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Vehicle categories</h1>
+    <div className="page">
+      <h1 className="page-title">Vehicle categories</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Renters select a category, never a specific VIN — these are what they choose from.
       </p>

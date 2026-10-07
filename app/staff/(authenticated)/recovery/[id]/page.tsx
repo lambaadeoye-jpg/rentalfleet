@@ -10,8 +10,8 @@ export default async function RecoveryCaseDetailPage({ params }: { params: Promi
   if (!recoveryCase) notFound();
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>{recoveryCase.customerName}</h1>
+    <div className="page">
+      <h1 className="page-title">{recoveryCase.customerName}</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Recovery case · opened {new Date(recoveryCase.createdAt).toLocaleDateString()}
       </p>

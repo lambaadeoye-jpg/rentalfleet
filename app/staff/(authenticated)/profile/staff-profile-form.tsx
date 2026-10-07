@@ -73,7 +73,7 @@ export default function StaffProfileForm({
 
       {isAdmin && (
         <div className="card">
-          <h2 style={{ fontSize: 16, marginBottom: 4 }}>Password sign-in (optional)</h2>
+          <h2 className="card-title card-title--tight">Password sign-in (optional)</h2>
           <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
             Purely optional convenience — the sign-in link by email always works regardless,
             whether or not you set a password here.

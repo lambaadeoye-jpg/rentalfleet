@@ -29,7 +29,7 @@ export default async function PortalReferralsPage() {
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 16 }}>Referrals</h1>
+      <h1 className="page-title" style={{ marginBottom: 16 }}>Referrals</h1>
 
       <div className="card" style={{ marginBottom: 16, textAlign: "center" }}>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 4 }}>Referral credit balance</p>
@@ -39,7 +39,7 @@ export default async function PortalReferralsPage() {
       {customer?.referral_code && <ReferralLinkBox referralLink={referralLink} />}
 
       <div className="card" style={{ marginTop: 16 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Your referrals</h2>
+        <h2 className="card-title">Your referrals</h2>
         {!referrals?.length ? (
           <p className="muted-text" style={{ fontSize: 14 }}>
             Share your link above — once someone you refer completes their first full paid week,

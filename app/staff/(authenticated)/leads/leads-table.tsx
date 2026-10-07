@@ -54,11 +54,11 @@ export default function LeadsTable({ leads, stages }: { leads: Lead[]; stages: s
 
   return (
     <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+      <table className="data-table">
         <thead>
-          <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
+          <tr>
             {["Name", "Contact", "Driving for", "Source", "Stage", "Received"].map((h) => (
-              <th key={h} style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 }}>
+              <th key={h}>
                 {h}
               </th>
             ))}
@@ -66,22 +66,22 @@ export default function LeadsTable({ leads, stages }: { leads: Lead[]; stages: s
         </thead>
         <tbody>
           {rows.map((lead) => (
-            <tr key={lead.id} style={{ borderBottom: "1px solid var(--border)" }}>
-              <td style={{ padding: "12px 16px", fontWeight: 600 }}>
+            <tr key={lead.id}>
+              <td className="cell-strong">
                 {lead.first_name} {lead.last_name}
                 {lead.details_completed_at === null && (
                   <div className="muted-text" style={{ fontSize: 11, fontWeight: 400 }}>Step 2 not finished</div>
                 )}
               </td>
-              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
+              <td className="cell-muted">
                 <div>{formatPhone(lead.phone)}</div>
                 {lead.email && <div style={{ fontSize: 12 }}>{lead.email}</div>}
               </td>
-              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
+              <td className="cell-muted">
                 {lead.platforms.length > 0 ? lead.platforms.join(", ") : "—"}
               </td>
-              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{lead.source ? sentenceCase(lead.source) : "—"}</td>
-              <td style={{ padding: "12px 16px" }}>
+              <td className="cell-muted">{lead.source ? sentenceCase(lead.source) : "—"}</td>
+              <td>
                 <select
                   value={lead.stage}
                   disabled={savingId === lead.id}

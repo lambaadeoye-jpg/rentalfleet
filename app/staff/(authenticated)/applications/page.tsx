@@ -25,8 +25,8 @@ export default async function ApplicationsPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Applications</h1>
+    <div className="page">
+      <h1 className="page-title">Applications</h1>
       <p className="muted-text" style={{ marginBottom: 28 }}>
         {applications?.length ?? 0} total.
       </p>
@@ -35,11 +35,11 @@ export default async function ApplicationsPage() {
         <p className="muted-text">No applications yet.</p>
       ) : (
         <div className="card" style={{ padding: 0, overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
+          <table className="data-table">
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
+              <tr>
                 {["Applicant", "Contact", "Status", "Submitted"].map((h) => (
-                  <th key={h} style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 }}>
+                  <th key={h}>
                     {h}
                   </th>
                 ))}
@@ -49,19 +49,19 @@ export default async function ApplicationsPage() {
               {applications.map((app) => {
                 const customer = app.customer as any;
                 return (
-                  <tr key={app.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                    <td style={{ padding: "12px 16px" }}>
+                  <tr key={app.id}>
+                    <td>
                       <Link href={`/staff/applications/${app.id}`} style={{ fontWeight: 600, color: "var(--text)" }}>
                         {customer?.first_name || customer?.last_name
                           ? `${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`.trim()
                           : "(name not yet provided)"}
                       </Link>
                     </td>
-                    <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
+                    <td className="cell-muted">
                       <div>{customer?.phone ? formatPhone(customer.phone) : "—"}</div>
                       {customer?.email && <div style={{ fontSize: 12 }}>{customer.email}</div>}
                     </td>
-                    <td style={{ padding: "12px 16px" }}>
+                    <td>
                       <span
                         style={{
                           fontSize: 12,

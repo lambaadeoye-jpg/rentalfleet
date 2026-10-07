@@ -7,15 +7,15 @@ export const dynamic = "force-dynamic";
 export default async function RefundsPage() {
   const [refunds, due] = await Promise.all([getRefunds(), getDepositsDue()]);
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Refunds</h1>
+    <div className="page">
+      <h1 className="page-title">Refunds</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Refunds from rentals cancelled before pickup. Each one is calculated from your approved cancellation rules.
         Approving sends the money back to the renter&rsquo;s original card. Refunds over the approval limit need an admin.
       </p>
       {due.length > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>
-          <h2 style={{ fontSize: 16, marginBottom: 6 }}>Deposits waiting to be returned</h2>
+          <h2 className="card-title card-title--tight">Deposits waiting to be returned</h2>
           <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>These vehicles are back. Open the application to review deductions and return the deposit.</p>
           {due.map((d) => (
             <div key={d.rentalId} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid rgba(128,128,128,0.25)" }}>

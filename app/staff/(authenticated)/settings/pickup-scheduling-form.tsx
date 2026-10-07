@@ -71,7 +71,7 @@ export default function PickupSchedulingForm({ initial }: { initial: PickupSched
 
   return (
     <div className="card" style={{ maxWidth: 720, marginTop: 28 }}>
-      <h2 style={{ fontSize: 16, marginBottom: 4 }}>Pickup scheduling</h2>
+      <h2 className="card-title card-title--tight">Pickup scheduling</h2>
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 14 }}>
         When on, a renter whose rental is scheduled can pick their own pickup time from the hours below.
         Turn it off any time and renters see nothing; times already booked stay booked.

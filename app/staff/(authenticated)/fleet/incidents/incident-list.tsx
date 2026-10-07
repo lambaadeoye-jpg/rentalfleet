@@ -54,7 +54,7 @@ export default function IncidentList({
   return (
     <div style={{ maxWidth: 640 }}>
       <div className="card" style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 12 }}>Log an incident</h2>
+        <h2 className="card-title">Log an incident</h2>
         <label className="field">
           <span style={{ fontSize: 13, fontWeight: 600 }}>Type</span>
           <input value={incidentType} onChange={(e) => setIncidentType(e.target.value)} placeholder="e.g. Accident, vandalism, mechanical failure" />

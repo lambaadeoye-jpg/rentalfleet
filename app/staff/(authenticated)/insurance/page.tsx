@@ -25,8 +25,8 @@ export default async function InsurancePage() {
   }));
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Insurance</h1>
+    <div className="page">
+      <h1 className="page-title">Insurance</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Renter insurance verification status. {rows.length} on file.
       </p>

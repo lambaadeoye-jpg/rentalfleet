@@ -17,8 +17,8 @@ export default async function MarketingSettingsPage() {
   const switches = await getSwitches();
 
   return (
-    <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Settings</h1>
+    <div className="page">
+      <h1 className="page-title">Settings</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Review links, pickup scheduling, payments, automation switches and the rental agreement. The review links feed
         the pickup review-request message directly, so there is no need to edit anything in n8n when you start a new
@@ -29,7 +29,7 @@ export default async function MarketingSettingsPage() {
       <PaymentSettingsForm initial={payments} />
       <SwitchSettingsForm initial={switches} />
       <div className="card" style={{ maxWidth: 720, marginTop: 28 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Rental agreement</h2>
+        <h2 className="card-title card-title--tight">Rental agreement</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 12 }}>The text renters sign, its versions, and approval.</p>
         <Link href="/staff/settings/agreement" className="button-secondary" style={{ display: "inline-flex" }}>Open agreement text</Link>
       </div>
