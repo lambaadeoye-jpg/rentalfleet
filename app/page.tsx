@@ -84,7 +84,7 @@ export default async function Home() {
                 <Phone size={15} />
                 {PHONE_DISPLAY}
               </a>
-              <a href="#apply" className="button-secondary" style={{ padding: "10px 18px", fontSize: 14 }}>
+              <a href="#apply" className="button-primary" style={{ padding: "10px 18px", fontSize: 14 }}>
                 Start My Application
               </a>
             </div>
@@ -104,6 +104,9 @@ export default async function Home() {
             <div className="cta-row">
               <a href="#apply" className="button-primary">
                 Find My Car
+              </a>
+              <a href="#how-it-works" className="button-secondary">
+                See How It Works
               </a>
             </div>
             <div className="benefit-strip">
