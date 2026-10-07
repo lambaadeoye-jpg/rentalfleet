@@ -1,4 +1,5 @@
 import AttributionCapture from "./attribution-capture";
+import Tracking from "./tracking";
 import type { Metadata } from "next";
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
@@ -12,7 +13,7 @@ import "./globals.css";
 const SITE_URL = "https://rentzivo.com";
 const TITLE = "Zivo | Gig Worker & Rideshare Car Rental — Get a Car. Get to Work. Get Moving.";
 const DESCRIPTION =
-  "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville. No credit check, insurance included.";
+  "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville. No credit check, insurance included if you don't have your own.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -43,6 +44,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <AttributionCapture />
+        <Tracking />
         {children}
       </body>
     </html>

@@ -156,6 +156,30 @@ label {
   padding: 40px 0 96px;
 }
 
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+.hero-form {
+  scroll-margin-top: 12px;
+}
+/* The hero is dark with white text; the form card is white, so give it dark text. */
+.hero-form .card,
+.hero-form .card h3 {
+  color: var(--text);
+}
+@media (min-width: 940px) {
+  .hero-grid {
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .hero-content.hero-grid {
+    padding-top: 24px;
+  }
+}
+
 .eyebrow {
   color: var(--teal);
   font-weight: 700;

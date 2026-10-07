@@ -7,7 +7,7 @@
 // automated agent are the same door, not two different numbers).
 export const PHONE_DISPLAY = "(615) 555-0100";
 export const PHONE_TEL = "+16155550100";
-// Call buttons only appear once a real number replaces the placeholder above (nothing else to switch).
+// Call buttons (nav, footer, forms) only appear once a real number replaces the placeholder above. The mobile sticky bar shows Call regardless, by owner decision.
 export const PHONE_IS_LIVE = PHONE_DISPLAY !== "(615) 555-0100";
 
 // Renter-facing inbox: Reply-To on renter emails, privacy requests, HELP text. Mail still sends from noreply.

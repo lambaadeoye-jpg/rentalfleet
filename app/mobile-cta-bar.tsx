@@ -3,18 +3,32 @@
 import { useEffect, useState } from "react";
 import { Phone } from "lucide-react";
 
-// Sticky bottom bar on phones. Always offers the main action; adds Call once a real number is live.
-// Hides while the form itself is on screen so it never covers the form's own button.
+// Sticky bottom bar on phones: Call plus the main action. Hides while either form is on screen
+// so it never covers a form's own button. The main action scrolls to the nearest form.
 export default function MobileCtaBar({ phoneLive, phoneDisplay, phoneTel }: { phoneLive: boolean; phoneDisplay: string; phoneTel: string }) {
   const [formVisible, setFormVisible] = useState(false);
 
   useEffect(() => {
-    const el = document.getElementById("apply");
-    if (!el || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(([e]) => setFormVisible(e.isIntersecting), { threshold: 0.15 });
-    io.observe(el);
+    const els = ["apply", "apply-bottom"].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    if (!els.length || typeof IntersectionObserver === "undefined") return;
+    const seen = new Set<Element>();
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) (e.isIntersecting ? seen.add(e.target) : seen.delete(e.target));
+      setFormVisible(seen.size > 0);
+    }, { threshold: 0.15 });
+    els.forEach((el) => io.observe(el));
     return () => io.disconnect();
   }, []);
+
+  function goToForm(e: React.MouseEvent) {
+    const top = document.getElementById("apply");
+    const bottom = document.getElementById("apply-bottom");
+    if (!top || !bottom) return; // plain anchor behavior
+    e.preventDefault();
+    // Past the hero? The lower form is closer.
+    const target = window.scrollY > top.offsetTop + top.offsetHeight ? bottom : top;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   if (formVisible) return null;
   return (
@@ -25,7 +39,7 @@ export default function MobileCtaBar({ phoneLive, phoneDisplay, phoneTel }: { ph
           Call
         </a>
       )}
-      <a href="#apply" data-cta="mobile_bar" className="mobile-cta-main">Find My Car</a>
+      <a href="#apply" onClick={goToForm} data-cta="mobile_bar" className="mobile-cta-main">Find My Car</a>
     </div>
   );
 }

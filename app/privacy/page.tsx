@@ -50,7 +50,7 @@ export default function PrivacyPage() {
         We share information only with service providers that help us run Zivo, and only for that purpose: payment
         processing (Stripe), text messaging and calling, email delivery, cloud hosting and database, and document storage.
         We may also disclose information when the law requires it, to protect rights and safety, or to our insurers
-        regarding a claim. We do not sell your personal information.
+        regarding a claim. If we run online ads, advertising and analytics tools from Meta and Google may record that you visited our site or submitted a request (never your name, phone, or email) so we can measure whether our ads work. We do not sell your personal information.
       </p>
 
       <h2 style={h}>How long we keep it</h2>

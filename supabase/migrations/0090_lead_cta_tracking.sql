@@ -1,5 +1,5 @@
 -- 0090: remember which website button a lead used, and report on it in the funnel.
--- first_cta is a short code like 'hero_primary' or 'mobile_bar'. NULL means the visitor scrolled to the form without using a button.
+-- first_cta is a short code like 'hero_primary' or 'mobile_bar'. NULL means older leads, from before this tracking existed. New leads always get a code: a button, or hero_form / bottom_form if the form was used without clicking a button.
 
 alter table lead add column if not exists first_cta text;
 do $$ begin
@@ -37,7 +37,7 @@ language sql stable security invoker set search_path = public as $$
   select
     case when p_group = 'campaign' then coalesce(f.campaign, '(no campaign)') || ' · ' || f.source
          when p_group = 'heard_about' then coalesce(f.heard_about, '(not answered)')
-         when p_group = 'button' then coalesce(f.cta, '(scrolled, no button)')
+         when p_group = 'button' then coalesce(f.cta, '(not recorded)')
          else f.source end as label,
     count(*),
     count(*) filter (where f.step2_done),

@@ -26,27 +26,29 @@ import {
 
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
 
-// Weekly rent shown as "From $X/week", read from the approved pricing policy so the page never drifts
-// from what staff set. Returns null (page falls back to "Custom Quote") if not approved or unreadable.
-async function getWeeklyFrom(): Promise<number | null> {
+// Daily pricing shown on the page, read from the approved pricing policy so the page never drifts from what staff set.
+// Returns null (price lines are hidden) if daily pricing is not approved or can't be read.
+type DailyPricing = { days: number; total: number; perDay: number };
+async function getDailyPricing(): Promise<DailyPricing | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
   try {
     const db = createClient(url, key);
     const { data } = await db.from("policy_version").select("rules").eq("policy_type", "pricing_and_mileage").eq("immutable", false).maybeSingle();
-    const r = data?.rules as { weekly_approved?: boolean; weekly_rate_usd?: number | null } | null;
-    return r?.weekly_approved && typeof r.weekly_rate_usd === "number" && r.weekly_rate_usd > 0 ? r.weekly_rate_usd : null;
+    const d = (data?.rules as { daily?: { approved?: boolean; first_tier_days?: number; first_tier_total_usd?: number; per_day_after_usd?: number } } | null)?.daily;
+    if (!d?.approved || !(d.first_tier_days! > 0) || !(d.first_tier_total_usd! > 0) || !(d.per_day_after_usd! > 0)) return null;
+    return { days: d.first_tier_days!, total: d.first_tier_total_usd!, perDay: d.per_day_after_usd! };
   } catch {
     return null;
   }
 }
 
 // One repeated call to action, same words everywhere, with the reassurance right under it.
-function SectionCta({ name }: { name: string }) {
+function SectionCta({ name, label = "Find My Car" }: { name: string; label?: string }) {
   return (
     <div className="section-cta">
-      <a href="#apply" className="button-primary" data-cta={name}>Find My Car</a>
+      <a href="#apply-bottom" className="button-primary" data-cta={name}>{label}</a>
       <p className="section-cta-note">No credit check. Takes about a minute.</p>
     </div>
   );
@@ -55,11 +57,11 @@ function SectionCta({ name }: { name: string }) {
 export default async function Home() {
   const supabase = createPublicClient();
 
-  const [{ data: tenant }, { data: categories }, { data: platforms }, weeklyFrom] = await Promise.all([
+  const [{ data: tenant }, { data: categories }, { data: platforms }, pricing] = await Promise.all([
     supabase.from("tenant").select("name").eq("status", "active").limit(1).maybeSingle(),
     supabase.from("vehicle_category").select("id, name, description").eq("active", true),
     supabase.from("gig_platform").select("id, code, name").order("sort_order"),
-    getWeeklyFrom(),
+    getDailyPricing(),
   ]);
 
   const brandName = tenant?.name ?? "Fleet Rental";
@@ -80,7 +82,7 @@ export default async function Home() {
             "@type": "AutoRental",
             name: brandName,
             description:
-              "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent-driving work throughout Greater Nashville.",
+              "Vehicle rentals for rideshare, delivery, courier, and independent-driving work in Nashville and Murfreesboro, Tennessee.",
             url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rentzivo.com",
             ...(PHONE_IS_LIVE ? { telephone: PHONE_TEL } : {}),
             areaServed: {
@@ -124,46 +126,28 @@ export default async function Home() {
             </div>
           </nav>
 
-          <div className="hero-content">
-            <div className="eyebrow">
-              Gig, Rideshare &amp; Delivery Vehicle Rentals in Greater Nashville
-            </div>
-            <h1>Get a car. Get to work. Get moving.</h1>
-            <p className="hero-sub">
-              Weekly and daily vehicle rentals for drivers who need a dependable way to work
-              and earn. Drive rideshare, deliver food and packages, run Amazon Flex routes,
-              provide medical courier services, and more — with a vehicle built to keep you
-              moving.
-            </p>
-            <div className="cta-row">
-              <a href="#apply" data-cta="hero" className="button-primary">
-                Find My Car
-              </a>
-              <a href="#how-it-works" className="button-secondary">
-                See How It Works
-              </a>
-            </div>
-            <div className="benefit-strip">
-              <span>Unlimited mileage</span>
-              <span>•</span>
-              <span>No credit check</span>
-              <span>•</span>
-              <span>Fuel-efficient vehicles</span>
-              <span>•</span>
-              <span>Fast process</span>
-            </div>
-            {PHONE_IS_LIVE ? (
-              <p style={{ marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
-                Prefer to talk it through?{" "}
-                <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
-                  Call {PHONE_DISPLAY}
-                </a>
+          <div className="hero-content hero-grid">
+            <div className="hero-copy">
+              <div className="eyebrow">Pickup in Nashville &amp; Murfreesboro</div>
+              <h1>Car rentals for rideshare &amp; delivery drivers.</h1>
+              <p className="hero-sub">
+                {pricing
+                  ? `$${pricing.total} for your first ${pricing.days} days, then $${pricing.perDay}/day.`
+                  : "Reliable, fuel-efficient cars for working drivers."}
               </p>
-            ) : (
-              <p style={{ marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
-                No credit check. Takes about a minute.
-              </p>
-            )}
+              <div className="benefit-strip">
+                <span>Unlimited mileage</span>
+                <span>•</span>
+                <span>No credit check</span>
+                <span>•</span>
+                <span>Insurance if you need it</span>
+              </div>
+            </div>
+            <div className="hero-form" id="apply">
+              <Suspense fallback={null}>
+                <LeadForm categories={categories ?? []} platforms={platforms ?? []} ctaDefault="hero_form" />
+              </Suspense>
+            </div>
           </div>
         </div>
       </div>
@@ -234,9 +218,8 @@ export default async function Home() {
               <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
               <h3>Insurance, Sorted Simply</h3>
               <p>
-                Already have coverage? Bring it. Need help getting set up? Ask us about
-                insurance options for qualified renters — either way, we&apos;ll make sure
-                you&apos;re covered before you drive.
+                Already have coverage? Bring it. Don&apos;t have any? Insurance is included with
+                your rental. Either way, you&apos;ll be covered before you drive.
               </p>
             </div>
           </div>
@@ -296,7 +279,7 @@ export default async function Home() {
                   <li>Unlimited mileage included</li>
                   <li>Fuel-efficient, practical choice for high-mileage driving</li>
                 </ul>
-                <a href="#apply" data-cta="fleet_card" className="button-primary" style={{ alignSelf: "flex-start" }}>
+                <a href="#apply-bottom" data-cta="fleet_card" className="button-primary" style={{ alignSelf: "flex-start" }}>
                   Find My Car
                 </a>
               </div>
@@ -308,41 +291,32 @@ export default async function Home() {
       {/* PRICING */}
       <section className="section section-dark" id="pricing">
         <div className="container">
-          <h2 className="section-title">Simple rental options for working drivers.</h2>
+          <h2 className="section-title">Simple pricing for working drivers.</h2>
           <div className="price-grid">
             <div className="card price-card" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
               <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>DAILY</div>
-              <div className="price">$220</div>
-              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                for your first 3 days, then $74/day after. 1-week minimum rental applies.
-              </p>
-            </div>
-            <div className="card price-card" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
-              <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>WEEKLY</div>
-              {weeklyFrom != null ? (
+              {pricing ? (
                 <>
-                  <div className="price">From ${weeklyFrom}<span style={{ fontSize: 16, fontWeight: 600 }}>/week</span></div>
+                  <div className="price">${pricing.total}</div>
                   <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                    For drivers who need a vehicle for ongoing work. Final weekly rate is confirmed
-                    during rental selection and may vary by category.
+                    for your first {pricing.days} days, then ${pricing.perDay}/day after. 1-week minimum rental applies.
                   </p>
                 </>
               ) : (
                 <>
-                  <div className="price">Custom Quote</div>
+                  <div className="price">Daily rates</div>
                   <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                    For drivers who need a vehicle for ongoing work. Pricing shown during rental
-                    selection, may vary by category.
+                    Pricing is shown during rental selection. 1-week minimum rental applies.
                   </p>
                 </>
               )}
             </div>
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
-            Unlimited mileage included on every rental. We currently offer daily and weekly
-            rental options — we do not offer a monthly rental plan.
+            Unlimited mileage included on every rental. Insurance is included if you don&apos;t have your
+            own. We do not offer a monthly rental plan.
           </p>
-          <SectionCta name="after_pricing" />
+          <SectionCta name="after_pricing" label="Check Availability" />
         </div>
       </section>
 
@@ -413,7 +387,7 @@ export default async function Home() {
             <div className="card benefit-card">
               <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
               <h3>Insurance Coverage</h3>
-              <p>Bring your own, or ask us about options for qualified renters.</p>
+              <p>Bring your own. If you don&apos;t have any, insurance is included with your rental.</p>
             </div>
             <div className="card benefit-card">
               <BadgeCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
@@ -424,12 +398,12 @@ export default async function Home() {
               </p>
             </div>
           </div>
-          <SectionCta name="after_requirements" />
+          <SectionCta name="after_requirements" label="I Have These. Check Availability." />
         </div>
       </section>
 
       {/* LEAD FORM */}
-      <section className="section section-dark" id="apply">
+      <section className="section section-dark" id="apply-bottom">
         <div className="container" style={{ maxWidth: 640 }}>
           <h2 className="section-title">Let&apos;s find the right vehicle for your work.</h2>
           <p className="section-lede">
@@ -445,7 +419,7 @@ export default async function Home() {
             )}
           </p>
           <Suspense fallback={null}>
-            <LeadForm categories={categories ?? []} platforms={platforms ?? []} />
+            <LeadForm categories={categories ?? []} platforms={platforms ?? []} ctaDefault="bottom_form" />
           </Suspense>
         </div>
       </section>
@@ -504,7 +478,7 @@ export default async function Home() {
           <div style={{ marginTop: 24 }}>
             <details className="faq-item">
               <summary>Do you offer monthly rentals?</summary>
-              <p>No. We currently offer daily and weekly rental options only.</p>
+              <p>No. We do not offer a monthly rental plan.</p>
             </details>
             <details className="faq-item">
               <summary>What&apos;s the minimum rental period?</summary>
@@ -513,16 +487,18 @@ export default async function Home() {
             <details className="faq-item">
               <summary>How does daily pricing work?</summary>
               <p>
-                The daily option is $220 for the first 3 days, followed by $74/day after the
-                first 3 days. A one-week minimum rental applies.
+                {pricing
+                  ? `The daily option is $${pricing.total} for the first ${pricing.days} days, followed by $${pricing.perDay}/day after the first ${pricing.days} days. `
+                  : "Daily pricing is shown during rental selection. "}
+                A one-week minimum rental applies.
               </p>
             </details>
             <details className="faq-item">
               <summary>Do I need my own insurance?</summary>
               <p>
-                You&apos;re welcome to bring your own coverage, or ask us about insurance
-                options for qualified renters — either way, you&apos;ll be covered before you
-                drive.
+                Not if you don&apos;t have any. Bring your own coverage if you have it. If you
+                don&apos;t, insurance is included with your rental. Either way, you&apos;ll be
+                covered before you drive.
               </p>
             </details>
             <details className="faq-item">
@@ -539,6 +515,13 @@ export default async function Home() {
                 We don&apos;t use a traditional credit check as part of our rental process.
                 Other eligibility, identity, driving, insurance, payment, and screening
                 requirements may apply.
+              </p>
+            </details>
+            <details className="faq-item">
+              <summary>Where do I pick up the car?</summary>
+              <p>
+                Pickup is in Nashville and Murfreesboro. We confirm the exact location and time
+                with you once you&apos;re approved.
               </p>
             </details>
             <details className="faq-item">
@@ -600,7 +583,7 @@ export default async function Home() {
             throughout Greater Nashville.
           </p>
           <div className="cta-row" style={{ justifyContent: "center" }}>
-            <a href="#apply" data-cta="final" className="button-primary">
+            <a href="#apply-bottom" data-cta="final" className="button-primary">
               Find My Car
             </a>
           </div>
@@ -633,7 +616,7 @@ export default async function Home() {
       </footer>
 
       {/* Sticky mobile bar: the main action always, plus Call once a real number is live. */}
-      <MobileCtaBar phoneLive={PHONE_IS_LIVE} phoneDisplay={PHONE_DISPLAY} phoneTel={PHONE_TEL} />
+      <MobileCtaBar phoneLive={true} phoneDisplay={PHONE_DISPLAY} phoneTel={PHONE_TEL} />
     </>
   );
 }

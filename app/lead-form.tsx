@@ -6,6 +6,7 @@ import { CheckCircle2 } from "lucide-react";
 import { submitLeadStep1, completeLeadStep2 } from "./actions";
 import { HEARD_ABOUT_OPTIONS } from "@/lib/lead-steps";
 import { readFirstTouch, readLastCta } from "@/lib/attribution";
+import { trackLead } from "@/lib/track";
 import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
 import LegalLinks from "./legal-links";
 
@@ -15,9 +16,12 @@ type GigPlatform = { id: string; code: string; name: string };
 export default function LeadForm({
   categories,
   platforms,
+  ctaDefault,
 }: {
   categories: VehicleCategory[];
   platforms: GigPlatform[];
+  /** Recorded as the button when the visitor used the form without clicking any button first. */
+  ctaDefault?: string;
 }) {
   const [submitted, setSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
@@ -71,13 +75,14 @@ export default function LeadForm({
         gigPlatformIds: selectedPlatforms,
         referralCode,
         contactConsent: consent,
-        attribution: { ...readFirstTouch(), cta: readLastCta() },
+        attribution: { ...readFirstTouch(), cta: readLastCta() ?? ctaDefault },
       });
 
       if (!result.success) {
         setError(result.error);
         return;
       }
+      trackLead();
       setSubmittedEmail(emailValue);
       setSaved({ leadId: result.leadId, token: result.token, firstName: firstName.trim() });
       setStep(2);
@@ -142,7 +147,7 @@ export default function LeadForm({
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
         <h3 style={{ fontSize: 22, marginBottom: 8 }}>Thanks — we've got your request.</h3>
         <p className="muted-text" style={{ marginBottom: step2Note ? 8 : 20 }}>
-          We'll review your information and follow up with the next step.
+          Check your email for a confirmation. If you opted in to texts and calls, we may reach out within minutes (8am to 9pm Central). Otherwise we'll follow up with the next step.
         </p>
         {step2Note && <p className="muted-text" style={{ marginBottom: 20, fontSize: 13 }}>{step2Note}</p>}
         {/* Bridge to the real Application Workspace -- previously there was
@@ -314,7 +319,7 @@ export default function LeadForm({
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
 
       <button type="submit" className="button-primary" disabled={loading} style={{ width: "100%" }}>
-        {loading ? "Saving..." : "Continue"}
+        {loading ? "Saving..." : "Check My Availability"}
       </button>
       <LegalLinks style={{ textAlign: "center", marginTop: 10 }} />
       <p className="muted-text" style={{ textAlign: "center", marginTop: 10, fontSize: 13 }}>

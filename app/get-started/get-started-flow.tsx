@@ -7,6 +7,7 @@ import { submitLead } from "../actions";
 import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
 import LegalLinks from "../legal-links";
 import { readFirstTouch, readLastCta } from "@/lib/attribution";
+import { trackLead } from "@/lib/track";
 import { PHONE_DISPLAY } from "@/lib/site-config";
 
 type Step = "license" | "driving" | "urgency" | "contact";
@@ -88,6 +89,7 @@ export default function GetStartedFlow() {
         setError(result.error);
         return;
       }
+      trackLead();
       setSubmitted(true);
     } catch {
       setError("Something went wrong. Please try again in a moment.");
@@ -316,7 +318,7 @@ export default function GetStartedFlow() {
         {step === "contact" && (
           <>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 24 }}>
-              {["No credit check", "Unlimited miles", "Insurance included"].map((badge) => (
+              {["No credit check", "Unlimited miles", "Insurance if you need it"].map((badge) => (
                 <span
                   key={badge}
                   style={{
