@@ -3,6 +3,8 @@ import MarketingSettingsForm from "./marketing-settings-form";
 import Link from "next/link";
 import PickupSchedulingForm from "./pickup-scheduling-form";
 import PaymentSettingsForm from "./payment-settings-form";
+import SwitchSettingsForm from "./switch-settings-form";
+import { getSwitches } from "./switch-settings-actions";
 import { getPaymentSettings } from "./payment-settings-actions";
 import { getPickupScheduling } from "./pickup-actions";
 
@@ -12,6 +14,7 @@ export default async function MarketingSettingsPage() {
   const settings = await getMarketingSettings();
   const pickup = await getPickupScheduling();
   const payments = await getPaymentSettings();
+  const switches = await getSwitches();
 
   return (
     <div style={{ padding: "32px 40px" }}>
@@ -23,6 +26,7 @@ export default async function MarketingSettingsPage() {
       <MarketingSettingsForm initialGoogleUrl={settings.googleReviewUrl} initialFacebookUrl={settings.facebookAdUrl} />
       <PickupSchedulingForm initial={pickup} />
       <PaymentSettingsForm initial={payments} />
+      <SwitchSettingsForm initial={switches} />
       <div className="card" style={{ maxWidth: 720, marginTop: 28 }}>
         <h2 style={{ fontSize: 16, marginBottom: 4 }}>Rental agreement</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 12 }}>The text renters sign, its versions, and approval.</p>
