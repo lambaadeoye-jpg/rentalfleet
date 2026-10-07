@@ -7,7 +7,7 @@ import { toE164 } from "./contact-validation";
 
 export type NoticeKind =
   | "cancelled" | "refund_sent" | "payment_received" | "weekly_rent_charged" | "weekly_charge_failed"
-  | "checkin_day1" | "checkin_day3" | "referral_ask";
+  | "checkin_day1" | "checkin_day3" | "referral_ask" | "card_updated";
 
 export type NoticeRow = {
   kind: NoticeKind;
@@ -76,6 +76,12 @@ export function noticeBody(
       // With a private update-card link the renter can fix it themselves; without one, point them to us.
       const fix = ctx?.cardUpdateUrl ? `Update your card here: ${ctx.cardUpdateUrl}` : "Please contact us so we can fix it.";
       return `Zivo: We couldn't charge your card ${dollars(d.amount_cents)} for this week's rent. ${fix}${help} ${STOP}`;
+    }
+    case "card_updated": {
+      const last4 = typeof d.last4 === "string" && /^\d{4}$/.test(d.last4) ? d.last4 : null;
+      const card = last4 ? `Your new card ending in ${last4}` : "Your new card";
+      // No timing promise: we say we will retry and text the result, not when.
+      return `Zivo: ${card} is saved. You were not charged. If a payment is past due, we'll try it on this card and text you the result.${help} ${STOP}`;
     }
     // Support starts in the portal (V2.1): texts point there rather than inviting replies.
     case "checkin_day1":

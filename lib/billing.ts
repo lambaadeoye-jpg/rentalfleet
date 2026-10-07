@@ -9,9 +9,10 @@ type Claimed = {
   stripe_customer_id: string; stripe_payment_method_id: string; due_at: string; attempt_no: number;
 };
 
-export async function processBilling(db: SupabaseClient): Promise<{ claimed: number; succeeded: number; failed: number; pending: number; skipped?: string }> {
+/** `customerId` limits the run to one renter (used the moment they save a new card). */
+export async function processBilling(db: SupabaseClient, opts?: { customerId?: string }): Promise<{ claimed: number; succeeded: number; failed: number; pending: number; skipped?: string }> {
   if (!stripeConfigured()) return { claimed: 0, succeeded: 0, failed: 0, pending: 0, skipped: "stripe_not_configured" };
-  const { data, error } = await db.rpc("claim_due_billing", { p_limit: 10 });
+  const { data, error } = await db.rpc("claim_due_billing", opts?.customerId ? { p_limit: 10, p_customer: opts.customerId } : { p_limit: 10 });
   if (error) { console.error("[billing] claim failed:", error.message); return { claimed: 0, succeeded: 0, failed: 0, pending: 0, skipped: "claim_failed" }; }
   const rows = (data ?? []) as Claimed[];
   let succeeded = 0, failed = 0, pending = 0;

@@ -123,3 +123,25 @@ describe("declined-card text", () => {
     if (d.action === "send") expect(d.body).toContain("/card/");
   });
 });
+
+describe("card-saved confirmation", () => {
+  it("names the last four digits, says nothing was charged, and promises no timing", () => {
+    const t = noticeBody("card_updated", { last4: "4242", brand: "visa" }, null)!;
+    expect(t).toContain("ending in 4242");
+    expect(t).toContain("not charged");
+    expect(t).toContain("Reply STOP");
+    expect(t).not.toMatch(/\b(now|minutes?|today|within)\b/i);
+    expect(t.length).toBeLessThanOrEqual(306);
+  });
+  it("ignores a malformed last4 instead of printing it", () => {
+    const t = noticeBody("card_updated", { last4: "<script>" }, null)!;
+    expect(t).toContain("Your new card is saved");
+    expect(t).not.toContain("script");
+  });
+  it("goes out without an active rental (the renter may have none left to check)", () => {
+    expect(decideNotice(row({ kind: "card_updated", data: { last4: "4242" }, rental_status: null }), NOON, true, null).action).toBe("send");
+  });
+  it("waits for quiet hours", () => {
+    expect(decideNotice(row({ kind: "card_updated", data: { last4: "4242" } }), NIGHT, true, null).action).toBe("defer");
+  });
+});

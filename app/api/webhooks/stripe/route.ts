@@ -4,6 +4,7 @@ import { parseCheckoutEvent, verifyStripeSignature } from "@/lib/checkout";
 import { fetchCardInfo, fetchSetupIntentCard } from "@/lib/stripe";
 import { parseSetupEvent } from "@/lib/card-update";
 import { nameMatches } from "@/lib/agreement";
+import { processBilling } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,16 @@ export async function POST(req: Request) {
     });
     if (error) { console.error("[stripe webhook] card update failed:", error.message); return NextResponse.json({ error: "db" }, { status: 500 }); }
     if (outcome === "not_found") { console.error("[stripe webhook] no matching card update request for", setup.sessionId); return NextResponse.json({ error: "not_found" }, { status: 500 }); }
+    // Card saved: retry any failed weekly charge for this renter right away instead of waiting for the next retry slot.
+    // Best effort and isolated: the card is already saved, and the regular billing job would pick the charge up anyway.
+    if (outcome === "saved") {
+      try {
+        const { data: reqRow } = await adminSetup.from("card_update_request").select("customer_id").eq("id", setup.requestId).maybeSingle();
+        if (reqRow?.customer_id) await processBilling(adminSetup, { customerId: reqRow.customer_id as string });
+      } catch (e) {
+        console.error("[stripe webhook] immediate retry failed:", (e as Error).message);
+      }
+    }
     return NextResponse.json({ ok: true, outcome });
   }
 

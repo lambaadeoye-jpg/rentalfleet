@@ -33,3 +33,23 @@ describe("billingErrorLabel", () => {
     expect(billingErrorLabel(null)).toBe("Charge failed");
   });
 });
+
+describe("processBilling for one renter", () => {
+  it("passes the renter filter to the database and sends the plain call otherwise", async () => {
+    const { processBilling } = await import("./billing");
+    const calls: Array<[string, unknown]> = [];
+    const db: any = { rpc: async (name: string, args: unknown) => { calls.push([name, args]); return { data: [], error: null }; } };
+    const prev = { k: process.env.STRIPE_SECRET_KEY, w: process.env.STRIPE_WEBHOOK_SECRET };
+    process.env.STRIPE_SECRET_KEY = "sk_test_x"; process.env.STRIPE_WEBHOOK_SECRET = "whsec_x";
+    try {
+      await processBilling(db, { customerId: "c-1" });
+      await processBilling(db);
+    } finally {
+      process.env.STRIPE_SECRET_KEY = prev.k; process.env.STRIPE_WEBHOOK_SECRET = prev.w;
+      if (prev.k === undefined) delete process.env.STRIPE_SECRET_KEY;
+      if (prev.w === undefined) delete process.env.STRIPE_WEBHOOK_SECRET;
+    }
+    expect(calls[0]).toEqual(["claim_due_billing", { p_limit: 10, p_customer: "c-1" }]);
+    expect(calls[1]).toEqual(["claim_due_billing", { p_limit: 10 }]);
+  });
+});
