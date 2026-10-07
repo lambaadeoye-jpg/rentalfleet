@@ -12,6 +12,8 @@ export type BillingRow = {
   scheduleId: string; rentalId: string; customerId: string | null; customerName: string; weeklyAmount: number; nextDueAt: string | null;
   weeksPaid: number; paused: boolean; lastStatus: string | null; lastError: string | null; lastAttemptNo: number | null; lastAt: string | null;
   hasCard: boolean; overdue: boolean;
+  /** When the renter last saved a card through an update-card link (shown for 7 days). */
+  cardUpdatedAt: string | null;
 };
 
 export async function getBilling(): Promise<{ rows: BillingRow[]; billingOn: boolean }> {
@@ -25,10 +27,17 @@ export async function getBilling(): Promise<{ rows: BillingRow[]; billingOn: boo
   const list = (schedules ?? []).filter((s: any) => ["active", "extended"].includes(s.rental?.status));
   const rentalIds = list.map((s: any) => s.rental_id);
   const customerIds = Array.from(new Set(list.map((s: any) => s.rental?.customer_id).filter(Boolean)));
-  const [{ data: attempts }, { data: cards }] = await Promise.all([
+  const [{ data: attempts }, { data: cards }, { data: cardUpdates }] = await Promise.all([
     rentalIds.length ? supabase.from("billing_attempt").select("rental_id, status, error, attempt_no, created_at, finished_at").in("rental_id", rentalIds).order("created_at", { ascending: false }).limit(1000) : Promise.resolve({ data: [] as any[] }),
     customerIds.length ? supabase.from("customer_payment_method").select("customer_id").in("customer_id", customerIds) : Promise.resolve({ data: [] as any[] }),
+    // Renters who fixed their card through an update-card link in the last 7 days (the table exists from migration 0086;
+    // if it is missing the query just returns nothing and the screen works as before).
+    customerIds.length
+      ? supabase.from("card_update_request").select("customer_id, completed_at").eq("status", "completed").gte("completed_at", new Date(Date.now() - 7 * 86400_000).toISOString()).in("customer_id", customerIds).order("completed_at", { ascending: false })
+      : Promise.resolve({ data: [] as any[] }),
   ]);
+  const cardUpdatedBy = new Map<string, string>();
+  for (const u of cardUpdates ?? []) if (u.customer_id && !cardUpdatedBy.has(u.customer_id)) cardUpdatedBy.set(u.customer_id, u.completed_at);
   const lastByRental = new Map<string, any>();
   for (const a of attempts ?? []) if (!lastByRental.has(a.rental_id)) lastByRental.set(a.rental_id, a);
   const withCard = new Set((cards ?? []).map((c: any) => c.customer_id));
@@ -42,6 +51,7 @@ export async function getBilling(): Promise<{ rows: BillingRow[]; billingOn: boo
       lastStatus: a?.status ?? null, lastError: a?.status === "failed" ? billingErrorLabel(a.error) : null,
       lastAttemptNo: a?.attempt_no ?? null, lastAt: a?.finished_at ?? a?.created_at ?? null,
       hasCard: withCard.has(s.rental?.customer_id), overdue: !!s.next_due_at && new Date(s.next_due_at).getTime() < now,
+      cardUpdatedAt: cardUpdatedBy.get(s.rental?.customer_id) ?? null,
     };
   });
   return { rows, billingOn: (setting?.value ?? "").toLowerCase() === "on" };

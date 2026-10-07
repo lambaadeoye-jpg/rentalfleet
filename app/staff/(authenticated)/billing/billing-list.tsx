@@ -68,8 +68,9 @@ export default function BillingList({ rows }: { rows: BillingRow[] }) {
               <td>{r.weeksPaid}</td>
               <td>
                 {r.lastStatus === "succeeded" && <span>Paid · {when(r.lastAt)}</span>}
-                {r.lastStatus === "failed" && <span className="error-text">Failed (try {r.lastAttemptNo} of 4): {r.lastError}</span>}
+                {r.lastStatus === "failed" && <span className="error-text">Failed (try {r.lastAttemptNo}{(r.lastAttemptNo ?? 0) > 4 ? ", new card" : ""}): {r.lastError}</span>}
                 {r.lastStatus === "processing" && <span className="muted-text">Charging…</span>}
+                {r.cardUpdatedAt && <div className="muted-text" style={{ fontSize: 12 }}>New card saved {when(r.cardUpdatedAt)}</div>}
                 {!r.lastStatus && <span className="muted-text">—</span>}
               </td>
               <td>
