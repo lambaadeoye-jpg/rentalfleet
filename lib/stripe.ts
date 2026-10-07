@@ -91,3 +91,46 @@ export async function createRefund(
     return { ok: false, error: "network" };
   }
 }
+
+export type ChargeResult = { ok: true; id: string } | { ok: false; error: string } | { ok: "pending"; id: string };
+
+/**
+ * One off-session charge of a saved card (weekly rent). The idempotency key is per billing attempt, so a retry of a
+ * crashed attempt returns the same PaymentIntent instead of charging twice.
+ */
+export async function chargeSavedCard(
+  stripeCustomerId: string, paymentMethodId: string, amountCents: number, idempotencyKey: string, attemptId: string, rentalId: string
+): Promise<ChargeResult> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return { ok: false, error: "not_configured" };
+  if (!/^cus_[A-Za-z0-9_]+$/.test(stripeCustomerId) || !/^pm_[A-Za-z0-9_]+$/.test(paymentMethodId)
+      || !Number.isInteger(amountCents) || amountCents < 50 || amountCents > 500000) return { ok: false, error: "bad_request" };
+  const body = new URLSearchParams({
+    amount: String(amountCents), currency: "usd", customer: stripeCustomerId, payment_method: paymentMethodId,
+    off_session: "true", confirm: "true", "payment_method_types[]": "card",
+    description: "Weekly rent", "metadata[billing_attempt_id]": attemptId, "metadata[rental_id]": rentalId,
+  });
+  try {
+    const res = await fetch(`${API}/payment_intents`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": idempotencyKey },
+      body,
+    });
+    const json: any = await res.json().catch(() => null);
+    return interpretChargeResponse(res.ok, res.status, json);
+  } catch (e) {
+    console.error("[stripe] charge network error:", (e as Error).message);
+    return { ok: "pending", id: "" }; // unknown outcome: leave the attempt claimed; the idempotency key makes the retry safe
+  }
+}
+
+/** Pure mapping from Stripe's response to what billing should do. */
+export function interpretChargeResponse(httpOk: boolean, status: number, json: any): ChargeResult {
+  if (httpOk && json?.id && json.status === "succeeded") return { ok: true, id: json.id };
+  if (httpOk && json?.id && json.status === "processing") return { ok: "pending", id: json.id };
+  if (httpOk && json?.id) return { ok: false, error: `stripe_${json.status ?? "unknown"}`.slice(0, 120) };
+  if (status >= 500 || status === 429) return { ok: "pending", id: "" };
+  const code = json?.error?.decline_code || json?.error?.code || `http_${status}`;
+  console.error("[stripe] charge failed:", status, json?.error?.type, json?.error?.code, json?.error?.decline_code);
+  return { ok: false, error: `stripe_${code}`.slice(0, 120) };
+}
