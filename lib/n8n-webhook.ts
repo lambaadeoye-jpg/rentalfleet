@@ -12,6 +12,10 @@
 // see the n8n workflow JSON files for the corresponding trigger config.
 
 const N8N_BASE_URL = process.env.N8N_WEBHOOK_BASE_URL; // e.g. https://lamba001.app.n8n.cloud
+// Every n8n webhook rejects calls without this shared secret (header x-webhook-secret). Read per call so tests and env changes apply.
+function webhookSecret(): string | undefined {
+  return process.env.N8N_WEBHOOK_SECRET || undefined;
+}
 
 export const N8N_WEBHOOK_PATHS = {
   newLead: "fleet-rental-new-lead",
@@ -47,13 +51,18 @@ export async function fireN8nWebhook(
     return false;
   }
 
+  const secret = webhookSecret();
+  if (!secret) {
+    console.warn(`[n8n webhook] N8N_WEBHOOK_SECRET not set -- n8n will reject ${path}`);
+  }
+
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 5000);
 
     const response = await fetch(`${N8N_BASE_URL}/webhook/${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(secret ? { "x-webhook-secret": secret } : {}) },
       body: JSON.stringify(payload),
       signal: controller.signal,
     });
