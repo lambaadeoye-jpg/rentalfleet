@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import LeadForm from "../lead-form";
 import CtaTracker from "../cta-tracker";
+import SiteFooter from "../site-footer";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
 import { getCityBySlug, SERVICE_AREA_CITIES } from "@/lib/service-areas";
 import { ShieldCheck, Fuel, Zap, KeyRound } from "lucide-react";
@@ -166,13 +167,7 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
         </p>
       </section>
 
-      <footer className="footer">
-        <div className="container">
-          <p style={{ margin: 0 }}>
-            <a href="/terms">Terms</a> · <a href="/privacy">Privacy Policy</a>
-          </p>
-        </div>
-      </footer>
+      <SiteFooter showTagline={false} />
     </main>
   );
 }

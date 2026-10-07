@@ -2,6 +2,7 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@supabase/supabase-js";
 import MobileCtaBar from "./mobile-cta-bar";
 import CtaTracker from "./cta-tracker";
+import SiteFooter from "./site-footer";
 import { Suspense } from "react";
 import LeadForm from "./lead-form";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
@@ -578,27 +579,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <footer className="footer">
-        <div className="container">
-          <p style={{ margin: "0 0 8px" }}>
-            {brandName} — Get a car. Get to work. Get moving. A car that works as hard as you
-            do.
-          </p>
-          {PHONE_IS_LIVE && (
-            <p style={{ margin: "0 0 8px" }}>
-              <a href={`tel:${PHONE_TEL}`} style={{ color: "rgba(255,255,255,0.8)" }}>
-                {PHONE_DISPLAY}
-              </a>
-            </p>
-          )}
-          <p style={{ margin: "0 0 8px" }}>
-            Already started? <a href="/apply">Continue your application</a>
-          </p>
-          <p style={{ margin: 0 }}>
-            <a href="/terms">Terms</a> · <a href="/privacy">Privacy Policy</a>
-          </p>
-        </div>
-      </footer>
+      <SiteFooter brandName={brandName} />
 
       {/* Sticky mobile bar: the main action always, plus Call once a real number is live. */}
       <MobileCtaBar phoneLive={true} phoneDisplay={PHONE_DISPLAY} phoneTel={PHONE_TEL} />
