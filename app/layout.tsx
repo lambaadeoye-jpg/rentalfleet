@@ -12,7 +12,7 @@ import "./globals.css";
 const SITE_URL = "https://rentzivo.com";
 const TITLE = "Zivo | Gig Worker & Rideshare Car Rental — Get a Car. Get to Work. Get Moving.";
 const DESCRIPTION =
-  "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville. No credit check, unlimited mileage.";
+  "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville. No credit check, insurance included.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -78,7 +78,7 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
       <section style={{ padding: "60px 20px 40px", textAlign: "center" }}>
         <h1 style={{ fontSize: 34, marginBottom: 12 }}>{city.heroLine}</h1>
         <p className="muted-text" style={{ fontSize: 17, maxWidth: 560, margin: "0 auto 20px" }}>
-          Get a work-ready vehicle in {city.displayName} — no credit check, unlimited mileage,
+          Get a work-ready vehicle in {city.displayName} — no credit check, insurance included,
           approved fast. Built for Uber, Lyft, and delivery drivers in {city.region}.
         </p>
         {PHONE_IS_LIVE ? (
@@ -106,9 +106,9 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24 }}>
             <div style={{ textAlign: "center" }}>
               <ShieldCheck size={28} color="var(--teal)" style={{ marginBottom: 8 }} />
-              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Insurance Options</h3>
+              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Insurance Included</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
-                Bring your own, or ask us about options for qualified renters.
+                Drive with confidence from day one.
               </p>
             </div>
             <div style={{ textAlign: "center" }}>

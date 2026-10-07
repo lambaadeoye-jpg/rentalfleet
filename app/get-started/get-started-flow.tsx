@@ -316,7 +316,7 @@ export default function GetStartedFlow() {
         {step === "contact" && (
           <>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 24 }}>
-              {["No credit check", "Unlimited miles", "Insurance options"].map((badge) => (
+              {["No credit check", "Unlimited miles", "Insurance included"].map((badge) => (
                 <span
                   key={badge}
                   style={{
