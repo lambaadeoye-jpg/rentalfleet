@@ -387,31 +387,78 @@ label {
   }
 }
 
-.mobile-call-bar {
+.mobile-cta-bar {
   display: none;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   z-index: 50;
+  gap: 8px;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: rgba(11, 18, 32, 0.96);
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.25);
+}
+.mobile-cta-bar a {
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  background: var(--teal);
-  color: white;
+  min-height: 48px;
+  border-radius: 10px;
   font-weight: 700;
-  font-size: 15px;
-  padding: 14px 0;
+  font-size: 16px;
   text-decoration: none;
 }
+.mobile-cta-main {
+  flex: 1;
+  background: var(--teal);
+  color: white;
+}
+.mobile-cta-call {
+  padding: 0 18px;
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  color: white;
+}
 @media (max-width: 640px) {
-  .mobile-call-bar {
+  .mobile-cta-bar {
     display: flex;
   }
   /* keep the sticky bar from covering the last section's content */
   .footer {
-    padding-bottom: 76px;
+    padding-bottom: 84px;
   }
+}
+
+.section-cta {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.section-cta-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.section-dark .section-cta-note {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+section[id] {
+  scroll-margin-top: 16px;
+}
+.nav-cta {
+  min-height: 44px;
 }
 
 .nav-jump-link {

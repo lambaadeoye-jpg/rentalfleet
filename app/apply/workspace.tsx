@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone, Mail, X, Users, Plus, Trash2 } from "lucide-react";
 import DocumentUpload from "./document-upload";
-import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/site-config";
+import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, SUPPORT_EMAIL } from "@/lib/site-config";
 import LegalLinks from "@/app/legal-links";
 import {
   type ApplicationData,
@@ -602,11 +602,21 @@ export default function Workspace({
           and navigating back to the homepage. */}
       <p className="muted-text" style={{ textAlign: "center", marginTop: 24, fontSize: 13 }}>
         Stuck on something?{" "}
-        <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
-          <Phone size={13} style={{ verticalAlign: "-2px", marginRight: 3 }} />
-          Call {PHONE_DISPLAY}
-        </a>{" "}
-        and we&apos;ll walk you through it.
+        {PHONE_IS_LIVE ? (
+          <>
+            <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
+              <Phone size={13} style={{ verticalAlign: "-2px", marginRight: 3 }} />
+              Call {PHONE_DISPLAY}
+            </a>{" "}
+            and we&apos;ll walk you through it.
+          </>
+        ) : (
+          <>
+            Email{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>{SUPPORT_EMAIL}</a>{" "}
+            and we&apos;ll walk you through it.
+          </>
+        )}
       </p>
     </div>
   );

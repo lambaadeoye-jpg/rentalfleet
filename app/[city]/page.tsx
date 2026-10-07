@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import LeadForm from "../lead-form";
-import { PHONE_DISPLAY, PHONE_TEL, MINIMUM_AGE } from "@/lib/site-config";
+import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
 import { getCityBySlug, SERVICE_AREA_CITIES } from "@/lib/service-areas";
 import { ShieldCheck, Fuel, Zap, KeyRound } from "lucide-react";
 
@@ -57,7 +57,7 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
     "@type": "AutoRental",
     name: "Zivo",
     url: `https://rentzivo.com/${city.slug}`,
-    telephone: PHONE_TEL,
+    ...(PHONE_IS_LIVE ? { telephone: PHONE_TEL } : {}),
     areaServed: {
       "@type": "City",
       name: city.displayName,
@@ -78,15 +78,21 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
       <section style={{ padding: "60px 20px 40px", textAlign: "center" }}>
         <h1 style={{ fontSize: 34, marginBottom: 12 }}>{city.heroLine}</h1>
         <p className="muted-text" style={{ fontSize: 17, maxWidth: 560, margin: "0 auto 20px" }}>
-          Get a work-ready vehicle in {city.displayName} — no credit check, insurance included,
+          Get a work-ready vehicle in {city.displayName} — no credit check, unlimited mileage,
           approved fast. Built for Uber, Lyft, and delivery drivers in {city.region}.
         </p>
-        <a href={`tel:${PHONE_TEL}`} className="button-primary" style={{ display: "inline-flex" }}>
-          Call {PHONE_DISPLAY}
-        </a>
+        {PHONE_IS_LIVE ? (
+          <a href={`tel:${PHONE_TEL}`} className="button-primary" style={{ display: "inline-flex" }}>
+            Call {PHONE_DISPLAY}
+          </a>
+        ) : (
+          <a href="#apply" className="button-primary" style={{ display: "inline-flex" }}>
+            Find My Car
+          </a>
+        )}
       </section>
 
-      <section style={{ padding: "20px", maxWidth: 480, margin: "0 auto 60px" }}>
+      <section id="apply" style={{ padding: "20px", maxWidth: 480, margin: "0 auto 60px" }}>
         <Suspense fallback={null}>
           <LeadForm categories={categories ?? []} platforms={platforms ?? []} />
         </Suspense>
@@ -100,9 +106,9 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24 }}>
             <div style={{ textAlign: "center" }}>
               <ShieldCheck size={28} color="var(--teal)" style={{ marginBottom: 8 }} />
-              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Insurance Included</h3>
+              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Insurance Options</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
-                Drive with confidence from day one.
+                Bring your own, or ask us about options for qualified renters.
               </p>
             </div>
             <div style={{ textAlign: "center" }}>

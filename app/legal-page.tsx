@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { PHONE_DISPLAY, PHONE_TEL, SUPPORT_EMAIL } from "@/lib/site-config";
+import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, SUPPORT_EMAIL } from "@/lib/site-config";
 
 export const LEGAL_UPDATED = "October 7, 2026";
 
@@ -14,7 +14,7 @@ export default function LegalPage({ title, children }: { title: string; children
       {children}
       <h2 style={{ fontSize: 20, margin: "32px 0 8px" }}>Contact</h2>
       <p>
-        Zivo Mobility LLC, Middle Tennessee. Call <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>, email{" "}
+        Zivo Mobility LLC, Middle Tennessee. {PHONE_IS_LIVE && (<>Call <a href={`tel:${PHONE_TEL}`}>{PHONE_DISPLAY}</a>, </>)}email{" "}
         <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>, or
         sign in to your account at <a href="/portal/login">rentzivo.com/portal</a> and send us a message.
       </p>

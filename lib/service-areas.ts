@@ -24,7 +24,7 @@ export const SERVICE_AREA_CITIES: CityData[] = [
     region: "Middle Tennessee",
     heroLine: "Rideshare & delivery car rentals in Nashville, TN.",
     metaDescription:
-      "Weekly and daily car rentals for Uber, Lyft, and delivery drivers in Nashville, TN. No credit check, insurance included, approved fast.",
+      "Weekly and daily car rentals for Uber, Lyft, and delivery drivers in Nashville, TN. No credit check, unlimited mileage, approved fast.",
   },
 ];
 

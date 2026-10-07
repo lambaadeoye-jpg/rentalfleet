@@ -1,7 +1,9 @@
 import { createPublicClient } from "@/lib/supabase/public";
+import { createClient } from "@supabase/supabase-js";
+import MobileCtaBar from "./mobile-cta-bar";
 import { Suspense } from "react";
 import LeadForm from "./lead-form";
-import { PHONE_DISPLAY, PHONE_TEL, MINIMUM_AGE } from "@/lib/site-config";
+import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
 import {
   Gauge,
   ShieldCheck,
@@ -23,13 +25,40 @@ import {
 
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
 
+// Weekly rent shown as "From $X/week", read from the approved pricing policy so the page never drifts
+// from what staff set. Returns null (page falls back to "Custom Quote") if not approved or unreadable.
+async function getWeeklyFrom(): Promise<number | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const db = createClient(url, key);
+    const { data } = await db.from("policy_version").select("rules").eq("policy_type", "pricing_and_mileage").eq("immutable", false).maybeSingle();
+    const r = data?.rules as { weekly_approved?: boolean; weekly_rate_usd?: number | null } | null;
+    return r?.weekly_approved && typeof r.weekly_rate_usd === "number" && r.weekly_rate_usd > 0 ? r.weekly_rate_usd : null;
+  } catch {
+    return null;
+  }
+}
+
+// One repeated call to action, same words everywhere, with the reassurance right under it.
+function SectionCta() {
+  return (
+    <div className="section-cta">
+      <a href="#apply" className="button-primary">Find My Car</a>
+      <p className="section-cta-note">No credit check. Takes about a minute.</p>
+    </div>
+  );
+}
+
 export default async function Home() {
   const supabase = createPublicClient();
 
-  const [{ data: tenant }, { data: categories }, { data: platforms }] = await Promise.all([
+  const [{ data: tenant }, { data: categories }, { data: platforms }, weeklyFrom] = await Promise.all([
     supabase.from("tenant").select("name").eq("status", "active").limit(1).maybeSingle(),
     supabase.from("vehicle_category").select("id, name, description").eq("active", true),
     supabase.from("gig_platform").select("id, code, name").order("sort_order"),
+    getWeeklyFrom(),
   ]);
 
   const brandName = tenant?.name ?? "Fleet Rental";
@@ -52,7 +81,7 @@ export default async function Home() {
             description:
               "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent-driving work throughout Greater Nashville.",
             url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rentzivo.com",
-            telephone: PHONE_TEL,
+            ...(PHONE_IS_LIVE ? { telephone: PHONE_TEL } : {}),
             areaServed: {
               "@type": "City",
               name: "Nashville",
@@ -80,12 +109,14 @@ export default async function Home() {
               <a href="#how-it-works" className="nav-jump-link">How It Works</a>
               <a href="#pricing" className="nav-jump-link">Pricing</a>
               <a href="#faq" className="nav-jump-link">FAQ</a>
-              <a href={`tel:${PHONE_TEL}`} className="nav-phone-link">
-                <Phone size={15} />
-                {PHONE_DISPLAY}
-              </a>
-              <a href="#apply" className="button-primary" style={{ padding: "10px 18px", fontSize: 14 }}>
-                Start My Application
+              {PHONE_IS_LIVE && (
+                <a href={`tel:${PHONE_TEL}`} className="nav-phone-link">
+                  <Phone size={15} />
+                  {PHONE_DISPLAY}
+                </a>
+              )}
+              <a href="#apply" className="button-primary nav-cta" style={{ padding: "10px 18px", fontSize: 14 }}>
+                Find My Car
               </a>
             </div>
           </nav>
@@ -118,12 +149,18 @@ export default async function Home() {
               <span>•</span>
               <span>Fast process</span>
             </div>
-            <p style={{ marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
-              Prefer to talk it through?{" "}
-              <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
-                Call {PHONE_DISPLAY}
-              </a>
-            </p>
+            {PHONE_IS_LIVE ? (
+              <p style={{ marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
+                Prefer to talk it through?{" "}
+                <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
+                  Call {PHONE_DISPLAY}
+                </a>
+              </p>
+            ) : (
+              <p style={{ marginTop: 18, fontSize: 14, color: "rgba(255,255,255,0.7)" }}>
+                No credit check. Takes about a minute.
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -257,7 +294,7 @@ export default async function Home() {
                   <li>Fuel-efficient, practical choice for high-mileage driving</li>
                 </ul>
                 <a href="#apply" className="button-primary" style={{ alignSelf: "flex-start" }}>
-                  Check Availability
+                  Find My Car
                 </a>
               </div>
             </div>
@@ -279,17 +316,30 @@ export default async function Home() {
             </div>
             <div className="card price-card" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
               <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>WEEKLY</div>
-              <div className="price">Custom Quote</div>
-              <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                For drivers who need a vehicle for ongoing work. Pricing shown during rental
-                selection, may vary by category.
-              </p>
+              {weeklyFrom != null ? (
+                <>
+                  <div className="price">From ${weeklyFrom}<span style={{ fontSize: 16, fontWeight: 600 }}>/week</span></div>
+                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
+                    For drivers who need a vehicle for ongoing work. Final weekly rate is confirmed
+                    during rental selection and may vary by category.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="price">Custom Quote</div>
+                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
+                    For drivers who need a vehicle for ongoing work. Pricing shown during rental
+                    selection, may vary by category.
+                  </p>
+                </>
+              )}
             </div>
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
             Unlimited mileage included on every rental. We currently offer daily and weekly
             rental options — we do not offer a monthly rental plan.
           </p>
+          <SectionCta />
         </div>
       </section>
 
@@ -335,6 +385,7 @@ export default async function Home() {
             Many customers can move through the process in less than 24 hours when required
             information, documentation, and approvals are completed promptly.
           </p>
+          <SectionCta />
         </div>
       </section>
 
@@ -370,6 +421,7 @@ export default async function Home() {
               </p>
             </div>
           </div>
+          <SectionCta />
         </div>
       </section>
 
@@ -379,11 +431,15 @@ export default async function Home() {
           <h2 className="section-title">Let&apos;s find the right vehicle for your work.</h2>
           <p className="section-lede">
             No document uploads here — just the basics. We&apos;ll follow up with next steps.
-            Prefer to talk it through instead?{" "}
-            <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
-              Call {PHONE_DISPLAY}
-            </a>
-            .
+            {PHONE_IS_LIVE && (
+              <>
+                {" "}Prefer to talk it through instead?{" "}
+                <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
+                  Call {PHONE_DISPLAY}
+                </a>
+                .
+              </>
+            )}
           </p>
           <Suspense fallback={null}>
             <LeadForm categories={categories ?? []} platforms={platforms ?? []} />
@@ -557,11 +613,13 @@ export default async function Home() {
             {brandName} — Get a car. Get to work. Get moving. A car that works as hard as you
             do.
           </p>
-          <p style={{ margin: "0 0 8px" }}>
-            <a href={`tel:${PHONE_TEL}`} style={{ color: "rgba(255,255,255,0.8)" }}>
-              {PHONE_DISPLAY}
-            </a>
-          </p>
+          {PHONE_IS_LIVE && (
+            <p style={{ margin: "0 0 8px" }}>
+              <a href={`tel:${PHONE_TEL}`} style={{ color: "rgba(255,255,255,0.8)" }}>
+                {PHONE_DISPLAY}
+              </a>
+            </p>
+          )}
           <p style={{ margin: "0 0 8px" }}>
             Already started? <a href="/apply">Continue your application</a>
           </p>
@@ -571,14 +629,8 @@ export default async function Home() {
         </div>
       </footer>
 
-      {/* Sticky mobile call bar — phone converts far better than forms in
-          this vertical, and mobile drives most traffic but converts worse
-          on forms specifically, so this is the highest-leverage single
-          placement for it. Hidden on desktop via CSS (.mobile-call-bar). */}
-      <a href={`tel:${PHONE_TEL}`} className="mobile-call-bar">
-        <Phone size={18} />
-        Call {PHONE_DISPLAY}
-      </a>
+      {/* Sticky mobile bar: the main action always, plus Call once a real number is live. */}
+      <MobileCtaBar phoneLive={PHONE_IS_LIVE} phoneDisplay={PHONE_DISPLAY} phoneTel={PHONE_TEL} />
     </>
   );
 }
