@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parseCheckoutEvent, verifyStripeSignature } from "@/lib/checkout";
-import { fetchCardInfo } from "@/lib/stripe";
+import { fetchCardInfo, fetchSetupIntentCard } from "@/lib/stripe";
+import { parseSetupEvent } from "@/lib/card-update";
 import { nameMatches } from "@/lib/agreement";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,25 @@ export async function POST(req: Request) {
 
   let raw: unknown;
   try { raw = JSON.parse(payload); } catch { return NextResponse.json({ error: "bad_json" }, { status: 400 }); }
+  // A renter saved a new card through an update-card link (setup mode: nothing was charged).
+  const setup = parseSetupEvent(raw);
+  if (setup) {
+    if (!setup.requestId || !setup.setupIntentId) return NextResponse.json({ ok: true, ignored: true });
+    const adminSetup = createAdminClient();
+    if (!adminSetup) return NextResponse.json({ error: "db_unavailable" }, { status: 500 });
+    const saved = await fetchSetupIntentCard(setup.setupIntentId);
+    // Could not read the card from Stripe right now: ask Stripe to retry rather than lose it.
+    if (!saved?.paymentMethodId) return NextResponse.json({ error: "card_unavailable" }, { status: 500 });
+    const { data: outcome, error } = await adminSetup.rpc("complete_card_update", {
+      p_event_id: setup.eventId, p_session_id: setup.sessionId, p_request_id: setup.requestId,
+      p_stripe_customer: saved.stripeCustomerId ?? setup.stripeCustomerId, p_pm: saved.paymentMethodId,
+      p_brand: saved.brand, p_last4: saved.last4, p_exp_month: saved.expMonth, p_exp_year: saved.expYear, p_billing_name: saved.billingName,
+    });
+    if (error) { console.error("[stripe webhook] card update failed:", error.message); return NextResponse.json({ error: "db" }, { status: 500 }); }
+    if (outcome === "not_found") { console.error("[stripe webhook] no matching card update request for", setup.sessionId); return NextResponse.json({ error: "not_found" }, { status: 500 }); }
+    return NextResponse.json({ ok: true, outcome });
+  }
+
   const ev = parseCheckoutEvent(raw);
   if (!ev) return NextResponse.json({ ok: true, ignored: true });
 
@@ -26,6 +46,8 @@ export async function POST(req: Request) {
   if (!admin) return NextResponse.json({ error: "db_unavailable" }, { status: 500 });
 
   if (ev.type === "checkout.session.expired") {
+    // Harmless for payment sessions; frees an update-card link whose Stripe page timed out.
+    await admin.rpc("expire_card_update_session", { p_session_id: ev.sessionId });
     const { error } = await admin.rpc("expire_checkout_session", { p_event_id: ev.eventId, p_session_id: ev.sessionId });
     if (error) { console.error("[stripe webhook] expire failed:", error.message); return NextResponse.json({ error: "db" }, { status: 500 }); }
     return NextResponse.json({ ok: true });

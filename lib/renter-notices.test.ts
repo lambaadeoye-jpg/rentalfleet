@@ -102,3 +102,24 @@ describe("check-ins and referral ask", () => {
       .toEqual({ action: "defer", reason: "quiet_hours" });
   });
 });
+
+describe("declined-card text", () => {
+  const url = "https://rentzivo.com/card/" + "a".repeat(43);
+  it("carries the private update-card link when there is one", () => {
+    const t = noticeBody("weekly_charge_failed", { amount_cents: 45000 }, null, { cardUpdateUrl: url })!;
+    expect(t).toContain(`Update your card here: ${url}`);
+    expect(t).toContain("$450.00");
+    expect(t).toContain("Reply STOP");
+    expect(t.length).toBeLessThanOrEqual(306);
+  });
+  it("asks the renter to contact us when no link could be made", () => {
+    const t = noticeBody("weekly_charge_failed", { amount_cents: 45000 }, "615-555-0100")!;
+    expect(t).toContain("Please contact us");
+    expect(t).not.toContain("/card/");
+  });
+  it("sends with the link through decideNotice", () => {
+    const d = decideNotice(row({ kind: "weekly_charge_failed", data: { amount_cents: 45000 } }), NOON, true, null, { cardUpdateUrl: url });
+    expect(d.action).toBe("send");
+    if (d.action === "send") expect(d.body).toContain("/card/");
+  });
+});

@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { decideNotice, type NoticeRow } from "@/lib/renter-notices";
 import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
+import { generateUploadToken } from "@/lib/upload-token";
+import { cardUpdateUrl, CARD_LINK_HOURS } from "@/lib/card-update";
 
 // Called every few minutes by an n8n Schedule trigger (never by a browser). Sends the texts queued by the database
 // (cancellation, refund issued, payment received, weekly rent charged / failed) exactly once each.
@@ -35,7 +37,15 @@ export async function POST(request: Request) {
 
   for (const row of (claimed ?? []) as Claimed[]) {
     try {
-      const decision = decideNotice(row, new Date(), smsConfigured, support, { siteUrl });
+      let decision = decideNotice(row, new Date(), smsConfigured, support, { siteUrl });
+      // A declined-card text carries a private update-card link. It is made only now, when the text is really going
+      // out, so a deferred or skipped notice never replaces a link the renter already has. If the link can't be made
+      // (payments switched off, database error) the text goes without it and asks them to contact us.
+      if (decision.action === "send" && row.kind === "weekly_charge_failed") {
+        const { token, hash } = generateUploadToken();
+        const { error: linkError } = await supabase.rpc("create_card_update_request", { p_customer_id: row.customer_id, p_token_hash: hash, p_hours: CARD_LINK_HOURS });
+        if (!linkError) decision = decideNotice(row, new Date(), smsConfigured, support, { siteUrl, cardUpdateUrl: cardUpdateUrl(token, siteUrl) });
+      }
       if (decision.action === "skip") {
         counts.skipped++;
         await supabase.from("renter_notice").update({ status: "skipped", error: decision.reason }).eq("id", row.id);

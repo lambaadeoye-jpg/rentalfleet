@@ -23,7 +23,7 @@ export type NoticeRow = {
   has_consent?: boolean;
 };
 
-export type NoticeContext = { siteUrl?: string | null };
+export type NoticeContext = { siteUrl?: string | null; cardUpdateUrl?: string | null };
 
 export type NoticeDecision =
   | { action: "send"; to: string; body: string }
@@ -72,8 +72,11 @@ export function noticeBody(
     }
     case "weekly_rent_charged":
       return `Zivo: We charged your card ${dollars(d.amount_cents)} for this week's rent. ${STOP}`;
-    case "weekly_charge_failed":
-      return `Zivo: We couldn't charge your card ${dollars(d.amount_cents)} for this week's rent. Please contact us so we can fix it.${help} ${STOP}`;
+    case "weekly_charge_failed": {
+      // With a private update-card link the renter can fix it themselves; without one, point them to us.
+      const fix = ctx?.cardUpdateUrl ? `Update your card here: ${ctx.cardUpdateUrl}` : "Please contact us so we can fix it.";
+      return `Zivo: We couldn't charge your card ${dollars(d.amount_cents)} for this week's rent. ${fix}${help} ${STOP}`;
+    }
     // Support starts in the portal (V2.1): texts point there rather than inviting replies.
     case "checkin_day1":
       return `Zivo: ${hi}how is the car working out so far? If anything is off, tell us in your portal: ${base(ctx)}/portal ${STOP}`;

@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { billingErrorLabel } from "@/lib/billing";
+import { generateUploadToken } from "@/lib/upload-token";
+import { cardUpdateUrl, CARD_LINK_HOURS } from "@/lib/card-update";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type BillingRow = {
-  scheduleId: string; rentalId: string; customerName: string; weeklyAmount: number; nextDueAt: string | null;
+  scheduleId: string; rentalId: string; customerId: string | null; customerName: string; weeklyAmount: number; nextDueAt: string | null;
   weeksPaid: number; paused: boolean; lastStatus: string | null; lastError: string | null; lastAttemptNo: number | null; lastAt: string | null;
   hasCard: boolean; overdue: boolean;
 };
@@ -34,7 +36,7 @@ export async function getBilling(): Promise<{ rows: BillingRow[]; billingOn: boo
   const rows: BillingRow[] = list.map((s: any) => {
     const a = lastByRental.get(s.rental_id);
     return {
-      scheduleId: s.id, rentalId: s.rental_id,
+      scheduleId: s.id, rentalId: s.rental_id, customerId: s.rental?.customer_id ?? null,
       customerName: s.rental?.customer ? `${s.rental.customer.first_name} ${s.rental.customer.last_name}` : "Unknown",
       weeklyAmount: Number(s.amount), nextDueAt: s.next_due_at, weeksPaid: s.weeks_paid, paused: !!s.billing_paused,
       lastStatus: a?.status ?? null, lastError: a?.status === "failed" ? billingErrorLabel(a.error) : null,
@@ -55,4 +57,19 @@ export async function setPaused(rentalId: string, paused: boolean): Promise<{ su
   }
   revalidatePath("/staff/billing");
   return { success: true };
+}
+
+/** Staff: make a private update-card link for a renter (valid 72 hours; replaces any earlier open link). */
+export async function createCardLink(customerId: string): Promise<{ success: true; url: string } | { success: false; error: string }> {
+  if (!UUID_RE.test(customerId)) return { success: false, error: "Something went wrong." };
+  const supabase = await createClient();
+  const { token, hash } = generateUploadToken();
+  const { error } = await supabase.rpc("create_card_update_request", { p_customer_id: customerId, p_token_hash: hash, p_hours: CARD_LINK_HOURS });
+  if (error) {
+    const m = (error.message ?? "").toLowerCase();
+    if (m.includes("permission")) return { success: false, error: "You don't have permission to do this." };
+    if (m.includes("payments_disabled")) return { success: false, error: "Card payments are switched off. Turn them on first." };
+    return { success: false, error: "Couldn't make the link. Please try again." };
+  }
+  return { success: true, url: cardUpdateUrl(token) };
 }

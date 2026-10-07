@@ -1,6 +1,8 @@
 // Minimal Stripe client over plain HTTPS (no SDK). Server-only.
 // Needs STRIPE_SECRET_KEY (and STRIPE_WEBHOOK_SECRET for the webhook route).
 
+import { extractSetupCard, type SetupCard } from "./card-update";
+
 const API = "https://api.stripe.com/v1";
 
 export function stripeConfigured(): boolean {
@@ -61,6 +63,19 @@ export async function fetchCardInfo(paymentIntentId: string): Promise<CardInfo |
     const res = await fetch(`${API}/payment_intents/${paymentIntentId}?expand[]=latest_charge`, { headers: { Authorization: `Bearer ${key}` } });
     if (!res.ok) return null;
     return extractCardInfo(await res.json());
+  } catch {
+    return null;
+  }
+}
+
+/** Best-effort read of the card saved by a setup-mode Checkout session. Returns null on any problem; the webhook then retries. */
+export async function fetchSetupIntentCard(setupIntentId: string): Promise<SetupCard | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key || !/^seti_[A-Za-z0-9_]+$/.test(setupIntentId)) return null;
+  try {
+    const res = await fetch(`${API}/setup_intents/${setupIntentId}?expand[]=payment_method`, { headers: { Authorization: `Bearer ${key}` } });
+    if (!res.ok) return null;
+    return extractSetupCard(await res.json());
   } catch {
     return null;
   }

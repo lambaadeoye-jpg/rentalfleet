@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { getMyGeneratedDocuments } from "./documents-actions";
 import GeneratedDocumentsList from "./generated-documents-list";
+import UpdateCardButton from "./update-card-button";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,8 @@ export default async function PortalMoneyPage() {
   return (
     <div style={{ padding: "24px 20px" }}>
       <h1 style={{ fontSize: 20, marginBottom: 16 }}>Money</h1>
+
+      <UpdateCardButton />
 
       <div className="card" style={{ marginBottom: 16 }}>
         <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Security Deposit</h2>
