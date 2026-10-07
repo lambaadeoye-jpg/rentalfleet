@@ -11,6 +11,7 @@ export type Attribution = {
   clickId?: string; // gclid / fbclid / etc.
   landingPath?: string;
   referrer?: string; // referring hostname only
+  cta?: string; // which website button was used last, e.g. "hero_primary"
 };
 
 const STORAGE_KEY = "zivo_first_touch";
@@ -33,6 +34,7 @@ export function sanitizeAttribution(a: Attribution | undefined | null): Attribut
     clickId: clean(a.clickId),
     landingPath: clean(a.landingPath),
     referrer: clean(a.referrer)?.toLowerCase(),
+    cta: typeof a.cta === "string" && /^[a-z0-9_]{1,30}$/.test(a.cta) ? a.cta : undefined,
   };
 }
 
@@ -96,5 +98,24 @@ export function readFirstTouch(): Attribution {
     return raw ? sanitizeAttribution(JSON.parse(raw)) : {};
   } catch {
     return {};
+  }
+}
+
+const CTA_KEY = "zivo_last_cta";
+
+/** Browser only. Remembers the last website button clicked in this visit. */
+export function rememberCta(name: string): void {
+  try {
+    if (/^[a-z0-9_]{1,30}$/.test(name)) window.sessionStorage.setItem(CTA_KEY, name);
+  } catch {
+    // Storage blocked: the lead is simply recorded without a button.
+  }
+}
+
+export function readLastCta(): string | undefined {
+  try {
+    return window.sessionStorage.getItem(CTA_KEY) ?? undefined;
+  } catch {
+    return undefined;
   }
 }

@@ -8,6 +8,7 @@ const GROUPS = [
   { key: "source", label: "Channel" },
   { key: "campaign", label: "Campaign" },
   { key: "heard_about", label: "\"How did you hear about us?\"" },
+  { key: "button", label: "Website button" },
 ] as const;
 
 type SourceRow = {

@@ -25,7 +25,7 @@ export default function MobileCtaBar({ phoneLive, phoneDisplay, phoneTel }: { ph
           Call
         </a>
       )}
-      <a href="#apply" className="mobile-cta-main">Find My Car</a>
+      <a href="#apply" data-cta="mobile_bar" className="mobile-cta-main">Find My Car</a>
     </div>
   );
 }

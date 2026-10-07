@@ -1,6 +1,7 @@
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@supabase/supabase-js";
 import MobileCtaBar from "./mobile-cta-bar";
+import CtaTracker from "./cta-tracker";
 import { Suspense } from "react";
 import LeadForm from "./lead-form";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
@@ -42,10 +43,10 @@ async function getWeeklyFrom(): Promise<number | null> {
 }
 
 // One repeated call to action, same words everywhere, with the reassurance right under it.
-function SectionCta() {
+function SectionCta({ name }: { name: string }) {
   return (
     <div className="section-cta">
-      <a href="#apply" className="button-primary">Find My Car</a>
+      <a href="#apply" className="button-primary" data-cta={name}>Find My Car</a>
       <p className="section-cta-note">No credit check. Takes about a minute.</p>
     </div>
   );
@@ -91,6 +92,8 @@ export default async function Home() {
         }}
       />
 
+      <CtaTracker />
+
       {/* NAV */}
       <div className="hero">
         <img
@@ -115,7 +118,7 @@ export default async function Home() {
                   {PHONE_DISPLAY}
                 </a>
               )}
-              <a href="#apply" className="button-primary nav-cta" style={{ padding: "10px 18px", fontSize: 14 }}>
+              <a href="#apply" data-cta="nav" className="button-primary nav-cta" style={{ padding: "10px 18px", fontSize: 14 }}>
                 Find My Car
               </a>
             </div>
@@ -133,7 +136,7 @@ export default async function Home() {
               moving.
             </p>
             <div className="cta-row">
-              <a href="#apply" className="button-primary">
+              <a href="#apply" data-cta="hero" className="button-primary">
                 Find My Car
               </a>
               <a href="#how-it-works" className="button-secondary">
@@ -293,7 +296,7 @@ export default async function Home() {
                   <li>Unlimited mileage included</li>
                   <li>Fuel-efficient, practical choice for high-mileage driving</li>
                 </ul>
-                <a href="#apply" className="button-primary" style={{ alignSelf: "flex-start" }}>
+                <a href="#apply" data-cta="fleet_card" className="button-primary" style={{ alignSelf: "flex-start" }}>
                   Find My Car
                 </a>
               </div>
@@ -339,7 +342,7 @@ export default async function Home() {
             Unlimited mileage included on every rental. We currently offer daily and weekly
             rental options — we do not offer a monthly rental plan.
           </p>
-          <SectionCta />
+          <SectionCta name="after_pricing" />
         </div>
       </section>
 
@@ -385,7 +388,7 @@ export default async function Home() {
             Many customers can move through the process in less than 24 hours when required
             information, documentation, and approvals are completed promptly.
           </p>
-          <SectionCta />
+          <SectionCta name="after_process" />
         </div>
       </section>
 
@@ -421,7 +424,7 @@ export default async function Home() {
               </p>
             </div>
           </div>
-          <SectionCta />
+          <SectionCta name="after_requirements" />
         </div>
       </section>
 
@@ -597,7 +600,7 @@ export default async function Home() {
             throughout Greater Nashville.
           </p>
           <div className="cta-row" style={{ justifyContent: "center" }}>
-            <a href="#apply" className="button-primary">
+            <a href="#apply" data-cta="final" className="button-primary">
               Find My Car
             </a>
           </div>

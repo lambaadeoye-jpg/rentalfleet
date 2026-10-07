@@ -23,3 +23,12 @@ describe("validation", () => {
   it("emails", () => { expect(isValidEmail("a@b.co")).toBe(true); expect(isValidEmail("a@b")).toBe(false); });
   it("phones", () => { expect(isValidUsPhone("(615) 555-0101")).toBe(true); expect(isValidUsPhone("12345")).toBe(false); });
 });
+
+import { sanitizeAttribution as _san } from "./attribution";
+describe("cta tag", () => {
+  it("keeps clean button codes and drops anything else", () => {
+    expect(_san({ cta: "hero" }).cta).toBe("hero");
+    expect(_san({ cta: "Hero Button!" }).cta).toBeUndefined();
+    expect(_san({ cta: "x".repeat(40) }).cta).toBeUndefined();
+  });
+});

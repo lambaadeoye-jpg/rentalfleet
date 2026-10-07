@@ -6,7 +6,7 @@ import { CheckCircle2, Phone, Mail, MessageSquare } from "lucide-react";
 import { submitLead } from "../actions";
 import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
 import LegalLinks from "../legal-links";
-import { readFirstTouch } from "@/lib/attribution";
+import { readFirstTouch, readLastCta } from "@/lib/attribution";
 import { PHONE_DISPLAY } from "@/lib/site-config";
 
 type Step = "license" | "driving" | "urgency" | "contact";
@@ -80,7 +80,7 @@ export default function GetStartedFlow() {
         hasDriversLicense: hasLicense ?? undefined,
         drivingStatus: drivingStatus ?? undefined,
         urgency: urgency ?? undefined,
-        attribution: readFirstTouch(),
+        attribution: { ...readFirstTouch(), cta: readLastCta() },
         sourceFallback: "get-started",
       });
 
@@ -316,7 +316,7 @@ export default function GetStartedFlow() {
         {step === "contact" && (
           <>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 24 }}>
-              {["No credit check", "Unlimited miles", "Insurance options"].map((badge) => (
+              {["No credit check", "Unlimited miles", "Insurance included"].map((badge) => (
                 <span
                   key={badge}
                   style={{

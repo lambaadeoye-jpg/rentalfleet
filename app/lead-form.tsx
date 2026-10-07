@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { submitLeadStep1, completeLeadStep2 } from "./actions";
 import { HEARD_ABOUT_OPTIONS } from "@/lib/lead-steps";
-import { readFirstTouch } from "@/lib/attribution";
+import { readFirstTouch, readLastCta } from "@/lib/attribution";
 import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
 import LegalLinks from "./legal-links";
 
@@ -71,7 +71,7 @@ export default function LeadForm({
         gigPlatformIds: selectedPlatforms,
         referralCode,
         contactConsent: consent,
-        attribution: readFirstTouch(),
+        attribution: { ...readFirstTouch(), cta: readLastCta() },
       });
 
       if (!result.success) {
