@@ -560,10 +560,13 @@ export default async function Home() {
             {brandName} — Get a car. Get to work. Get moving. A car that works as hard as you
             do.
           </p>
-          <p style={{ margin: 0 }}>
+          <p style={{ margin: "0 0 8px" }}>
             <a href={`tel:${PHONE_TEL}`} style={{ color: "rgba(255,255,255,0.8)" }}>
               {PHONE_DISPLAY}
             </a>
+          </p>
+          <p style={{ margin: 0 }}>
+            <a href="/terms">Terms</a> · <a href="/privacy">Privacy Policy</a>
           </p>
         </div>
       </footer>

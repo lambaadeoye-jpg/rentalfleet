@@ -5,6 +5,7 @@ import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone, Mai
 import DocumentUpload from "./document-upload";
 import { PHONE_DISPLAY, PHONE_TEL } from "@/lib/site-config";
 import {
+import LegalLinks from "@/app/legal-links";
   type ApplicationData,
   savePersonalStep,
   saveLicenseStep,
@@ -143,6 +144,7 @@ export default function Workspace({
         We just need a few more details to determine your eligibility. Your progress is saved
         automatically as you go — leave anytime and pick up where you left off.
       </p>
+      <LegalLinks style={{ marginBottom: 12 }} />
       {step !== "review" && (
         <p className="muted-text" style={{ marginBottom: 24, fontSize: 13, fontWeight: 600 }}>
           Step {stepIndex + 1} of {STEPS.length}

@@ -19,6 +19,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     ...cityPages,
+    { url: `${SITE_URL}/privacy`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
+    { url: `${SITE_URL}/terms`, lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
     // Staff/portal/apply are deliberately excluded -- authenticated
     // areas have nothing for search engines to index and no reason to
     // be crawled.

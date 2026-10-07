@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { Mail, CheckCircle2 } from "lucide-react";
 import { sendPortalMagicLink } from "../actions";
+import LegalLinks from "@/app/legal-links";
 
 export default function PortalLoginForm({ inactiveTimeout }: { inactiveTimeout: boolean }) {
   const [email, setEmail] = useState("");
@@ -65,6 +66,7 @@ export default function PortalLoginForm({ inactiveTimeout }: { inactiveTimeout: 
         <button type="submit" className="button-primary" disabled={loading} style={{ width: "100%" }}>
           {loading ? "Sending..." : "Continue"}
         </button>
+        <LegalLinks style={{ textAlign: "center", marginTop: 12 }} />
       </form>
     </div>
   );

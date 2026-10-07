@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Phone, Mail, MessageSquare } from "lucide-react";
 import { submitLead } from "../actions";
+import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
+import LegalLinks from "../legal-links";
 import { readFirstTouch } from "@/lib/attribution";
 import { PHONE_DISPLAY } from "@/lib/site-config";
 
@@ -25,6 +27,7 @@ export default function GetStartedFlow() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [consent, setConsent] = useState(false); // unchecked by default, never required
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
@@ -73,6 +76,7 @@ export default function GetStartedFlow() {
         additionalInfo: "",
         gigPlatformIds: [],
         referralCode,
+        contactConsent: consent,
         hasDriversLicense: hasLicense ?? undefined,
         drivingStatus: drivingStatus ?? undefined,
         urgency: urgency ?? undefined,
@@ -282,6 +286,10 @@ export default function GetStartedFlow() {
                 <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Phone *</label>
                 <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" />
               </div>
+              <label className="checkbox-item" style={{ alignItems: "flex-start", fontSize: 13 }}>
+                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} style={{ marginTop: 3 }} />
+                <span>{CONTACT_CONSENT_TEXT}</span>
+              </label>
             </>
           )}
 
@@ -323,10 +331,7 @@ export default function GetStartedFlow() {
                 </span>
               ))}
             </div>
-            <p className="muted-text" style={{ fontSize: 12, textAlign: "center", marginTop: 16 }}>
-              Your information is private and secure. By submitting you agree to be contacted by Zivo
-              about your rental.
-            </p>
+            <LegalLinks style={{ textAlign: "center", marginTop: 16, fontSize: 12 }} />
           </>
         )}
       </div>

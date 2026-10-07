@@ -7,6 +7,7 @@ import { submitLeadStep1, completeLeadStep2 } from "./actions";
 import { HEARD_ABOUT_OPTIONS } from "@/lib/lead-steps";
 import { readFirstTouch } from "@/lib/attribution";
 import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
+import LegalLinks from "./legal-links";
 
 type VehicleCategory = { id: string; name: string; description: string | null };
 type GigPlatform = { id: string; code: string; name: string };
@@ -39,6 +40,8 @@ export default function LeadForm({
   // submission worked -- a real, silent way to lose leads who think it
   // failed and leave (or worse, resubmit).
   const successRef = useRef<HTMLDivElement>(null);
+  // Step 2 is taller than step 1; without this the phone keeps the old scroll position and the headline is off-screen.
+  const formTopRef = useRef<HTMLFormElement>(null);
 
   const otherPlatform = platforms.find((p) => p.code === "other");
   const otherSelected = otherPlatform ? selectedPlatforms.includes(otherPlatform.id) : false;
@@ -122,6 +125,12 @@ export default function LeadForm({
   }
 
   useEffect(() => {
+    if (step === 2 && !submitted) {
+      formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [step, submitted]);
+
+  useEffect(() => {
     if (submitted) {
       successRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
     }
@@ -153,7 +162,7 @@ export default function LeadForm({
 
   if (step === 2 && saved) {
     return (
-      <form onSubmit={handleStep2} className="card">
+      <form ref={formTopRef} onSubmit={handleStep2} className="card" style={{ scrollMarginTop: 80 }}>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Step 2 of 2</p>
         <h3 style={{ fontSize: 20, marginBottom: 4 }}>
           Thanks{saved.firstName ? `, ${saved.firstName}` : ""}. We&apos;ve got your request.
@@ -307,6 +316,7 @@ export default function LeadForm({
       <button type="submit" className="button-primary" disabled={loading} style={{ width: "100%" }}>
         {loading ? "Saving..." : "Continue"}
       </button>
+      <LegalLinks style={{ textAlign: "center", marginTop: 10 }} />
       <p className="muted-text" style={{ textAlign: "center", marginTop: 10, fontSize: 13 }}>
         No spam. No obligation. We&apos;ll follow up shortly after you submit.
       </p>

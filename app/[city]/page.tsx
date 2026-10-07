@@ -135,6 +135,14 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
           Must be at least {MINIMUM_AGE} years old with a valid driver&apos;s license.
         </p>
       </section>
+
+      <footer className="footer">
+        <div className="container">
+          <p style={{ margin: 0 }}>
+            <a href="/terms">Terms</a> · <a href="/privacy">Privacy Policy</a>
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
