@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { saveSwitch, type SwitchState } from "./switch-settings-actions";
+import { saveSwitch } from "./switch-settings-actions";
+import type { SwitchState } from "./switches";
 
 export default function SwitchSettingsForm({ initial }: { initial: SwitchState[] }) {
   const [state, setState] = useState(() => Object.fromEntries(initial.map((s) => [s.key, s.on])));
