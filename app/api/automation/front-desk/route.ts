@@ -350,5 +350,94 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, urgent, matched: Boolean(top), ticketCreated });
   }
 
+  // stop_contacting: the person asked, on this call, not to be texted or called again. Applies to the number Vapi
+  // reports for this call (the person we called, or the person who called in), never a number the model typed.
+  // Takes effect at once and cancels queued follow-ups; staff see it in the inbox.
+  if (action === "stop_contacting") {
+    if (!callerPhone) return NextResponse.json({ success: false, error: "No number on this call." });
+    const { error: optErr } = await db.rpc("record_opt_out", { p_tenant_id: tenantId, p_phone: callerPhone, p_source: "voice_request" });
+    if (optErr) {
+      console.error("[front-desk] record_opt_out failed:", optErr);
+      return NextResponse.json({ success: false, error: "Could not record it." });
+    }
+    const matches = await matchCaller(db, tenantId, callerPhone);
+    const top = matches[0];
+    await logEvent(
+      db,
+      tenantId,
+      "callback_request",
+      callId,
+      {
+        from: callerPhone,
+        body: "Asked on a call not to be texted or called again. Opt-out recorded automatically; no more automated texts or calls. Staff: contact only if needed for an active rental.",
+        category: "opt_out",
+        urgent: false,
+      },
+      { customerId: top ? (top.kind === "customer" ? top.id : top.customer_id) : null, leadId: top?.kind === "lead" ? top.id : null },
+    );
+    return NextResponse.json({ success: true });
+  }
+
+  // send_portal_link: after verification, emails the caller a sign-in link to the Customer Portal (update card, payments,
+  // documents, support). Only goes to the email already on file, never one the caller states.
+  if (action === "send_portal_link") {
+    const email = asString(args.email, 200);
+    if (!email) {
+      return NextResponse.json({ verified: false, note: "Ask the caller for the email address on file first." });
+    }
+    const key = callerKey(callerPhone);
+    if (isLockedOut(await recentFailures(db, tenantId, key))) {
+      await logEvent(db, tenantId, "auth_locked", callId, { caller_key: key, for: "send_portal_link" });
+      return NextResponse.json(LOCKED_RESPONSE);
+    }
+    const who = callerPhone ? await verifyCaller(db, tenantId, callerPhone, email) : null;
+    if (!who) {
+      await logEvent(db, tenantId, "auth_failed", callId, { method: "phone+email", for: "send_portal_link", caller_key: key });
+      return NextResponse.json({ verified: false, note: "Verification required first. Do not share any account details." });
+    }
+    if (!who.customerId) {
+      return NextResponse.json({
+        verified: true,
+        sent: false,
+        reason: "no_account_yet",
+        note: "This caller has no renter account yet, so there is no portal to sign in to. Offer the application link instead (send_application_link).",
+      });
+    }
+    // At most 3 links per hour per renter.
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count } = await db
+      .from("communication_event")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", tenantId)
+      .eq("customer_id", who.customerId)
+      .eq("event_type", "portal_link_sent")
+      .gte("created_at", since);
+    if ((count ?? 0) >= 3) {
+      return NextResponse.json({ verified: true, sent: false, reason: "limit", note: "Links were already sent recently. Tell them to check their email, or offer a callback request." });
+    }
+    const { data: cust } = await db.from("customer").select("email").eq("id", who.customerId).maybeSingle();
+    const onFile = typeof cust?.email === "string" ? cust.email : "";
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!onFile || !anonKey) {
+      return NextResponse.json({ verified: true, sent: false, reason: "unavailable", note: "Could not send the link. Apologize and offer a callback request." });
+    }
+    const site = (process.env.NEXT_PUBLIC_SITE_URL || "https://rentzivo.com").replace(/\/$/, "");
+    const authClient = createClient(supabaseUrl, anonKey);
+    const { error: otpErr } = await authClient.auth.signInWithOtp({
+      email: onFile,
+      options: { shouldCreateUser: false, emailRedirectTo: `${site}/auth/callback?next=/portal` },
+    });
+    if (otpErr) {
+      console.error("[front-desk] portal link failed:", otpErr.message);
+      return NextResponse.json({ verified: true, sent: false, reason: "unavailable", note: "Could not send the link. Apologize and offer a callback request." });
+    }
+    await logEvent(db, tenantId, "portal_link_sent", callId, { via: "email" }, { customerId: who.customerId, leadId: who.leadId });
+    return NextResponse.json({
+      verified: true,
+      sent: true,
+      note: "A sign-in link was emailed to the address on file. Do not say the address. From the portal they can update their card, see payments, documents and rental details, and contact support.",
+    });
+  }
+
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });
 }
