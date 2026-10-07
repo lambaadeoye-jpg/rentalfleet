@@ -62,8 +62,8 @@ export async function setPaused(rentalId: string, paused: boolean): Promise<{ su
   const supabase = await createClient();
   const { error } = await supabase.rpc("set_billing_paused", { p_rental_id: rentalId, p_paused: paused });
   if (error) {
-    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don't have permission to change billing." };
-    return { success: false, error: "Couldn't update. Please try again." };
+    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don’t have permission to change billing." };
+    return { success: false, error: "Couldn’t update. Please try again." };
   }
   revalidatePath("/staff/billing");
   return { success: true };
@@ -77,9 +77,9 @@ export async function createCardLink(customerId: string): Promise<{ success: tru
   const { error } = await supabase.rpc("create_card_update_request", { p_customer_id: customerId, p_token_hash: hash, p_hours: CARD_LINK_HOURS });
   if (error) {
     const m = (error.message ?? "").toLowerCase();
-    if (m.includes("permission")) return { success: false, error: "You don't have permission to do this." };
+    if (m.includes("permission")) return { success: false, error: "You don’t have permission to do this." };
     if (m.includes("payments_disabled")) return { success: false, error: "Card payments are switched off. Turn them on first." };
-    return { success: false, error: "Couldn't make the link. Please try again." };
+    return { success: false, error: "Couldn’t make the link. Please try again." };
   }
   return { success: true, url: cardUpdateUrl(token) };
 }

@@ -57,7 +57,7 @@ export default function PickupSlotPicker({ state }: { state: PickerState }) {
       return;
     }
     setChanging(false);
-    setNotice(res.status === "held" ? "We're holding that time for you. Payment locks it in." : "Your pickup time is booked.");
+    setNotice(res.status === "held" ? "We’re holding that time for you. Payment locks it in." : "Your pickup time is booked.");
     router.refresh();
   }
 
@@ -75,7 +75,7 @@ export default function PickupSlotPicker({ state }: { state: PickerState }) {
     <div className="card" style={{ marginBottom: 16 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
         <CalendarClock size={20} color="var(--teal)" />
-        <h2 style={{ fontSize: 14, fontWeight: 700 }}>Pickup time</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700 }}>Pickup time</h2>
       </div>
 
       {notice && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 14, marginBottom: 10 }}>{notice}</p>}
@@ -124,7 +124,7 @@ export default function PickupSlotPicker({ state }: { state: PickerState }) {
 
           {slots === null && <p className="muted-text" style={{ fontSize: 14 }}>Loading times…</p>}
           {slots !== null && days.length === 0 && !error && (
-            <p className="muted-text" style={{ fontSize: 14 }}>No times are open right now. We&apos;ll reach out to set one with you.</p>
+            <p className="muted-text" style={{ fontSize: 14 }}>No times are open right now. We&rsquo;ll reach out to set one with you.</p>
           )}
 
           {days.length > 0 && (
@@ -161,7 +161,7 @@ export default function PickupSlotPicker({ state }: { state: PickerState }) {
       )}
 
       {!state.canPick && !state.current && !state.pending && (
-        <p className="muted-text" style={{ fontSize: 14 }}>We&apos;ll let you know here when it&apos;s time to choose a pickup time.</p>
+        <p className="muted-text" style={{ fontSize: 14 }}>We&rsquo;ll let you know here when it&rsquo;s time to choose a pickup time.</p>
       )}
 
       {error && <p className="error-text" style={{ marginTop: 10 }}>{error}</p>}

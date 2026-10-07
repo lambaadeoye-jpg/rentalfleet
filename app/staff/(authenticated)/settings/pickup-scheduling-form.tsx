@@ -18,12 +18,12 @@ function LocationHoursEditor({ locationId, name, initial }: { locationId: string
     setBusy(true);
     const res = await saveLocationHours(locationId, week);
     setBusy(false);
-    setMsg(res.success ? { ok: true, text: "Saved." } : { ok: false, text: res.error ?? "Couldn't save." });
+    setMsg(res.success ? { ok: true, text: "Saved." } : { ok: false, text: res.error ?? "Couldn’t save." });
   }
 
   return (
     <div style={{ marginTop: 20 }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8 }}>{name}</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>{name}</h3>
       {week.map((d, i) => (
         <div key={d.weekday} style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 8 }}>
           <label className="checkbox-item" style={{ width: 120 }}>
@@ -66,7 +66,7 @@ export default function PickupSchedulingForm({ initial }: { initial: PickupSched
     setBusy(true);
     const res = await savePickupSettings(enabled, hold);
     setBusy(false);
-    setMsg(res.success ? { ok: true, text: "Saved." } : { ok: false, text: res.error ?? "Couldn't save." });
+    setMsg(res.success ? { ok: true, text: "Saved." } : { ok: false, text: res.error ?? "Couldn’t save." });
   }
 
   return (
@@ -96,7 +96,7 @@ export default function PickupSchedulingForm({ initial }: { initial: PickupSched
       <hr style={{ margin: "24px 0 4px", opacity: 0.2 }} />
       <h3 style={{ fontSize: 15, marginTop: 16 }}>Weekly pickup hours</h3>
       <p className="muted-text" style={{ fontSize: 12 }}>
-        &ldquo;At once&rdquo; is how many pickups your team can hand over in the same time slot. Times are in each location&apos;s time zone.
+        &ldquo;At once&rdquo; is how many pickups your team can hand over in the same time slot. Times are in each location&rsquo;s time zone.
       </p>
       {initial.locations.length === 0 && <p className="muted-text">Add a location first.</p>}
       {initial.locations.map((l) => (

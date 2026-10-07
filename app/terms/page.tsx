@@ -3,7 +3,7 @@ import LegalPage from "../legal-page";
 import { MINIMUM_AGE } from "@/lib/site-config";
 
 export const metadata: Metadata = {
-  title: "Terms of Use",
+  title: "Terms of use",
   description: "Terms for using the Zivo website and messaging program.",
   alternates: { canonical: "/terms" },
 };
@@ -12,7 +12,7 @@ const h = { fontSize: 20, margin: "32px 0 8px" } as const;
 
 export default function TermsPage() {
   return (
-    <LegalPage title="Terms of Use">
+    <LegalPage title="Terms of use">
       <p>
         These terms cover your use of rentzivo.com and our messaging program. Renting a vehicle is governed by the
         separate rental agreement you review and sign before pickup. If the two differ, the rental agreement controls for
@@ -21,9 +21,9 @@ export default function TermsPage() {
 
       <h2 style={h}>Using the site</h2>
       <ul>
-        <li>You must be at least {MINIMUM_AGE} years old with a valid driver&apos;s license to apply for a rental.</li>
+        <li>You must be at least {MINIMUM_AGE} years old with a valid driver&rsquo;s license to apply for a rental.</li>
         <li>Give us accurate information. Submitting a request or application does not guarantee approval or that a vehicle is available.</li>
-        <li>Do not misuse the site, try to access other people&apos;s information, or interfere with how it works.</li>
+        <li>Do not misuse the site, try to access other people&rsquo;s information, or interfere with how it works.</li>
       </ul>
 
       <h2 style={h}>Applications and rentals</h2>
@@ -39,7 +39,7 @@ export default function TermsPage() {
         Zivo sends text messages about rental requests, applications, pickup, payments, and your rental. You join only by
         checking the consent box on our forms or by messaging us first. Consent is not a condition of renting. Message
         frequency varies. Message and data rates may apply. Reply STOP to opt out at any time and HELP for help. Carriers
-        are not liable for delayed or undelivered messages. See our <a href="/privacy">Privacy Policy</a> for how we
+        are not liable for delayed or undelivered messages. See our <a href="/privacy">Privacy policy</a> for how we
         handle your information.
       </p>
 

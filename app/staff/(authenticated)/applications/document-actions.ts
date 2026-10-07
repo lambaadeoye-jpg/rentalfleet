@@ -9,7 +9,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const LINK_HOURS = 72;
 
 // Create a private upload link for the renter on this application. The
-// database checks the staff member belongs to the customer's business; any
+// database checks the staff member belongs to the customer’s business; any
 // older link for the same renter is revoked.
 export async function createUploadLink(
   applicationId: string,
@@ -31,7 +31,7 @@ export async function createUploadLink(
     p_hours: LINK_HOURS,
     p_application_id: applicationId,
   });
-  if (error) return { success: false, error: "Couldn't create the link. Please try again." };
+  if (error) return { success: false, error: "Couldn’t create the link. Please try again." };
   return { success: true, url: uploadLinkUrl(token), hours: LINK_HOURS };
 }
 
@@ -53,9 +53,9 @@ export async function reviewDocument(
   });
   if (error) {
     const m = error.message?.toLowerCase() ?? "";
-    if (m.includes("permission")) return { success: false, error: "You don't have permission to review documents." };
+    if (m.includes("permission")) return { success: false, error: "You don’t have permission to review documents." };
     if (m.includes("note_required")) return { success: false, error: "Add a short note so the renter knows what to fix." };
-    return { success: false, error: "Couldn't save. Please try again." };
+    return { success: false, error: "Couldn’t save. Please try again." };
   }
   revalidatePath(`/staff/applications/${applicationId}`);
   return { success: true };

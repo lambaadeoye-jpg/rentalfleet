@@ -25,8 +25,8 @@ export async function saveSwitch(key: string, on: boolean): Promise<{ success: b
     { onConflict: "tenant_id,key" }
   );
   if (error) {
-    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don't have permission to change this setting." };
-    return { success: false, error: "Couldn't save. Please try again." };
+    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don’t have permission to change this setting." };
+    return { success: false, error: "Couldn’t save. Please try again." };
   }
   revalidatePath("/staff/settings");
   return { success: true };

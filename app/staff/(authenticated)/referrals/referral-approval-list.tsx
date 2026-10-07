@@ -27,7 +27,7 @@ export default function ReferralApprovalList({
     setLoadingId(null);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't approve that referral.");
+      setError(result.error ?? "Couldn’t approve that referral.");
       return;
     }
     router.refresh();

@@ -36,7 +36,7 @@ export default function ExportButtons() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      setError(`Couldn't export ${item.label.toLowerCase()}. Please try again.`);
+      setError(`Couldn’t export ${item.label.toLowerCase()}. Please try again.`);
     }
     setLoadingLabel(null);
   }

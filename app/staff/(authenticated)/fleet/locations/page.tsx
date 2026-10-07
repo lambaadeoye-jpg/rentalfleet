@@ -8,9 +8,9 @@ export default async function LocationsPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Pickup Locations</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Pickup locations</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
-        Plain address fields for now -- autocomplete is on hold until the domain is set up.
+        Plain address fields for now — autocomplete is on hold until the domain is set up.
       </p>
       <LocationList initialLocations={locations} />
     </div>

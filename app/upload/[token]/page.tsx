@@ -6,7 +6,7 @@ import UploadForm, { type UploadItem } from "./upload-form";
 
 export const dynamic = "force-dynamic";
 
-// A private link: keep it out of search engines and don't leak it in referrers.
+// A private link: keep it out of search engines and don’t leak it in referrers.
 export const metadata: Metadata = {
   title: "Upload your documents",
   robots: { index: false, follow: false },
@@ -26,8 +26,8 @@ export default async function UploadPage({ params }: { params: Promise<{ token: 
   const { token } = await params;
   const invalid = (
     <Shell>
-      <h1 style={{ fontSize: 20, marginBottom: 8 }}>This link isn&apos;t active</h1>
-      <p className="muted-text">It may have expired or been replaced by a newer one. Please contact us and we&apos;ll send a fresh link.</p>
+      <h1 style={{ fontSize: 24, marginBottom: 8 }}>This link isn&rsquo;t active</h1>
+      <p className="muted-text">It may have expired or been replaced by a newer one. Please contact us and we&rsquo;ll send a fresh link.</p>
     </Shell>
   );
 
@@ -59,7 +59,7 @@ export default async function UploadPage({ params }: { params: Promise<{ token: 
 
   return (
     <Shell>
-      <h1 style={{ fontSize: 22, marginBottom: 6 }}>{req.first_name ? `Hi ${req.first_name}, ` : ""}upload your documents</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 6 }}>{req.first_name ? `Hi ${req.first_name}, ` : ""}upload your documents</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Take a clear photo with your phone or choose a file. This link is just for you and expires on{" "}
         {new Date(req.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" })}.

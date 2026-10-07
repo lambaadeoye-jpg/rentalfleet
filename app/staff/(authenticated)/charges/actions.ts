@@ -109,9 +109,9 @@ export async function logCharge(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to log a charge." };
+      return { success: false, error: "You don’t have permission to log a charge." };
     }
-    return { success: false, error: "Couldn't log that charge. Please try again." };
+    return { success: false, error: "Couldn’t log that charge. Please try again." };
   }
 
   void logAuditEvent({
@@ -127,7 +127,7 @@ export async function logCharge(
   return { success: true };
 }
 
-// Approving a charge: if it's deposit-linked, reduces that deposit's
+// Approving a charge: if it’s deposit-linked, reduces that deposit’s
 // refundable_amount explicitly in application code (not a DB trigger) --
 // same visible, auditable pattern as every other financial side effect
 // in this build.
@@ -148,9 +148,9 @@ export async function approveCharge(chargeId: string): Promise<{ success: boolea
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to approve charges." };
+      return { success: false, error: "You don’t have permission to approve charges." };
     }
-    return { success: false, error: "Couldn't approve that charge." };
+    return { success: false, error: "Couldn’t approve that charge." };
   }
 
   if (charge.deposit_id) {
@@ -170,7 +170,7 @@ export async function approveCharge(chargeId: string): Promise<{ success: boolea
     source: "staff_portal",
   });
 
-  // Deposit-deducted charges don't need an invoice -- there's nothing
+  // Deposit-deducted charges don’t need an invoice -- there’s nothing
   // separately owed, the deposit already covered it. Only bill-
   // separately charges get one.
   if (!charge.deposit_id) {

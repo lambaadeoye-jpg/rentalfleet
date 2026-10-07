@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createWorkOrder, completeWorkOrder, type WorkOrder, type VehicleOption } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
 
 export default function MaintenanceList({
   initialWorkOrders,
@@ -30,7 +31,7 @@ export default function MaintenanceList({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't create that work order.");
+      setError(result.error ?? "Couldn’t create that work order.");
       return;
     }
     if (result.warning) setWarning(result.warning);
@@ -47,7 +48,7 @@ export default function MaintenanceList({
 
     const result = await completeWorkOrder(workOrderId, cost);
     if (!result.success) {
-      setError(result.error ?? "Couldn't complete that work order.");
+      setError(result.error ?? "Couldn’t complete that work order.");
       return;
     }
     setCompletingId(null);
@@ -81,7 +82,7 @@ export default function MaintenanceList({
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
         {warning && <p style={{ color: "var(--warning, #b45309)", fontSize: 13, marginBottom: 12 }}>{warning}</p>}
         <button onClick={handleCreate} disabled={loading || !vehicleId} className="button-primary">
-          {loading ? "Logging..." : "Log Work Order"}
+          {loading ? "Logging..." : "Log work order"}
         </button>
       </div>
 
@@ -91,7 +92,7 @@ export default function MaintenanceList({
             <div>
               <div style={{ fontWeight: 700 }}>{w.vehicleLabel}</div>
               <div className="muted-text" style={{ fontSize: 13 }}>
-                {w.workType ?? "General maintenance"} — <span style={{ textTransform: "capitalize" }}>{w.status}</span>
+                {w.workType ?? "General maintenance"} — <span>{sentenceCase(w.status)}</span>
               </div>
               {w.notes && <div className="muted-text" style={{ fontSize: 13, marginTop: 4 }}>{w.notes}</div>}
               {w.cost != null && <div style={{ fontSize: 13, marginTop: 4 }}>Cost: ${Number(w.cost).toFixed(2)}</div>}
@@ -116,7 +117,7 @@ export default function MaintenanceList({
                   className="button-secondary"
                   style={{ color: "var(--text)", borderColor: "var(--border)" }}
                 >
-                  Mark Complete
+                  Mark complete
                 </button>
               ))}
           </div>

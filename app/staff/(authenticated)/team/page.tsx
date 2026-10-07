@@ -9,7 +9,7 @@ export default async function TeamPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Team</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Team</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         {staff.length} staff member{staff.length === 1 ? "" : "s"}.
       </p>

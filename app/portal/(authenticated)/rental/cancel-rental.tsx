@@ -30,7 +30,7 @@ export default function CancelRental() {
   if (done) {
     return (
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Your rental is cancelled</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Your rental is cancelled</h2>
         <p style={{ fontSize: 14 }}>{settlementSummary(done)}</p>
         {done.totalRefundCents > 0 && (
           <p className="muted-text" style={{ fontSize: 13, marginTop: 6 }}>
@@ -45,10 +45,10 @@ export default function CancelRental() {
 
   return (
     <div className="card" style={{ marginBottom: 16 }}>
-      <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Need to cancel?</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Need to cancel?</h2>
       {!preview ? (
         <>
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>See exactly what you&apos;d get back before you decide.</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>See exactly what you&rsquo;d get back before you decide.</p>
           <button className="button-secondary" disabled={busy} onClick={start}>{busy ? "Checking..." : "See my refund"}</button>
         </>
       ) : (

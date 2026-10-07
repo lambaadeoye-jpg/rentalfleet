@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { sentenceCase } from "@/lib/format-label";
+import { formatPhone } from "@/lib/format-phone";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,7 @@ export default async function ApplicationsPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Applications</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Applications</h1>
       <p className="muted-text" style={{ marginBottom: 28 }}>
         {applications?.length ?? 0} total.
       </p>
@@ -56,7 +58,7 @@ export default async function ApplicationsPage() {
                       </Link>
                     </td>
                     <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
-                      <div>{customer?.phone ?? "—"}</div>
+                      <div>{customer?.phone ? formatPhone(customer.phone) : "—"}</div>
                       {customer?.email && <div style={{ fontSize: 12 }}>{customer.email}</div>}
                     </td>
                     <td style={{ padding: "12px 16px" }}>
@@ -65,10 +67,9 @@ export default async function ApplicationsPage() {
                           fontSize: 12,
                           fontWeight: 700,
                           color: STATUS_COLOR[app.status] ?? "var(--text-secondary)",
-                          textTransform: "capitalize",
                         }}
                       >
-                        {app.status.replace(/_/g, " ")}
+                        {sentenceCase(app.status)}
                       </span>
                     </td>
                     <td style={{ padding: "12px 16px", color: "var(--text-secondary)", fontSize: 13 }}>

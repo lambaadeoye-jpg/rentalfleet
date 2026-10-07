@@ -54,7 +54,7 @@ export default function StartRentalForm({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't schedule the rental. Please try again.");
+      setError(result.error ?? "Couldn’t schedule the rental. Please try again.");
       return;
     }
 
@@ -77,7 +77,7 @@ export default function StartRentalForm({
 
   return (
     <div className="card" style={{ marginTop: 16 }}>
-      <h3 style={{ fontSize: 16, marginBottom: 12 }}>Schedule Rental</h3>
+      <h3 style={{ fontSize: 15, marginBottom: 12 }}>Schedule Rental</h3>
 
       <label className="field">
         <span style={{ fontSize: 13, fontWeight: 600 }}>Vehicle</span>
@@ -122,8 +122,8 @@ export default function StartRentalForm({
       </button>
 
       <p className="muted-text" style={{ fontSize: 12, marginTop: 10 }}>
-        Reserves the vehicle and creates the rental record. The vehicle isn&apos;t handed over
-        yet -- that happens separately in Fleet, when whoever&apos;s doing the physical pickup
+        Reserves the vehicle and creates the rental record. The vehicle isn&rsquo;t handed over
+        yet — that happens separately in Fleet, when whoever&rsquo;s doing the physical pickup
         confirms it.
       </p>
     </div>

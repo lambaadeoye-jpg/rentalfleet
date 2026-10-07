@@ -105,7 +105,7 @@ export async function openRecoveryCase(
     .limit(1)
     .maybeSingle();
 
-  if (!segment) return { success: false, error: "Couldn't find the vehicle for this rental." };
+  if (!segment) return { success: false, error: "Couldn’t find the vehicle for this rental." };
 
   const { data: newCase, error } = await supabase
     .from("recovery_case")
@@ -123,9 +123,9 @@ export async function openRecoveryCase(
 
   if (error || !newCase) {
     if (error?.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to open a recovery case." };
+      return { success: false, error: "You don’t have permission to open a recovery case." };
     }
-    return { success: false, error: "Couldn't open a recovery case. Please try again." };
+    return { success: false, error: "Couldn’t open a recovery case. Please try again." };
   }
 
   void logAuditEvent({
@@ -157,9 +157,9 @@ export async function authorizeRecoveryCase(caseId: string): Promise<{ success: 
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to authorize recovery." };
+      return { success: false, error: "You don’t have permission to authorize recovery." };
     }
-    return { success: false, error: "Couldn't authorize. Please try again." };
+    return { success: false, error: "Couldn’t authorize. Please try again." };
   }
 
   revalidatePath("/staff/recovery");
@@ -170,7 +170,7 @@ export async function authorizeRecoveryCase(caseId: string): Promise<{ success: 
 export async function closeRecoveryCase(caseId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
   const { error } = await supabase.from("recovery_case").update({ status: "closed" }).eq("id", caseId);
-  if (error) return { success: false, error: "Couldn't close the case." };
+  if (error) return { success: false, error: "Couldn’t close the case." };
 
   revalidatePath("/staff/recovery");
   revalidatePath(`/staff/recovery/${caseId}`);
@@ -243,7 +243,7 @@ export async function addRecoveryExpense(
     approval_status: "pending",
   });
 
-  if (error) return { success: false, error: "Couldn't add that expense. Please try again." };
+  if (error) return { success: false, error: "Couldn’t add that expense. Please try again." };
 
   revalidatePath(`/staff/recovery/${caseId}`);
   return { success: true };
@@ -251,7 +251,7 @@ export async function addRecoveryExpense(
 
 // Approving a recovery expense is what actually turns it into a charge
 // against the deposit -- this is the entire point of the feature. The
-// expense's own approval_status update is gated by the existing
+// expense’s own approval_status update is gated by the existing
 // database guard (approve_recovery_expense); once that succeeds, this
 // creates the charge (deposit-linked, tagged back to the expense via
 // source_recovery_expense_id) and reuses the EXISTING approveCharge()
@@ -278,9 +278,9 @@ export async function approveRecoveryExpense(expenseId: string): Promise<{ succe
 
   if (approveError) {
     if (approveError.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to approve recovery expenses." };
+      return { success: false, error: "You don’t have permission to approve recovery expenses." };
     }
-    return { success: false, error: "Couldn't approve that expense." };
+    return { success: false, error: "Couldn’t approve that expense." };
   }
 
   const { data: recoveryCase } = await supabase
@@ -288,7 +288,7 @@ export async function approveRecoveryExpense(expenseId: string): Promise<{ succe
     .select("rental_id, customer_id")
     .eq("id", expense.recovery_case_id)
     .single();
-  if (!recoveryCase) return { success: false, error: "Couldn't find the related recovery case." };
+  if (!recoveryCase) return { success: false, error: "Couldn’t find the related recovery case." };
 
   const { data: deposit } = await supabase
     .from("deposit")
@@ -314,7 +314,7 @@ export async function approveRecoveryExpense(expenseId: string): Promise<{ succe
     .single();
 
   if (chargeError || !newCharge) {
-    return { success: false, error: "Expense approved, but couldn't create the linked charge. Please check /staff/charges." };
+    return { success: false, error: "Expense approved, but couldn’t create the linked charge. Please check /staff/charges." };
   }
 
   const chargeResult = await approveCharge(newCharge.id);

@@ -8,7 +8,7 @@ import { logAuditEvent } from "@/lib/audit-log";
 // processor exists yet, so this is inherently a staff-assisted step --
 // creates the offsetting ledger entry (referral_credit_applied),
 // reducing their usable balance. Append-only, same as every other
-// financial record here: this doesn't touch the original
+// financial record here: this doesn’t touch the original
 // referral_credit_earned entries, it adds a new one alongside them.
 export async function applyReferralCredit(
   customerId: string,
@@ -45,9 +45,9 @@ export async function applyReferralCredit(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to apply credit." };
+      return { success: false, error: "You don’t have permission to apply credit." };
     }
-    return { success: false, error: "Couldn't apply that credit. Please try again." };
+    return { success: false, error: "Couldn’t apply that credit. Please try again." };
   }
 
   void logAuditEvent({

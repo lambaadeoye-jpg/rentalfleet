@@ -18,7 +18,7 @@ const ERRORS: Record<string, string> = {
 };
 function errorFor(message: string | undefined): string {
   for (const [code, text] of Object.entries(ERRORS)) if ((message ?? "").includes(code)) return text;
-  return "We couldn't record your signature. Please try again.";
+  return "We couldn’t record your signature. Please try again.";
 }
 
 export async function signAgreement(
@@ -29,11 +29,11 @@ export async function signAgreement(
 ): Promise<{ success: boolean; error?: string }> {
   if (!UPLOAD_TOKEN_RE.test(token)) return { success: false, error: ERRORS.link_invalid };
   const admin = createAdminClient();
-  if (!admin) return { success: false, error: "We couldn't record your signature. Please try again." };
+  if (!admin) return { success: false, error: "We couldn’t record your signature. Please try again." };
 
   const hash = hashUploadToken(token);
   const { data: rows, error: getError } = await admin.rpc("get_sign_request", { p_token_hash: hash });
-  if (getError) return { success: false, error: "We couldn't record your signature. Please try again." };
+  if (getError) return { success: false, error: "We couldn’t record your signature. Please try again." };
   const req = Array.isArray(rows) ? rows[0] : null;
   if (!req) return { success: false, error: ERRORS.link_invalid };
   if (req.signed_at) return { success: false, error: ERRORS.already_signed };
@@ -63,12 +63,12 @@ export async function signAgreement(
   try {
     pdf = await buildSignedAgreementPdf(rendered, { signerName: name, signedAtIso: signedAt.toISOString(), ip, versionLabel, contentHash: req.content_hash, initials: keptInitials });
   } catch {
-    return { success: false, error: "We couldn't record your signature. Please try again." };
+    return { success: false, error: "We couldn’t record your signature. Please try again." };
   }
 
   const path = `${req.tenant_id}/${req.customer_id}/rental_agreement/${Date.now()}_${randomBytes(6).toString("hex")}.pdf`;
   const { error: upError } = await admin.storage.from("applicant-documents").upload(path, pdf, { contentType: "application/pdf", upsert: false });
-  if (upError) return { success: false, error: "We couldn't record your signature. Please try again." };
+  if (upError) return { success: false, error: "We couldn’t record your signature. Please try again." };
 
   const { error: signError } = await admin.rpc("complete_signing", {
     p_token_hash: hash, p_typed_name: name, p_initials: cleanInitials, p_esign_consent: true, p_ip: ip, p_ua: ua, p_storage_key: path,

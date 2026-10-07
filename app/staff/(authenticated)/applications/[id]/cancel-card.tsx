@@ -9,9 +9,9 @@ import { REASON_LABELS, settlementSummary, type Settlement } from "@/lib/refunds
 const REASONS = ["renter_cancelled", "no_show", "requirement_failed", "zivo_cancelled", "fraud_or_identity"] as const;
 const HELP: Record<string, string> = {
   renter_cancelled: "The renter asked to cancel. The fee depends on how close to pickup it is and their recent cancellations.",
-  no_show: "The renter didn't arrive after the grace period. The late fee is kept and the rest is refunded. To let them reschedule instead, do not cancel: use Resolve on the Pickups screen.",
-  requirement_failed: "They couldn't meet a stated requirement at pickup (valid license, a card in their own name, required documents).",
-  zivo_cancelled: "Zivo's error or no car ready. No fee, full refund.",
+  no_show: "The renter didn’t arrive after the grace period. The late fee is kept and the rest is refunded. To let them reschedule instead, do not cancel: use Resolve on the Pickups screen.",
+  requirement_failed: "They couldn’t meet a stated requirement at pickup (valid license, a card in their own name, required documents).",
+  zivo_cancelled: "Zivo’s error or no car ready. No fee, full refund.",
   fraud_or_identity: "A fraud or identity problem found before pickup. No fee, full refund.",
 };
 

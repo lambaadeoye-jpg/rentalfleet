@@ -29,7 +29,7 @@ export default function FleetTable({ vehicles }: { vehicles: Vehicle[] }) {
     setSavingId(null);
 
     if (!result.success) {
-      setErrorById((prev) => ({ ...prev, [vehicleId]: result.error ?? "Couldn't update." }));
+      setErrorById((prev) => ({ ...prev, [vehicleId]: result.error ?? "Couldn’t update." }));
       return;
     }
     setRows((prev) => prev.map((v) => (v.id === vehicleId ? { ...v, status: newStatus } : v)));

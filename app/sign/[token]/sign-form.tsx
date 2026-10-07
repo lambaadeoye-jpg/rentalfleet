@@ -23,7 +23,7 @@ export default function SignForm({ token, rendered }: { token: string; rendered:
     setBusy(true);
     const res = await signAgreement(token, name, initials, consent);
     setBusy(false);
-    if (!res.success) { setError(res.error ?? "We couldn't record your signature."); return; }
+    if (!res.success) { setError(res.error ?? "We couldn’t record your signature."); return; }
     router.refresh();
   }
 
@@ -34,7 +34,7 @@ export default function SignForm({ token, rendered }: { token: string; rendered:
       </div>
       {rendered.clauses.map((c) => (
         <div key={c.number} className="card" style={{ marginBottom: 12, borderColor: c.initial ? "var(--teal)" : undefined }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>{c.number}. {c.title}</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>{c.number}. {c.title}</h2>
           <p style={{ fontSize: 14, whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{c.body}</p>
           {c.initial && (
             <label className="field" style={{ marginTop: 12, maxWidth: 220 }}>

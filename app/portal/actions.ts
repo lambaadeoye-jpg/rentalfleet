@@ -2,10 +2,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 
-// Same low-friction magic-link pattern as the Application Workspace's
+// Same low-friction magic-link pattern as the Application Workspace’s
 // resume flow (/apply/resume) -- a customer who already has an active
 // rental has definitely provided an email by this point (required to get
-// here at all: approved application -> started rental), so there's no
+// here at all: approved application -> started rental), so there’s no
 // anonymous-first case to handle like /apply has. Straight to magic link.
 export async function sendPortalMagicLink(email: string): Promise<{ success: boolean; error?: string }> {
   const trimmed = email.trim();
@@ -44,7 +44,7 @@ export async function updateProfile(fields: {
     })
     .eq("auth_user_id", user.id);
 
-  if (error) return { success: false, error: "Couldn't save. Please try again." };
+  if (error) return { success: false, error: "Couldn’t save. Please try again." };
   return { success: true };
 }
 
@@ -73,6 +73,6 @@ export async function createSupportTicket(subject: string): Promise<{ success: b
     priority: "normal",
   });
 
-  if (error) return { success: false, error: "Couldn't submit. Please try again." };
+  if (error) return { success: false, error: "Couldn’t submit. Please try again." };
   return { success: true };
 }

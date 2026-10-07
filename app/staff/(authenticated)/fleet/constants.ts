@@ -3,9 +3,9 @@
 // and enforce_status_transition trigger. This list is every value the DB
 // will accept; it does NOT mean every transition from every status is
 // valid -- the trigger enforces that, and will reject an invalid jump with
-// a clear error. This UI intentionally doesn't try to compute "valid next
+// a clear error. This UI intentionally doesn’t try to compute "valid next
 // states per row" -- simpler to let staff pick and let the database be the
-// one source of truth for what's actually allowed, same pattern as every
+// one source of truth for what’s actually allowed, same pattern as every
 // other status field in this build.
 export const VEHICLE_STATUSES = [
   "acquired",

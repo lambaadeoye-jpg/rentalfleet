@@ -18,15 +18,15 @@ export type SubmitLeadResult =
  * Submits a lead from the public homepage form. Runs as the anon Postgres
  * role via RLS (migration 0024) -- INSERT only, no read-back. Deliberately
  * does NOT call .select() after .insert(): that would trigger a Postgres
- * RETURNING clause, which requires SELECT privilege anon doesn't have by
+ * RETURNING clause, which requires SELECT privilege anon doesn’t have by
  * design (see the note in supabase/migrations/0024_public_marketing_access.sql).
- * We generate the lead's id ourselves instead, so we already have it for the
+ * We generate the lead’s id ourselves instead, so we already have it for the
  * lead_gig_platform inserts without ever asking the database to hand a row back.
  *
  * Wrapped in try/catch deliberately: this function must NEVER throw. An
  * unhandled rejection here leaves the calling form stuck on "Submitting..."
- * forever with no error shown, since nothing resets the client's loading
- * state -- that's a real bug this fixes regardless of what specifically
+ * forever with no error shown, since nothing resets the client’s loading
+ * state -- that’s a real bug this fixes regardless of what specifically
  * causes a given failure.
  */
 export async function submitLead(formData: {
@@ -78,7 +78,7 @@ export async function submitLead(formData: {
     const source = deriveSource(attribution, fallback);
 
     // Consent record: wording + version come from the server, never the
-    // client, so what's stored is exactly what we showed.
+    // client, so what’s stored is exactly what we showed.
     const consented = formData.contactConsent === true;
     let consentIp: string | null = null;
     let consentUa: string | null = null;
@@ -159,14 +159,14 @@ export async function submitLead(formData: {
       consent_user_agent: consentUa,
       // "What are you driving for?" is answered by the gig_platform
       // checkboxes (lead_gig_platform, below) -- driving_for only holds the
-      // free-text detail when "Other" is selected, so we're not asking the
+      // free-text detail when "Other" is selected, so we’re not asking the
       // same question two different ways.
       driving_for: formData.otherPlatformDetail.trim() || null,
       notes: formData.additionalInfo.trim() || null,
     });
 
     if (insertError) {
-      return { success: false, error: "We couldn't submit your request. Please try again." };
+      return { success: false, error: "We couldn’t submit your request. Please try again." };
     }
 
     if (formData.gigPlatformIds.length > 0) {
@@ -225,7 +225,7 @@ export async function submitLead(formData: {
     return { success: true };
   } catch {
     // Catches anything unexpected (network failure, serialization issue,
-    // etc.) that isn't one of the typed Postgrest error paths above --
+    // etc.) that isn’t one of the typed Postgrest error paths above --
     // guarantees the caller always gets a real result, never a hang.
     return { success: false, error: "Something went wrong. Please try again in a moment." };
   }
@@ -330,7 +330,7 @@ export async function submitLeadStep1(formData: {
       driving_for: formData.otherPlatformDetail.trim() || null,
     });
     if (insertError) {
-      return { success: false, error: "We couldn't submit your request. Please try again." };
+      return { success: false, error: "We couldn’t submit your request. Please try again." };
     }
 
     if (formData.gigPlatformIds.length > 0) {
@@ -393,7 +393,7 @@ export async function completeLeadStep2(input: {
     const invalid = validateStep2(input);
     if (invalid) return { success: false, error: invalid, requestSaved: true };
     if (!input.leadId || !input.token) {
-      return { success: false, error: "We couldn't save those details, but your request is saved.", requestSaved: true };
+      return { success: false, error: "We couldn’t save those details, but your request is saved.", requestSaved: true };
     }
     const c = cleanStep2(input);
     const supabase = createPublicClient();
@@ -409,10 +409,10 @@ export async function completeLeadStep2(input: {
       p_heard_about: c.heardAbout,
     });
     if (error || data !== true) {
-      return { success: false, error: "We couldn't save those last details, but your request is saved and we'll follow up.", requestSaved: true };
+      return { success: false, error: "We couldn’t save those last details, but your request is saved and we’ll follow up.", requestSaved: true };
     }
     return { success: true };
   } catch {
-    return { success: false, error: "We couldn't save those last details, but your request is saved and we'll follow up.", requestSaved: true };
+    return { success: false, error: "We couldn’t save those last details, but your request is saved and we’ll follow up.", requestSaved: true };
   }
 }

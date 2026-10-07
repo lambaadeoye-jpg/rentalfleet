@@ -9,9 +9,9 @@ export default async function CustomersPage({ searchParams }: { searchParams: Pr
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Customers</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Customers</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
-        Search by name, email, or phone. Click through for the full history -- CRM, rentals,
+        Search by name, email, or phone. Click through for the full history — CRM, rentals,
         payments, insurance, documents, all in one place.
       </p>
       <CustomerSearch initialQuery={q ?? ""} customers={customers} />

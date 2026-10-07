@@ -26,8 +26,8 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
   const { token } = await params;
   const invalid = (
     <Shell>
-      <h1 style={{ fontSize: 20, marginBottom: 8 }}>This link isn&apos;t active</h1>
-      <p className="muted-text">It may have expired or been replaced by a newer one. Please contact us and we&apos;ll send a fresh link.</p>
+      <h1 style={{ fontSize: 24, marginBottom: 8 }}>This link isn&rsquo;t active</h1>
+      <p className="muted-text">It may have expired or been replaced by a newer one. Please contact us and we&rsquo;ll send a fresh link.</p>
     </Shell>
   );
   if (!UPLOAD_TOKEN_RE.test(token)) return invalid;
@@ -46,7 +46,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
     }
     return (
       <Shell>
-        <h1 style={{ fontSize: 22, marginBottom: 8 }}>Agreement signed. Thank you!</h1>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>Agreement signed. Thank you!</h1>
         <p className="muted-text" style={{ marginBottom: 16 }}>
           Signed on {new Date(req.signed_at).toLocaleString("en-US", { timeZone: "America/Chicago", dateStyle: "long", timeStyle: "short" })} Central.
           Keep a copy for your records.
@@ -59,7 +59,7 @@ export default async function SignPage({ params }: { params: Promise<{ token: st
   const rendered = req.rendered as RenderedAgreement;
   return (
     <Shell>
-      <h1 style={{ fontSize: 22, marginBottom: 6 }}>{req.first_name ? `${req.first_name}, please ` : "Please "}review and sign</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 6 }}>{req.first_name ? `${req.first_name}, please ` : "Please "}review and sign</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Read the agreement, initial the highlighted clauses, then type your full legal name to sign. Link expires{" "}
         {new Date(req.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" })}.

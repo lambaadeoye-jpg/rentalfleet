@@ -8,6 +8,7 @@ import PayNow from "./pay-now";
 import { getPortalPayState } from "./payment-actions";
 import CancelRental from "./cancel-rental";
 import { getMyCancelState } from "./cancel-actions";
+import { sentenceCase } from "@/lib/format-label";
 
 export const dynamic = "force-dynamic";
 
@@ -36,15 +37,15 @@ export default async function PortalRentalPage() {
   if (!rental) {
     return (
       <div style={{ padding: "24px 20px" }}>
-        <h1 style={{ fontSize: 20, marginBottom: 12 }}>My Rental</h1>
-        <p className="muted-text">You don&apos;t have a rental on file yet.</p>
+        <h1 style={{ fontSize: 24, marginBottom: 12 }}>My rental</h1>
+        <p className="muted-text">You don&rsquo;t have a rental on file yet.</p>
       </div>
     );
   }
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 20, marginBottom: 16 }}>My Rental</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 16 }}>My rental</h1>
 
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
@@ -66,17 +67,16 @@ export default async function PortalRentalPage() {
             fontWeight: 700,
             padding: "3px 10px",
             borderRadius: 999,
-            textTransform: "capitalize",
           }}
         >
-          {rental.status}
+          {sentenceCase(rental.status)}
         </span>
       </div>
 
       {payState.show && (
         <div className="card" style={{ marginBottom: 16 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Pay to lock in your rental</h2>
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus refundable deposit, paid by card on a secure Stripe page. Sign your agreement first if you haven&apos;t.</p>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 6 }}>Pay to lock in your rental</h2>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus refundable deposit, paid by card on a secure Stripe page. Sign your agreement first if you haven&rsquo;t.</p>
           <PayNow />
         </div>
       )}
@@ -86,7 +86,7 @@ export default async function PortalRentalPage() {
       {cancelState.canCancel && <CancelRental />}
 
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Rental Period</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Rental period</h2>
         <p style={{ fontSize: 14, marginBottom: 4 }}>
           Started: {rental.start_at ? new Date(rental.start_at).toLocaleDateString() : "—"}
         </p>
@@ -97,19 +97,19 @@ export default async function PortalRentalPage() {
 
       {(policy.weekly_rate_usd || policy.mileage_policy) && (
         <div className="card">
-          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Your Rate &amp; Policy</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Your rate &amp; policy</h2>
           {policy.weekly_rate_usd && (
             <p style={{ fontSize: 14, marginBottom: 4 }}>Weekly rate: ${policy.weekly_rate_usd}</p>
           )}
           {policy.mileage_policy && (
-            <p style={{ fontSize: 14, textTransform: "capitalize" }}>Mileage: {policy.mileage_policy}</p>
+            <p style={{ fontSize: 14 }}>Mileage: {sentenceCase(policy.mileage_policy)}</p>
           )}
         </div>
       )}
 
       {customer && (
         <div className="card" style={{ marginTop: 16 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Other Drivers</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Other drivers</h2>
           <PortalDriversManager customerId={customer.id} initialDrivers={additionalDrivers} />
         </div>
       )}

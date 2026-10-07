@@ -16,8 +16,8 @@ export async function decideApplication(
   // This UPDATE is permission-gated at the database level (migration 0021's
   // guard_application_decision trigger, requiring the approve_driver
   // permission) -- if a staff member without that permission calls this,
-  // Postgres rejects it and the error below is what they'll actually see.
-  // The UI enforcing "who can click this" is a nicety; this is what's real.
+  // Postgres rejects it and the error below is what they’ll actually see.
+  // The UI enforcing "who can click this" is a nicety; this is what’s real.
   const { error } = await supabase
     .from("application")
     .update({
@@ -29,9 +29,9 @@ export async function decideApplication(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to decide applications." };
+      return { success: false, error: "You don’t have permission to decide applications." };
     }
-    return { success: false, error: "Couldn't save that decision. Please try again." };
+    return { success: false, error: "Couldn’t save that decision. Please try again." };
   }
 
   // Fetch contact info for the notification separately from the update

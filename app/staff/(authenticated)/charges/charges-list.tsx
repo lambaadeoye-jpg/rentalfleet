@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { logCharge, approveCharge, type ChargeRecord, type RentalOption } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
 
 const CHARGE_TYPES = ["toll", "ticket", "cleaning", "fuel", "damage", "other"] as const;
 
@@ -26,7 +27,7 @@ export default function ChargesList({ initialCharges, rentals }: { initialCharge
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't log that charge.");
+      setError(result.error ?? "Couldn’t log that charge.");
       return;
     }
     setRentalId("");
@@ -46,7 +47,7 @@ export default function ChargesList({ initialCharges, rentals }: { initialCharge
     setApprovingId(null);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't approve that charge.");
+      setError(result.error ?? "Couldn’t approve that charge.");
       return;
     }
     router.refresh();
@@ -72,8 +73,8 @@ export default function ChargesList({ initialCharges, rentals }: { initialCharge
             <span style={{ fontSize: 13, fontWeight: 600 }}>Type</span>
             <select value={chargeType} onChange={(e) => setChargeType(e.target.value as (typeof CHARGE_TYPES)[number])}>
               {CHARGE_TYPES.map((t) => (
-                <option key={t} value={t} style={{ textTransform: "capitalize" }}>
-                  {t}
+                <option key={t} value={t}>
+                  {sentenceCase(t)}
                 </option>
               ))}
             </select>
@@ -91,7 +92,7 @@ export default function ChargesList({ initialCharges, rentals }: { initialCharge
         )}
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
         <button onClick={handleLog} disabled={loading || !rentalId || !amount} className="button-primary">
-          {loading ? "Logging..." : "Log Charge"}
+          {loading ? "Logging..." : "Log charge"}
         </button>
       </div>
 
@@ -101,8 +102,8 @@ export default function ChargesList({ initialCharges, rentals }: { initialCharge
             <div style={{ fontWeight: 700 }}>
               {c.customerName} — ${c.amount.toFixed(2)}
             </div>
-            <div className="muted-text" style={{ fontSize: 13, textTransform: "capitalize" }}>
-              {c.chargeType} {c.isDeductible && "— deposit deduction"} — {c.approvalStatus}
+            <div className="muted-text" style={{ fontSize: 13 }}>
+              {sentenceCase(c.chargeType)} {c.isDeductible && "— deposit deduction"} — {c.approvalStatus}
             </div>
           </div>
           {c.approvalStatus === "pending" && (

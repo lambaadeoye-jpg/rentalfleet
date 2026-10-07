@@ -17,7 +17,7 @@ export default function CardForm({ token, authorization }: { token: string; auth
       if (!res.success) { setError(res.error); setBusy(false); return; }
       window.location.href = res.url;
     } catch {
-      setError("We couldn't open the card page. Please try again.");
+      setError("We couldn’t open the card page. Please try again.");
       setBusy(false);
     }
   }

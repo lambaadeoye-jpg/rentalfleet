@@ -4,6 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { searchCustomers, type CustomerListItem } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
+import { formatPhone } from "@/lib/format-phone";
 
 export default function CustomerSearch({
   initialQuery,
@@ -57,8 +59,8 @@ export default function CustomerSearch({
                   {c.firstName} {c.lastName}
                 </td>
                 <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{c.email ?? "—"}</td>
-                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{c.phone ?? "—"}</td>
-                <td style={{ padding: "12px 16px", textTransform: "capitalize" }}>{c.status}</td>
+                <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{c.phone ? formatPhone(c.phone) : "—"}</td>
+                <td style={{ padding: "12px 16px" }}>{sentenceCase(c.status)}</td>
               </tr>
             ))}
             {customers.length === 0 && (

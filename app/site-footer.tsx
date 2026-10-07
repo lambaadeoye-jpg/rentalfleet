@@ -35,7 +35,7 @@ export default function SiteFooter({ brandName = "Zivo", showTagline = true }: {
           Already started? <a href="/apply">Continue your application</a>
         </p>
         <p style={{ margin: "0 0 8px" }}>
-          <a href="/terms">Terms</a> · <a href="/privacy">Privacy Policy</a>
+          <a href="/terms">Terms</a> · <a href="/privacy">Privacy policy</a>
         </p>
         <p style={{ margin: 0 }}>© {year} Zivo Mobility LLC. All rights reserved.</p>
       </div>

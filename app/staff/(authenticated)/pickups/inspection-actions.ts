@@ -52,9 +52,9 @@ export async function uploadInspectionPhoto(
 
     if (inspectionError || !newInspection) {
       if (inspectionError?.message?.toLowerCase().includes("permission")) {
-        return { success: false, error: "You don't have permission to log an inspection." };
+        return { success: false, error: "You don’t have permission to log an inspection." };
       }
-      return { success: false, error: "Couldn't start the inspection record. Please try again." };
+      return { success: false, error: "Couldn’t start the inspection record. Please try again." };
     }
     inspection = newInspection;
   }
@@ -73,7 +73,7 @@ export async function uploadInspectionPhoto(
     captured_at: new Date().toISOString(),
   });
 
-  if (mediaError) return { success: false, error: "Photo uploaded but couldn't be recorded. Please try again." };
+  if (mediaError) return { success: false, error: "Photo uploaded but couldn’t be recorded. Please try again." };
 
   return { success: true };
 }

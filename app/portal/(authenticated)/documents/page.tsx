@@ -4,14 +4,14 @@ import { FileText } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 const DOCUMENT_LABELS: Record<string, string> = {
-  drivers_license: "Driver's License",
-  proof_of_residence: "Proof of Residence",
-  insurance_card: "Insurance Card",
+  drivers_license: "Driver’s License",
+  proof_of_residence: "Proof of residence",
+  insurance_card: "Insurance card",
 };
 
 async function getSignedUrl(storageKey: string): Promise<string | null> {
   const supabase = await createClient();
-  // Relies on the SAME storage RLS as the Application Workspace's own
+  // Relies on the SAME storage RLS as the Application Workspace’s own
   // uploads (migration 0026's applicant_own_documents_select) -- a
   // customer reading their own storage_key succeeds because customer and
   // applicant are the same auth_user_id-linked identity throughout this
@@ -43,7 +43,7 @@ export default async function PortalDocumentsPage() {
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 20, marginBottom: 16 }}>Documents</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 16 }}>Documents</h1>
 
       {signedWithUrls.map((d) => (
         <a key={d.id} href={d.url ?? "#"} target="_blank" rel="noreferrer" className="card"

@@ -7,13 +7,13 @@ import { UPLOAD_TOKEN_RE } from "@/lib/upload-validation";
 import { buildCheckoutBody } from "@/lib/checkout";
 import { createCheckoutSession, stripeConfigured } from "@/lib/stripe";
 
-const GENERIC = "We couldn't start the payment. Please try again.";
+const GENERIC = "We couldn’t start the payment. Please try again.";
 
 /** Renter ticked the refund-terms box and tapped Pay. Returns the Stripe page to send them to. */
 export async function startCheckout(token: string, termsAccepted: boolean): Promise<{ success: true; url: string } | { success: false; error: string }> {
-  if (!UPLOAD_TOKEN_RE.test(token)) return { success: false, error: "This link isn't active. Ask us for a new one." };
-  if (!termsAccepted) return { success: false, error: "Please tick the box to confirm you've read the cancellation and refund terms." };
-  if (!stripeConfigured()) return { success: false, error: "Card payments aren't available right now. Please contact us." };
+  if (!UPLOAD_TOKEN_RE.test(token)) return { success: false, error: "This link isn’t active. Ask us for a new one." };
+  if (!termsAccepted) return { success: false, error: "Please tick the box to confirm you’ve read the cancellation and refund terms." };
+  if (!stripeConfigured()) return { success: false, error: "Card payments aren’t available right now. Please contact us." };
   const admin = createAdminClient();
   if (!admin) return { success: false, error: GENERIC };
 
@@ -25,7 +25,7 @@ export async function startCheckout(token: string, termsAccepted: boolean): Prom
     const m = error.message ?? "";
     if (m.includes("agreement_not_signed")) return { success: false, error: "Please sign your rental agreement first, then come back to this link." };
     if (m.includes("not_open")) return { success: false, error: "This payment has already been completed." };
-    if (m.includes("link_invalid")) return { success: false, error: "This link isn't active. Ask us for a new one." };
+    if (m.includes("link_invalid")) return { success: false, error: "This link isn’t active. Ask us for a new one." };
     return { success: false, error: GENERIC };
   }
   const r = Array.isArray(rows) ? rows[0] : null;

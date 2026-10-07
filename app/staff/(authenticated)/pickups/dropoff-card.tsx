@@ -37,7 +37,7 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
     const result = await setDropoffDate(item.rentalId, new Date(dueAt).toISOString());
     setDueLoading(false);
     if (!result.success) {
-      setDueError(result.error ?? "Couldn't save the drop-off date.");
+      setDueError(result.error ?? "Couldn’t save the drop-off date.");
       return;
     }
     setDueSaved(true);
@@ -50,7 +50,7 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
       return;
     }
     if (item.startMileage !== null && Number(endMileage) < item.startMileage) {
-      setError(`Ending mileage can't be less than the starting mileage (${item.startMileage}).`);
+      setError(`Ending mileage can’t be less than the starting mileage (${item.startMileage}).`);
       return;
     }
 
@@ -66,7 +66,7 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't confirm dropoff. Please try again.");
+      setError(result.error ?? "Couldn’t confirm dropoff. Please try again.");
       return;
     }
     router.refresh();
@@ -124,7 +124,7 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
           </label>
           {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
           <button onClick={handleConfirmDropoff} disabled={loading} className="button-primary">
-            {loading ? "Confirming..." : "Confirm Dropoff"}
+            {loading ? "Confirming..." : "Confirm dropoff"}
           </button>
         </div>
       )}

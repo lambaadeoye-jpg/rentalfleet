@@ -23,7 +23,7 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
   const [followupError, setFollowupError] = useState<string | null>(null);
   const outcomeLabels: Record<string, string> = {
     needs_reschedule: "Renter wants to reschedule",
-    cannot_make_it: "Renter can't make it",
+    cannot_make_it: "Renter can’t make it",
     needs_help_from_staff: "Renter asked for help from a person",
     no_answer: "No answer",
     voicemail: "Voicemail left",
@@ -35,13 +35,13 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
     const result = await resolvePickupFollowup(item.rentalId);
     setFollowupLoading(false);
     if (!result.success) {
-      setFollowupError(result.error ?? "Couldn't mark that as handled.");
+      setFollowupError(result.error ?? "Couldn’t mark that as handled.");
       return;
     }
     router.refresh();
   }
 
-  // datetime-local wants "YYYY-MM-DDTHH:mm" in the browser's local time.
+  // datetime-local wants "YYYY-MM-DDTHH:mm" in the browser’s local time.
   const toLocalInput = (iso: string | null) => {
     if (!iso) return "";
     const d = new Date(iso);
@@ -66,7 +66,7 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
     const result = await setPickupAppointment(item.rentalId, new Date(apptAt).toISOString(), returnAt ? new Date(returnAt).toISOString() : null, apptLocation);
     setApptLoading(false);
     if (!result.success) {
-      setApptError(result.error ?? "Couldn't save the appointment.");
+      setApptError(result.error ?? "Couldn’t save the appointment.");
       return;
     }
     setApptSaved(true);
@@ -84,7 +84,7 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
     }
 
     // Critical action -- confirm before it actually happens, per explicit
-    // requirement that field staff shouldn't be able to mistakenly trigger
+    // requirement that field staff shouldn’t be able to mistakenly trigger
     // a handover with one accidental tap.
     const confirmed = window.confirm(
       `Confirm handover to ${item.customerFirstName} ${item.customerLastName} for the ${item.vehicleLabel}? This cannot be undone from here.`
@@ -98,8 +98,8 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
 
     if (!result.success) {
       // Surfaces the payment-gate error too -- "Record a payment/deposit
-      // before confirming pickup" -- if nothing's been recorded yet.
-      setError(result.error ?? "Couldn't confirm pickup. Please try again.");
+      // before confirming pickup" -- if nothing’s been recorded yet.
+      setError(result.error ?? "Couldn’t confirm pickup. Please try again.");
       return;
     }
     router.refresh();
@@ -192,12 +192,12 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
             className="button-secondary"
             style={{ color: "var(--text)", borderColor: "var(--border)", marginBottom: 20 }}
           >
-            {apptLoading ? "Saving..." : item.pickupAt ? "Update Appointment" : "Set Appointment"}
+            {apptLoading ? "Saving..." : item.pickupAt ? "Update appointment" : "Set appointment"}
           </button>
 
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Pre-pickup checklist</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
-            <ChecklistRow ok={item.hasLicenseDocument} label="Driver's license on file" />
+            <ChecklistRow ok={item.hasLicenseDocument} label="Driver’s license on file" />
             <ChecklistRow ok={item.insuranceVerified} label="Insurance verified" />
           </div>
 
@@ -232,7 +232,7 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
           {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
 
           <button onClick={handleConfirmPickup} disabled={loading || !readyChecks} className="button-primary">
-            {loading ? "Confirming..." : "Confirm Pickup"}
+            {loading ? "Confirming..." : "Confirm pickup"}
           </button>
         </div>
       )}

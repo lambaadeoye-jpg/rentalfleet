@@ -20,7 +20,7 @@ export default function LocationList({ initialLocations }: { initialLocations: P
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't add that location.");
+      setError(result.error ?? "Couldn’t add that location.");
       return;
     }
     setName("");
@@ -59,7 +59,7 @@ export default function LocationList({ initialLocations }: { initialLocations: P
         </div>
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
         <button onClick={handleAdd} disabled={loading} className="button-primary">
-          {loading ? "Adding..." : "Add Location"}
+          {loading ? "Adding..." : "Add location"}
         </button>
       </div>
 

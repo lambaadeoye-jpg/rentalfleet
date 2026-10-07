@@ -16,7 +16,7 @@ export default function AnonymousEntry() {
       if (!result.success) {
         // The raw reason (for example a Supabase setting) is for us, not the applicant.
         console.error("[apply] could not start anonymous session:", result.error);
-        setError("We couldn't start your application automatically.");
+        setError("We couldn’t start your application automatically.");
         return;
       }
       // Reload so the server component now sees a real (anonymous) user

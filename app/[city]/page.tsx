@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: { params: Promise<{ city: str
   const city = getCityBySlug(citySlug);
   if (!city) return {};
 
-  // The root layout's title template appends " | Zivo", so the page title omits it.
+  // The root layout’s title template appends " | Zivo", so the page title omits it.
   const title = `Rideshare & Delivery Car Rental in ${city.displayName}, TN`;
   return {
     title,
@@ -91,7 +91,7 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
           </a>
         ) : (
           <a href="#apply" data-cta="city_hero" className="button-primary" style={{ display: "inline-flex" }}>
-            Find My Car
+            Find my car
           </a>
         )}
       </section>
@@ -110,9 +110,9 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 24 }}>
             <div style={{ textAlign: "center" }}>
               <ShieldCheck size={28} color="var(--teal)" style={{ marginBottom: 8 }} />
-              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Insurance If You Need It</h3>
+              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Insurance if you need it</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
-                Bring your own, or get insurance included if you don&apos;t have any.
+                Bring your own, or get insurance included if you don&rsquo;t have any.
               </p>
             </div>
             <div style={{ textAlign: "center" }}>
@@ -124,14 +124,14 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
             </div>
             <div style={{ textAlign: "center" }}>
               <Zap size={28} color="var(--teal)" style={{ marginBottom: 8 }} />
-              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Fast Approval</h3>
+              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Fast approval</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
                 No credit check required.
               </p>
             </div>
             <div style={{ textAlign: "center" }}>
               <KeyRound size={28} color="var(--teal)" style={{ marginBottom: 8 }} />
-              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Staff-Assisted Pickup</h3>
+              <h3 style={{ fontSize: 16, marginBottom: 4 }}>Staff-assisted pickup</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
                 A real person hands you the keys.
               </p>
@@ -163,7 +163,7 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
 
       <section style={{ padding: "40px 20px", textAlign: "center" }}>
         <p className="muted-text" style={{ fontSize: 14 }}>
-          Must be at least {MINIMUM_AGE} years old with a valid driver&apos;s license.
+          Must be at least {MINIMUM_AGE} years old with a valid driver&rsquo;s license.
         </p>
       </section>
 

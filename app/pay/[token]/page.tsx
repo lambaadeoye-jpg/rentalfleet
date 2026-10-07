@@ -28,8 +28,8 @@ export default async function PayPage({ params, searchParams }: { params: Promis
   const { status } = await searchParams;
   const invalid = (
     <Shell>
-      <h1 style={{ fontSize: 20, marginBottom: 8 }}>This link isn&apos;t active</h1>
-      <p className="muted-text">It may have expired or been replaced by a newer one. Please contact us and we&apos;ll send a fresh link.</p>
+      <h1 style={{ fontSize: 24, marginBottom: 8 }}>This link isn&rsquo;t active</h1>
+      <p className="muted-text">It may have expired or been replaced by a newer one. Please contact us and we&rsquo;ll send a fresh link.</p>
     </Shell>
   );
   if (!UPLOAD_TOKEN_RE.test(token)) return invalid;
@@ -43,28 +43,28 @@ export default async function PayPage({ params, searchParams }: { params: Promis
   if (req.status === "paid") {
     return (
       <Shell>
-        <h1 style={{ fontSize: 22, marginBottom: 8 }}>Payment received. Thank you!</h1>
-        <p className="muted-text">You&apos;re all set. We&apos;ll send your pickup details. Keep your photo ID and the card you paid with.</p>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>Payment received. Thank you!</h1>
+        <p className="muted-text">You&rsquo;re all set. We&rsquo;ll send your pickup details. Keep your photo ID and the card you paid with.</p>
       </Shell>
     );
   }
   if (req.status === "review") {
     return (
       <Shell>
-        <h1 style={{ fontSize: 22, marginBottom: 8 }}>We&apos;re checking your payment</h1>
-        <p className="muted-text">Your payment needs a quick look from our team. We&apos;ll contact you shortly. You don&apos;t need to pay again.</p>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>We&rsquo;re checking your payment</h1>
+        <p className="muted-text">Your payment needs a quick look from our team. We&rsquo;ll contact you shortly. You don&rsquo;t need to pay again.</p>
       </Shell>
     );
   }
   if (req.status !== "open") return invalid;
 
-  // Back from Stripe but the webhook hasn't landed yet: refresh until it does.
+  // Back from Stripe but the webhook hasn’t landed yet: refresh until it does.
   if (status === "success") {
     return (
       <Shell>
         <AutoRefresh />
-        <h1 style={{ fontSize: 22, marginBottom: 8 }}>Confirming your payment...</h1>
-        <p className="muted-text">This takes a few seconds. Please don&apos;t pay again.</p>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>Confirming your payment...</h1>
+        <p className="muted-text">This takes a few seconds. Please don&rsquo;t pay again.</p>
       </Shell>
     );
   }
@@ -72,8 +72,8 @@ export default async function PayPage({ params, searchParams }: { params: Promis
   const total = (req.rent_cents + req.deposit_cents) / 100;
   return (
     <Shell>
-      <h1 style={{ fontSize: 22, marginBottom: 6 }}>{req.first_name ? `${req.first_name}, ` : ""}pay to lock in your rental</h1>
-      {status === "cancelled" && <p className="muted-text" style={{ marginBottom: 12 }}>Payment wasn&apos;t completed. You can try again below.</p>}
+      <h1 style={{ fontSize: 24, marginBottom: 6 }}>{req.first_name ? `${req.first_name}, ` : ""}pay to lock in your rental</h1>
+      {status === "cancelled" && <p className="muted-text" style={{ marginBottom: 12 }}>Payment wasn&rsquo;t completed. You can try again below.</p>}
       <div className="card" style={{ marginBottom: 14 }}>
         {req.rent_cents > 0 && (
           <p style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}><span>Rent (first week)</span><span>{money(req.rent_cents / 100)}</span></p>

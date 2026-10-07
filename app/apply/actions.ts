@@ -21,7 +21,7 @@ export async function beginAnonymousSession(): Promise<{ success: boolean; error
   const { error } = await supabase.auth.signInAnonymously();
 
   if (error) {
-    // Most likely cause: "Allow anonymous sign-ins" isn't enabled yet for
+    // Most likely cause: "Allow anonymous sign-ins" isn’t enabled yet for
     // this Supabase project (Authentication -> Sign In / Providers). Same
     // category of one-time dashboard setup as the SMTP/redirect URL config.
     return { success: false, error: error.message };
@@ -74,7 +74,7 @@ export async function sendMagicLink(email: string): Promise<{ success: boolean; 
   if (error) {
     // Surface the real Supabase error rather than a generic message -- this
     // is an Auth API error describing our own configuration (e.g. rate
-    // limits, SMTP not set up), not private user data, so it's safe and
+    // limits, SMTP not set up), not private user data, so it’s safe and
     // actually necessary to show while diagnosing the real cause.
     return { success: false, error: error.message };
   }
@@ -82,7 +82,7 @@ export async function sendMagicLink(email: string): Promise<{ success: boolean; 
 }
 
 // ---------------------------------------------------------------------------
-// Get-or-create the applicant's customer + application rows. Called once the
+// Get-or-create the applicant’s customer + application rows. Called once the
 // user has a session (post magic-link). Uses the cookie-aware server client
 // so it runs AS the authenticated applicant, not a trusted/service context --
 // RLS (0020, 0024) genuinely governs what this can do, same as everything
@@ -171,7 +171,7 @@ export async function getOrCreateApplication(): Promise<
     }
 
     if (!newCustomer) {
-      return { success: false, error: "Couldn't start your application. Please try again." };
+      return { success: false, error: "Couldn’t start your application. Please try again." };
     }
     customerId = newCustomer.id;
   }
@@ -204,7 +204,7 @@ export async function getOrCreateApplication(): Promise<
       .single();
 
     if (applicationError || !newApplication) {
-      return { success: false, error: "Couldn't start your application. Please try again." };
+      return { success: false, error: "Couldn’t start your application. Please try again." };
     }
     applicationId = newApplication.id;
     applicationStatus = newApplication.status;
@@ -272,10 +272,10 @@ export async function getOrCreateApplication(): Promise<
 // ---------------------------------------------------------------------------
 // STEP 1: Personal
 // ---------------------------------------------------------------------------
-// Bumps the applicant's most recent application.updated_at whenever a real
+// Bumps the applicant’s most recent application.updated_at whenever a real
 // step is saved -- the actual step data lives on OTHER tables (customer,
 // authorized_driver, platform_eligibility, insurance_policy), none of
-// which touch application itself, so without this there'd be no accurate
+// which touch application itself, so without this there’d be no accurate
 // signal of "last real activity" for the abandonment-recovery workflow to
 // check. Best-effort and silent: a failure here must never block the
 // step save itself, which has already succeeded by the time this runs.
@@ -308,7 +308,7 @@ export async function savePersonalStep(
     })
     .eq("id", customerId);
 
-  if (error) return { success: false, error: "Couldn't save. Please try again." };
+  if (error) return { success: false, error: "Couldn’t save. Please try again." };
   await touchApplication(customerId);
   return { success: true };
 }
@@ -345,7 +345,7 @@ export async function saveLicenseStep(
         license_expiry: fields.licenseExpiry || null,
       })
       .eq("id", existing.id);
-    if (error) return { success: false, error: "Couldn't save. Please try again." };
+    if (error) return { success: false, error: "Couldn’t save. Please try again." };
   } else {
     const { error } = await supabase.from("authorized_driver").insert({
       tenant_id: customer?.tenant_id,
@@ -358,7 +358,7 @@ export async function saveLicenseStep(
       status: "pending",
       is_primary: true,
     });
-    if (error) return { success: false, error: "Couldn't save. Please try again." };
+    if (error) return { success: false, error: "Couldn’t save. Please try again." };
   }
 
   await touchApplication(customerId);
@@ -406,7 +406,7 @@ export async function uploadApplicantDocument(
     status: "active",
   });
 
-  if (recordError) return { success: false, error: "Upload saved but couldn't be recorded. Contact support." };
+  if (recordError) return { success: false, error: "Upload saved but couldn’t be recorded. Contact support." };
 
   void fireN8nWebhook(N8N_WEBHOOK_PATHS.applicationDocumentUploaded, { customerId, documentType, via: "application" });
 
@@ -434,7 +434,7 @@ export async function saveWorkStep(
     .from("application")
     .update({ driving_status: drivingStatus })
     .eq("id", applicationId);
-  if (applicationError) return { success: false, error: "Couldn't save. Please try again." };
+  if (applicationError) return { success: false, error: "Couldn’t save. Please try again." };
 
   // Replace the set: delete existing, insert the current selection. Simple
   // and correct for a form re-save; this table has no history requirement.
@@ -448,7 +448,7 @@ export async function saveWorkStep(
       verification_status: "pending",
     }));
     const { error } = await supabase.from("platform_eligibility").insert(rows);
-    if (error) return { success: false, error: "Couldn't save. Please try again." };
+    if (error) return { success: false, error: "Couldn’t save. Please try again." };
   }
 
   await touchApplication(customerId);
@@ -475,11 +475,11 @@ export async function saveInsuranceStep(
     .from("application")
     .update({ has_own_insurance: fields.hasOwnInsurance })
     .eq("id", applicationId);
-  if (applicationError) return { success: false, error: "Couldn't save. Please try again." };
+  if (applicationError) return { success: false, error: "Couldn’t save. Please try again." };
 
-  // Someone who says they don't have insurance has no real policy to
-  // record yet -- an empty insurance_policy row wouldn't mean anything.
-  // Only touch insurance_policy when they've actually said yes.
+  // Someone who says they don’t have insurance has no real policy to
+  // record yet -- an empty insurance_policy row wouldn’t mean anything.
+  // Only touch insurance_policy when they’ve actually said yes.
   if (fields.hasOwnInsurance) {
     const { data: existing } = await supabase
       .from("insurance_policy")
@@ -494,7 +494,7 @@ export async function saveInsuranceStep(
         .from("insurance_policy")
         .update({ provider: fields.provider, policy_reference: fields.policyReference })
         .eq("id", existing.id);
-      if (error) return { success: false, error: "Couldn't save. Please try again." };
+      if (error) return { success: false, error: "Couldn’t save. Please try again." };
     } else {
       const { error } = await supabase.from("insurance_policy").insert({
         tenant_id: customer.tenant_id,
@@ -504,7 +504,7 @@ export async function saveInsuranceStep(
         policy_reference: fields.policyReference,
         verification_status: "pending",
       });
-      if (error) return { success: false, error: "Couldn't save. Please try again." };
+      if (error) return { success: false, error: "Couldn’t save. Please try again." };
     }
   }
 
@@ -540,8 +540,8 @@ export async function getAdditionalDrivers(customerId: string): Promise<Addition
 
 // Replaces the full set of additional drivers each save -- simpler and
 // safer than diffing individual rows for a form with an add/remove list,
-// and this step is revisited rarely enough that the extra writes don't
-// matter. Never touches the is_primary=true row (the applicant's own
+// and this step is revisited rarely enough that the extra writes don’t
+// matter. Never touches the is_primary=true row (the applicant’s own
 // license), which is exactly the distinction migration 0051 exists for.
 export async function saveAdditionalDrivers(
   customerId: string,
@@ -557,7 +557,7 @@ export async function saveAdditionalDrivers(
     .delete()
     .eq("customer_id", customerId)
     .eq("is_primary", false);
-  if (deleteError) return { success: false, error: "Couldn't save. Please try again." };
+  if (deleteError) return { success: false, error: "Couldn’t save. Please try again." };
 
   const validDrivers = drivers.filter((d) => d.firstName.trim() && d.lastName.trim());
   if (validDrivers.length > 0) {
@@ -573,7 +573,7 @@ export async function saveAdditionalDrivers(
         is_primary: false,
       }))
     );
-    if (insertError) return { success: false, error: "Couldn't save. Please try again." };
+    if (insertError) return { success: false, error: "Couldn’t save. Please try again." };
   }
 
   await touchApplication(customerId);
@@ -592,7 +592,7 @@ export async function submitApplication(
     .update({ status: "submitted", submitted_at: new Date().toISOString() })
     .eq("id", applicationId);
 
-  if (error) return { success: false, error: "Couldn't submit. Please try again." };
+  if (error) return { success: false, error: "Couldn’t submit. Please try again." };
 
   // Best-effort: tell automation the application is in. Details are read after the save, so a lookup problem
   // never affects the submission itself.

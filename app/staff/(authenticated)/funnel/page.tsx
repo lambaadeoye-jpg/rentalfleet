@@ -7,7 +7,7 @@ const RANGES = [7, 30, 90];
 const GROUPS = [
   { key: "source", label: "Channel" },
   { key: "campaign", label: "Campaign" },
-  { key: "heard_about", label: "\"How did you hear about us?\"" },
+  { key: "heard_about", label: "“How did you hear about us?”" },
   { key: "button", label: "Website button" },
 ] as const;
 
@@ -41,21 +41,20 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
 
   return (
     <div style={{ padding: "32px 40px", maxWidth: 980 }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Funnel</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Funnel</h1>
       <p className="muted-text" style={{ marginBottom: 16 }}>
         Of the leads created in the period, how many reached each step. Steps are counted per person, so someone who skips
         ahead still counts at every step they reached.
       </p>
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+      <div className="tab-row">
         {RANGES.map((d) => (
-          <a key={d} href={`/staff/funnel?days=${d}&by=${by}`} className="btn"
-            style={{ fontWeight: d === days ? 700 : 400, textDecoration: d === days ? "underline" : "none" }}>
+          <a key={d} href={`/staff/funnel?days=${d}&by=${by}`} aria-current={d === days ? "true" : undefined}>
             Last {d} days
           </a>
         ))}
       </div>
       {error ? (
-        <p>Couldn&apos;t load the funnel. Please try again.</p>
+        <p>Couldn&rsquo;t load the funnel. Please try again.</p>
       ) : top === 0 ? (
         <p className="muted-text">No leads in this period yet.</p>
       ) : (
@@ -82,20 +81,19 @@ export default async function FunnelPage({ searchParams }: { searchParams: Promi
         </div>
       )}
 
-      <h2 style={{ fontSize: 18, margin: "36px 0 4px" }}>By source</h2>
+      <h2 style={{ fontSize: 16, margin: "36px 0 4px" }}>By source</h2>
       <p className="muted-text" style={{ marginBottom: 12 }}>
         Where leads came from and how far each group got. Small groups swing a lot: judge a source on at least 20 to 30 leads.
       </p>
-      <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+      <div className="tab-row">
         {GROUPS.map((g) => (
-          <a key={g.key} href={`/staff/funnel?days=${days}&by=${g.key}`} className="btn"
-            style={{ fontWeight: g.key === by ? 700 : 400, textDecoration: g.key === by ? "underline" : "none" }}>
+          <a key={g.key} href={`/staff/funnel?days=${days}&by=${g.key}`} aria-current={g.key === by ? "true" : undefined}>
             {g.label}
           </a>
         ))}
       </div>
       {srcError ? (
-        <p>Couldn&apos;t load the source breakdown. Please try again.</p>
+        <p>Couldn&rsquo;t load the source breakdown. Please try again.</p>
       ) : srcRows.length === 0 ? (
         <p className="muted-text">No leads in this period yet.</p>
       ) : (

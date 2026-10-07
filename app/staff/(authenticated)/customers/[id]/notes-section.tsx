@@ -17,7 +17,7 @@ export default function NotesSection({ customerId, initialNotes }: { customerId:
     setSubmitting(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't add that note.");
+      setError(result.error ?? "Couldn’t add that note.");
       return;
     }
     setBody("");
@@ -47,7 +47,7 @@ export default function NotesSection({ customerId, initialNotes }: { customerId:
         />
         {error && <p className="error-text" style={{ marginBottom: 8, fontSize: 13 }}>{error}</p>}
         <button onClick={handleAdd} disabled={submitting || !body.trim()} className="button-primary">
-          {submitting ? "Adding..." : "Add Note"}
+          {submitting ? "Adding..." : "Add note"}
         </button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 // Manual-first status vocabulary from migration 0030 -- see that
-// migration's comments for why this is a scoped-down subset of the full
-// V2.3 spec's 12-state machine, not the whole thing.
+// migration’s comments for why this is a scoped-down subset of the full
+// V2.3 spec’s 12-state machine, not the whole thing.
 export const INSURANCE_STATUSES = [
   "pending",
   "document_received",

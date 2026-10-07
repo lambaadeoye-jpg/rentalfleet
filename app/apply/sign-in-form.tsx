@@ -28,7 +28,7 @@ export default function SignInForm() {
     return (
       <div className="card" style={{ maxWidth: 420, margin: "80px auto", textAlign: "center", padding: 40 }}>
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
-        <h1 style={{ fontSize: 20, marginBottom: 8 }}>Check your email</h1>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>Check your email</h1>
         <p className="muted-text">
           We sent a secure sign-in link to <strong>{email}</strong>. Open it on this device to
           continue your application.
@@ -41,9 +41,9 @@ export default function SignInForm() {
     <div style={{ maxWidth: 420, margin: "80px auto", padding: "0 24px" }}>
       <form onSubmit={handleSubmit} className="card">
         <Mail size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
-        <h1 style={{ fontSize: 20, marginBottom: 4 }}>Continue on a new device?</h1>
+        <h1 style={{ fontSize: 24, marginBottom: 4 }}>Continue on a new device?</h1>
         <p className="muted-text" style={{ marginBottom: 20 }}>
-          If you added your email while applying, enter it below and we&apos;ll send a secure
+          If you added your email while applying, enter it below and we&rsquo;ll send a secure
           link to pick up where you left off — no password needed.
         </p>
         <label htmlFor="email" style={{ display: "block", marginBottom: 16 }}>

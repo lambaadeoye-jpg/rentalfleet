@@ -73,9 +73,9 @@ export async function createWorkOrder(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to log maintenance." };
+      return { success: false, error: "You don’t have permission to log maintenance." };
     }
-    return { success: false, error: "Couldn't create that work order. Please try again." };
+    return { success: false, error: "Couldn’t create that work order. Please try again." };
   }
 
   // Vehicle goes into maintenance status -- matches the already-seeded
@@ -83,8 +83,8 @@ export async function createWorkOrder(
   // allowed_status_transition before relying on this). Deliberately
   // checked for failure here: 'reserved' (an upcoming pickup already
   // scheduled) is NOT a valid ->maintenance transition, and silently
-  // ignoring that would leave a work order existing while the vehicle's
-  // actual status doesn't reflect it at all.
+  // ignoring that would leave a work order existing while the vehicle’s
+  // actual status doesn’t reflect it at all.
   const { error: vehicleError } = await supabase.from("vehicle").update({ status: "maintenance" }).eq("id", vehicleId);
   if (vehicleError) {
     // The work order itself still exists and is valid -- this is a
@@ -92,7 +92,7 @@ export async function createWorkOrder(
     return {
       success: true,
       warning:
-        "Work order created, but the vehicle's status couldn't be updated -- it may have an upcoming reservation. Resolve that first, or update the vehicle status manually on Fleet.",
+        "Work order created, but the vehicle’s status couldn’t be updated -- it may have an upcoming reservation. Resolve that first, or update the vehicle status manually on Fleet.",
     };
   }
 
@@ -123,9 +123,9 @@ export async function completeWorkOrder(workOrderId: string, cost: number | null
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to update maintenance." };
+      return { success: false, error: "You don’t have permission to update maintenance." };
     }
-    return { success: false, error: "Couldn't update that work order." };
+    return { success: false, error: "Couldn’t update that work order." };
   }
 
   // Free the vehicle back to available -- matches the already-seeded

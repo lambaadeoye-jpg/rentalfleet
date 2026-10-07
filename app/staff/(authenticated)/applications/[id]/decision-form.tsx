@@ -7,7 +7,7 @@ import { DECISION_OUTCOMES } from "../constants";
 
 const OUTCOME_LABELS: Record<(typeof DECISION_OUTCOMES)[number], string> = {
   approved: "Approve",
-  conditionally_approved: "Conditionally Approve",
+  conditionally_approved: "Conditionally approve",
   declined: "Decline",
 };
 
@@ -30,7 +30,7 @@ export default function DecisionForm({ applicationId }: { applicationId: string 
     setPendingOutcome(null);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't save that decision. Please try again.");
+      setError(result.error ?? "Couldn’t save that decision. Please try again.");
       return;
     }
 

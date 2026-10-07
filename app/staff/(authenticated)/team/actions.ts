@@ -86,9 +86,9 @@ export async function inviteStaffMember(email: string, roleId: string): Promise<
 
   if (insertError) {
     if (insertError.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to invite staff." };
+      return { success: false, error: "You don’t have permission to invite staff." };
     }
-    return { success: false, error: "Couldn't create the invite. Please try again." };
+    return { success: false, error: "Couldn’t create the invite. Please try again." };
   }
 
   const { error: emailError } = await supabase.auth.signInWithOtp({
@@ -102,7 +102,7 @@ export async function inviteStaffMember(email: string, roleId: string): Promise<
   if (emailError) {
     // The invite record exists even if the email send failed -- worth
     // surfacing distinctly rather than implying nothing happened.
-    return { success: false, error: `Invite created, but the email couldn't be sent: ${emailError.message}` };
+    return { success: false, error: `Invite created, but the email couldn’t be sent: ${emailError.message}` };
   }
 
   revalidatePath("/staff/team");
@@ -115,9 +115,9 @@ export async function revokeInvite(inviteId: string): Promise<{ success: boolean
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to revoke invites." };
+      return { success: false, error: "You don’t have permission to revoke invites." };
     }
-    return { success: false, error: "Couldn't revoke that invite. Please try again." };
+    return { success: false, error: "Couldn’t revoke that invite. Please try again." };
   }
 
   revalidatePath("/staff/team");

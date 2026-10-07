@@ -11,10 +11,10 @@ export default function PayNow({ label = "Pay now" }: { label?: string }) {
     setBusy(true); setError(null);
     try {
       const res = await startMyPayment();
-      if (!res.success || !res.url) { setError(res.error ?? "Couldn't start payment."); setBusy(false); return; }
+      if (!res.success || !res.url) { setError(res.error ?? "Couldn’t start payment."); setBusy(false); return; }
       window.location.href = res.url;
     } catch {
-      setError("Couldn't start payment. Please try again.");
+      setError("Couldn’t start payment. Please try again.");
       setBusy(false);
     }
   }

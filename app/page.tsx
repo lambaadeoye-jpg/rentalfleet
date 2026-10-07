@@ -29,7 +29,7 @@ import {
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
 
 // Daily pricing shown on the page, read from the approved pricing policy so the page never drifts from what staff set.
-// Returns null (price lines are hidden) if daily pricing is not approved or can't be read.
+// Returns null (price lines are hidden) if daily pricing is not approved or can’t be read.
 type DailyPricing = { days: number; total: number; perDay: number };
 async function getDailyPricing(): Promise<DailyPricing | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -47,7 +47,7 @@ async function getDailyPricing(): Promise<DailyPricing | null> {
 }
 
 // One repeated call to action, same words everywhere, with the reassurance right under it.
-function SectionCta({ name, label = "Find My Car" }: { name: string; label?: string }) {
+function SectionCta({ name, label = "Find my car" }: { name: string; label?: string }) {
   return (
     <div className="section-cta">
       <a href="#apply-bottom" className="button-primary" data-cta={name}>{label}</a>
@@ -71,7 +71,7 @@ export default async function Home() {
   // FAQ content lives in one list so the visible answers and the FAQPage structured data can never drift apart.
   const faqs: { q: string; a: string; schema?: boolean }[] = [
     { q: "Do you offer monthly rentals?", a: "No. We do not offer a monthly rental plan." },
-    { q: "What's the minimum rental period?", a: "The minimum rental period is one week, so every rental is a weekly rental or longer." },
+    { q: "What’s the minimum rental period?", a: "The minimum rental period is one week, so every rental is a weekly rental or longer." },
     {
       q: "How does daily pricing work?",
       a:
@@ -81,17 +81,17 @@ export default async function Home() {
     },
     {
       q: "Do I need my own insurance?",
-      a: "Not if you don't have any. Bring your own coverage if you have it. If you don't, insurance is included with your rental. Either way, you'll be covered before you drive.",
+      a: "Not if you don’t have any. Bring your own coverage if you have it. If you don’t, insurance is included with your rental. Either way, you’ll be covered before you drive.",
     },
     { q: "Is mileage limited?", a: "Unlimited mileage is included." },
-    { q: "What's the minimum age to rent?", a: `You must be at least ${MINIMUM_AGE} years old with a valid driver's license.` },
+    { q: "What’s the minimum age to rent?", a: `You must be at least ${MINIMUM_AGE} years old with a valid driver’s license.` },
     {
       q: "Do you run a credit check?",
-      a: "We don't use a traditional credit check as part of our rental process. Other eligibility, identity, driving, insurance, payment, and screening requirements may apply.",
+      a: "We don’t use a traditional credit check as part of our rental process. Other eligibility, identity, driving, insurance, payment, and screening requirements may apply.",
     },
     {
       q: "Where do I pick up the car?",
-      a: "Pickup is in Nashville and Murfreesboro. We confirm the exact location and time with you once you're approved.",
+      a: "Pickup is in Nashville and Murfreesboro. We confirm the exact location and time with you once you’re approved.",
     },
     { q: "Do I pick the exact car?", a: "You select a vehicle category. We assign an available vehicle within that category." },
     {
@@ -102,7 +102,7 @@ export default async function Home() {
     {
       q: "Can I apply or ask questions by phone instead of online?",
       a: `Yes — call ${PHONE_DISPLAY} and we can walk you through availability, pricing, and the application process directly.`,
-      schema: PHONE_IS_LIVE, // don't publish the placeholder number into search results
+      schema: PHONE_IS_LIVE, // don’t publish the placeholder number into search results
     },
     {
       q: "Can I use this rental for DoorDash, Uber Eats, or Instacart?",
@@ -114,7 +114,7 @@ export default async function Home() {
     },
     {
       q: "Can I drive for more than one platform with the same rental?",
-      a: "Yes — our vehicles aren't limited to a single platform. Many drivers run rideshare, delivery, and courier apps on the same vehicle, subject to each platform's own requirements.",
+      a: "Yes — our vehicles aren’t limited to a single platform. Many drivers run rideshare, delivery, and courier apps on the same vehicle, subject to each platform’s own requirements.",
     },
   ];
 
@@ -178,7 +178,7 @@ export default async function Home() {
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
               <a href="#fleet" className="nav-jump-link">Fleet</a>
-              <a href="#how-it-works" className="nav-jump-link">How It Works</a>
+              <a href="#how-it-works" className="nav-jump-link">How it works</a>
               <a href="#pricing" className="nav-jump-link">Pricing</a>
               <a href="#faq" className="nav-jump-link">FAQ</a>
               {PHONE_IS_LIVE && (
@@ -188,14 +188,14 @@ export default async function Home() {
                 </a>
               )}
               <a href="#apply" data-cta="nav" className="button-primary nav-cta" style={{ padding: "10px 18px", fontSize: 14 }}>
-                Find My Car
+                Find my car
               </a>
             </div>
           </nav>
 
           <div className="hero-content hero-grid">
             <div className="hero-copy">
-              <div className="eyebrow">Gig, Rideshare &amp; Delivery Car Rentals in Nashville</div>
+              <div className="eyebrow">Gig, rideshare &amp; delivery car rentals in Nashville</div>
               <h1>Car rentals for rideshare &amp; delivery drivers.</h1>
               <p className="hero-sub">
                 {pricing
@@ -234,7 +234,7 @@ export default async function Home() {
           <div className="grid-3">
             <div className="card benefit-card">
               <Gauge size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Unlimited Mileage</h3>
+              <h3>Unlimited mileage</h3>
               <p>
                 Drive without watching the odometer. Focus on routes, customers, shifts, and
                 deliveries instead of mileage limits.
@@ -242,21 +242,21 @@ export default async function Home() {
             </div>
             <div className="card benefit-card">
               <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>No Credit Check</h3>
+              <h3>No credit check</h3>
               <p>
-                We don&apos;t use a traditional credit check as part of our rental process.
+                We don&rsquo;t use a traditional credit check as part of our rental process.
                 Other eligibility, identity, driving, insurance, payment, and screening
                 requirements may apply.
               </p>
             </div>
             <div className="card benefit-card">
               <Fuel size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Fuel Efficiency</h3>
+              <h3>Fuel efficiency</h3>
               <p>Choose economical vehicles designed to help keep fuel costs under control.</p>
             </div>
             <div className="card benefit-card">
               <Briefcase size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Work-Ready Vehicles</h3>
+              <h3>Work-ready vehicles</h3>
               <p>
                 Vehicles are selected with the needs of rideshare, delivery, courier, and
                 independent drivers in mind.
@@ -264,7 +264,7 @@ export default async function Home() {
             </div>
             <div className="card benefit-card">
               <Zap size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Fast Process</h3>
+              <h3>Fast process</h3>
               <p>Complete the required steps, get approved, make your rental payment, and get on the road.</p>
             </div>
             <div className="card benefit-card">
@@ -274,12 +274,12 @@ export default async function Home() {
             </div>
             <div className="card benefit-card">
               <Wrench size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Regular Maintenance Covered</h3>
+              <h3>Regular maintenance covered</h3>
               <p>Routine maintenance is handled for you, so your vehicle stays road-ready.</p>
             </div>
             <div className="card benefit-card">
               <Layers size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Multi-Platform Ready</h3>
+              <h3>Multi-platform ready</h3>
               <p>
                 Built for drivers working across major rideshare, delivery, courier, and
                 independent-driving platforms, subject to applicable requirements.
@@ -287,10 +287,10 @@ export default async function Home() {
             </div>
             <div className="card benefit-card">
               <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Insurance, Sorted Simply</h3>
+              <h3>Insurance, sorted simply</h3>
               <p>
-                Already have coverage? Bring it. Don&apos;t have any? Insurance is included with
-                your rental. Either way, you&apos;ll be covered before you drive.
+                Already have coverage? Bring it. Don&rsquo;t have any? Insurance is included with
+                your rental. Either way, you&rsquo;ll be covered before you drive.
               </p>
             </div>
           </div>
@@ -300,7 +300,7 @@ export default async function Home() {
       {/* PLATFORMS */}
       <section className="section section-dark">
         <div className="container">
-          <h2 className="section-title">Built for Gig, Rideshare &amp; Delivery Drivers</h2>
+          <h2 className="section-title">Built for gig, rideshare &amp; delivery drivers</h2>
           <p className="section-lede">
             One car. More ways to work. Our vehicles are intended for drivers working across
             major rideshare, delivery, courier, and independent-driving platforms, subject to
@@ -325,8 +325,8 @@ export default async function Home() {
         <div className="container">
           <h2 className="section-title">Find the vehicle that fits your work.</h2>
           <p className="section-lede">
-            Choose the vehicle category that fits your needs. We&apos;ll match you with an
-            available vehicle in that category. You don&apos;t need to choose a specific VIN.
+            Choose the vehicle category that fits your needs. We&rsquo;ll match you with an
+            available vehicle in that category. You don&rsquo;t need to choose a specific VIN.
           </p>
           {/* Shows every active category, not just the first -- previously
               only categories[0] ever rendered here, which worked by
@@ -339,7 +339,7 @@ export default async function Home() {
             <div className="card vehicle-card" key={category.id} style={{ marginBottom: 20 }}>
               {/* Same photo for every category for now -- vehicle_category has
                   no per-category image column yet, so all cards share the one
-                  real fleet photo until that's added. */}
+                  real fleet photo until that’s added. */}
               <img src="/images/vehicle-economy-sedan.jpg" alt={category.name} />
               <div className="vehicle-card-body">
                 <h3 style={{ fontSize: 22, marginBottom: 8 }}>{category.name}</h3>
@@ -351,7 +351,7 @@ export default async function Home() {
                   <li>Fuel-efficient, practical choice for high-mileage driving</li>
                 </ul>
                 <a href="#apply-bottom" data-cta="fleet_card" className="button-primary" style={{ alignSelf: "flex-start" }}>
-                  Find My Car
+                  Find my car
                 </a>
               </div>
             </div>
@@ -385,9 +385,9 @@ export default async function Home() {
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
             Unlimited mileage included on every rental. Rentals start at one week, then continue day by day.
-            Insurance is included if you don&apos;t have your own. We do not offer a monthly rental plan.
+            Insurance is included if you don&rsquo;t have your own. We do not offer a monthly rental plan.
           </p>
-          <SectionCta name="after_pricing" label="Check Availability" />
+          <SectionCta name="after_pricing" label="Check availability" />
         </div>
       </section>
 
@@ -401,13 +401,13 @@ export default async function Home() {
               <div className="step-number">01</div>
               <h3 style={{ fontSize: 16, margin: "8px 0" }}>Apply</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
-                Tell us what you&apos;re driving for and what type of vehicle you need.
+                Tell us what you&rsquo;re driving for and what type of vehicle you need.
               </p>
             </div>
             <div>
               <ClipboardCheck size={20} color="var(--teal)" style={{ marginBottom: 6 }} />
               <div className="step-number">02</div>
-              <h3 style={{ fontSize: 16, margin: "8px 0" }}>Complete Requirements</h3>
+              <h3 style={{ fontSize: 16, margin: "8px 0" }}>Complete requirements</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
                 Provide required information and documentation.
               </p>
@@ -415,7 +415,7 @@ export default async function Home() {
             <div>
               <BadgeCheck size={20} color="var(--teal)" style={{ marginBottom: 6 }} />
               <div className="step-number">03</div>
-              <h3 style={{ fontSize: 16, margin: "8px 0" }}>Get Approved</h3>
+              <h3 style={{ fontSize: 16, margin: "8px 0" }}>Get approved</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
                 Complete verification and screening.
               </p>
@@ -423,7 +423,7 @@ export default async function Home() {
             <div>
               <KeyRound size={20} color="var(--teal)" style={{ marginBottom: 6 }} />
               <div className="step-number">04</div>
-              <h3 style={{ fontSize: 16, margin: "8px 0" }}>Pay &amp; Pick Up</h3>
+              <h3 style={{ fontSize: 16, margin: "8px 0" }}>Pay &amp; pick up</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
                 Make your rental payment, complete the staff-assisted pickup, and get on the road.
               </p>
@@ -452,19 +452,19 @@ export default async function Home() {
             </div>
             <div className="card benefit-card">
               <IdCard size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Valid Driver&apos;s License</h3>
+              <h3>Valid driver&rsquo;s license</h3>
               <p>A current, non-expired license with valid ID.</p>
             </div>
             <div className="card benefit-card">
               <ShieldCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Insurance Coverage</h3>
-              <p>Bring your own. If you don&apos;t have any, insurance is included with your rental.</p>
+              <h3>Insurance coverage</h3>
+              <p>Bring your own. If you don&rsquo;t have any, insurance is included with your rental.</p>
             </div>
             <div className="card benefit-card">
               <BadgeCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>No Credit Check</h3>
+              <h3>No credit check</h3>
               <p>
-                We don&apos;t use a traditional credit check as part of our rental process.
+                We don&rsquo;t use a traditional credit check as part of our rental process.
                 Other eligibility requirements may apply.
               </p>
             </div>
@@ -476,9 +476,9 @@ export default async function Home() {
       {/* LEAD FORM */}
       <section className="section section-dark" id="apply-bottom">
         <div className="container" style={{ maxWidth: 640 }}>
-          <h2 className="section-title">Let&apos;s find the right vehicle for your work.</h2>
+          <h2 className="section-title">Let&rsquo;s find the right vehicle for your work.</h2>
           <p className="section-lede">
-            No document uploads here — just the basics. We&apos;ll follow up with next steps.
+            No document uploads here — just the basics. We&rsquo;ll follow up with next steps.
             {PHONE_IS_LIVE && (
               <>
                 {" "}Prefer to talk it through instead?{" "}
@@ -500,7 +500,7 @@ export default async function Home() {
         <div className="container">
           <h2 className="section-title">A work-ready vehicle, close to where you work.</h2>
           <p className="section-lede">
-            We&apos;re focused on serving drivers throughout Greater Nashville with reliable,
+            We&rsquo;re focused on serving drivers throughout Greater Nashville with reliable,
             affordable transportation designed around the realities of working on the road.
           </p>
           <div className="platform-pill-row">
@@ -570,7 +570,7 @@ export default async function Home() {
           </p>
           <div className="cta-row" style={{ justifyContent: "center" }}>
             <a href="#apply-bottom" data-cta="final" className="button-primary">
-              Find My Car
+              Find my car
             </a>
           </div>
           <p className="muted-text" style={{ color: "rgba(255,255,255,0.6)", marginTop: 20, fontSize: 14 }}>

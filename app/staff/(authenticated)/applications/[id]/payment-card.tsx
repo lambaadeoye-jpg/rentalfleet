@@ -16,7 +16,7 @@ export default function PaymentCard({ rentalId, status }: { rentalId: string; st
     setBusy(true); setError(null); setCopied(false);
     const res = await createPaymentLink(rentalId);
     setBusy(false);
-    if (!res.success || !res.url) setError(res.error ?? "Couldn't create the link.");
+    if (!res.success || !res.url) setError(res.error ?? "Couldn’t create the link.");
     else { setUrl(res.url); setTotal(res.totalUsd ?? null); }
   }
   async function copy() {
@@ -34,7 +34,7 @@ export default function PaymentCard({ rentalId, status }: { rentalId: string; st
             {status.paid.paidAt ? ` on ${new Date(status.paid.paidAt).toLocaleString()}` : ""}
           </p>
           {status.paid.nameMatches === false && (
-            <p style={{ fontSize: 13, marginTop: 6 }}>Name on the card doesn&apos;t match the renter. Check ID and card at pickup.</p>
+            <p style={{ fontSize: 13, marginTop: 6 }}>Name on the card doesn&rsquo;t match the renter. Check ID and card at pickup.</p>
           )}
         </>
       ) : (

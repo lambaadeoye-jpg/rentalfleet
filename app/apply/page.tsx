@@ -36,7 +36,7 @@ export default async function ApplyPage({
     );
   }
 
-  // Public client for gig_platform is fine here -- it's non-sensitive
+  // Public client for gig_platform is fine here -- it’s non-sensitive
   // reference data, same table the homepage reads.
   const publicClient = createPublicClient();
   const { data: platforms } = await publicClient

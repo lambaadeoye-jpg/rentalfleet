@@ -13,8 +13,8 @@ export default function ReferralLinkBox({ referralLink }: { referralLink: string
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard access can fail (permissions, older browsers) -- the
-      // link text is still selectable/visible either way, so this isn't
-      // a dead end even if the copy button itself doesn't work.
+      // link text is still selectable/visible either way, so this isn’t
+      // a dead end even if the copy button itself doesn’t work.
     }
   }
 

@@ -16,7 +16,7 @@ export async function previewStaffCancellation(rentalId: string, reason: string)
   const { data, error } = await supabase.rpc("request_cancellation", { p_rental_id: rentalId, p_reason: reason, p_initiator: "staff", p_note: null, p_dry_run: true });
   if (error) return { success: false, error: cancelErrorMessage(error.message) };
   const s = parseSettlement(Array.isArray(data) ? data[0] : null);
-  return s ? { success: true, settlement: s } : { success: false, error: "Couldn't work out the refund." };
+  return s ? { success: true, settlement: s } : { success: false, error: "Couldn’t work out the refund." };
 }
 
 export async function confirmStaffCancellation(rentalId: string, reason: string, note: string): Promise<Preview & { sendNote?: string }> {
@@ -25,7 +25,7 @@ export async function confirmStaffCancellation(rentalId: string, reason: string,
   const { data, error } = await supabase.rpc("request_cancellation", { p_rental_id: rentalId, p_reason: reason, p_initiator: "staff", p_note: note.trim().slice(0, 500) || null, p_dry_run: false });
   if (error) return { success: false, error: cancelErrorMessage(error.message) };
   const s = parseSettlement(Array.isArray(data) ? data[0] : null);
-  if (!s) return { success: false, error: "Cancelled, but couldn't read the result. Check the Refunds page." };
+  if (!s) return { success: false, error: "Cancelled, but couldn’t read the result. Check the Refunds page." };
   let sendNote: string | undefined;
   if (s.status === "approved") {
     const admin = createAdminClient();

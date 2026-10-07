@@ -13,7 +13,7 @@ export default function ApplyReferralCreditForm({ customerId, maxAmount }: { cus
 
   async function handleApply() {
     const numAmount = Number(amount);
-    const confirmed = window.confirm(`Apply $${numAmount.toFixed(2)} referral credit toward this customer's balance?`);
+    const confirmed = window.confirm(`Apply $${numAmount.toFixed(2)} referral credit toward this customer’s balance?`);
     if (!confirmed) return;
 
     setError(null);
@@ -22,7 +22,7 @@ export default function ApplyReferralCreditForm({ customerId, maxAmount }: { cus
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't apply that credit.");
+      setError(result.error ?? "Couldn’t apply that credit.");
       return;
     }
     setOpen(false);
@@ -32,7 +32,7 @@ export default function ApplyReferralCreditForm({ customerId, maxAmount }: { cus
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} className="button-primary">
-        Apply Credit
+        Apply credit
       </button>
     );
   }

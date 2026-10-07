@@ -109,6 +109,54 @@ label {
   color: var(--text);
 }
 
+/* Links with no class of their own use the brand colour instead of the browser's default blue. */
+a:not([class]) {
+  color: var(--teal-dark);
+}
+
+/* A label that wraps its input is an inline element by default, which ignores vertical margins and
+   makes stacked fields touch each other. Make it a block so every form has the same rhythm. */
+label.field {
+  display: block;
+}
+label.field > span:first-child {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Staff and portal screens: one control height, one gap between a label and its field. */
+.app-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+.app-shell select {
+  min-height: 40px;
+}
+.app-shell .field > label:first-child {
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Tabs (period and grouping pickers). */
+.tab-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.tab-row a {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.tab-row a[aria-current="true"] {
+  background: var(--midnight);
+  border-color: var(--midnight);
+  color: var(--white);
+}
+
 .error-text {
   color: var(--red);
   font-size: 14px;
@@ -507,4 +555,10 @@ section[id] {
   .nav-jump-link {
     display: inline-block;
   }
+}
+
+/* Page intro text under a page title: keep lines readable on wide screens. */
+h1 + p.muted-text {
+  max-width: 760px;
+  line-height: 1.5;
 }

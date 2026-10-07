@@ -8,10 +8,10 @@ export default async function RefundsPage() {
   const [refunds, due] = await Promise.all([getRefunds(), getDepositsDue()]);
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Refunds</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Refunds</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Refunds from rentals cancelled before pickup. Each one is calculated from your approved cancellation rules.
-        Approving sends the money back to the renter&apos;s original card. Refunds over the approval limit need an admin.
+        Approving sends the money back to the renter&rsquo;s original card. Refunds over the approval limit need an admin.
       </p>
       {due.length > 0 && (
         <div className="card" style={{ marginBottom: 24 }}>

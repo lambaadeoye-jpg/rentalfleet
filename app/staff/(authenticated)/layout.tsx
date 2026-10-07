@@ -141,7 +141,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   };
 
   // Field staff get a genuinely different, mobile-first layout -- not the
-  // desktop-oriented sidebar. They're standing next to a car on their
+  // desktop-oriented sidebar. They’re standing next to a car on their
   // phone, not sitting at a desk managing leads and applications; a
   // sidebar built for back-office work is the wrong shape for that job,
   // even though nothing about it was actually broken for them.
@@ -164,15 +164,15 @@ export default async function StaffLayout({ children }: { children: React.ReactN
           <span style={{ fontWeight: 700, fontSize: 15 }}>{tenant?.name ?? "Fleet Rental"}</span>
           <SignOutButton />
         </header>
-        <main>{children}</main>
+        <main className="app-shell">{children}</main>
       </div>
     );
   }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>
-      <StaffNav tenantName={tenant?.name ?? "Staff Portal"} userEmail={user.email ?? ""} roleName={role?.name} badgeCounts={badgeCounts} />
-      <main style={{ flex: 1, background: "var(--cloud)", minHeight: "100vh" }}>{children}</main>
+      <StaffNav tenantName={tenant?.name ?? "Staff portal"} userEmail={user.email ?? ""} roleName={role?.name} badgeCounts={badgeCounts} />
+      <main className="app-shell" style={{ flex: 1, background: "var(--cloud)", minHeight: "100vh" }}>{children}</main>
     </div>
   );
 }

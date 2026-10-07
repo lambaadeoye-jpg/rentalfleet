@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { updateLeadStage } from "./actions";
+import { formatPhone } from "@/lib/format-phone";
+import { sentenceCase } from "@/lib/format-label";
 
 type Lead = {
   id: string;
@@ -18,12 +20,12 @@ type Lead = {
 
 const STAGE_LABELS: Record<string, string> = {
   new: "New",
-  attempting_contact: "Attempting Contact",
+  attempting_contact: "Attempting contact",
   contacted: "Contacted",
   qualified: "Qualified",
-  application_invited: "Application Invited",
-  application_started: "Application Started",
-  application_submitted: "Application Submitted",
+  application_invited: "Application invited",
+  application_started: "Application started",
+  application_submitted: "Application submitted",
   screening: "Screening",
   approved: "Approved",
   booking: "Booking",
@@ -40,7 +42,7 @@ export default function LeadsTable({ leads, stages }: { leads: Lead[]; stages: s
     setSavingId(null);
 
     if (!result.success) {
-      alert(result.error ?? "Couldn't update that lead's stage. Please try again.");
+      alert(result.error ?? "Couldn’t update that lead’s stage. Please try again.");
       return;
     }
     setRows((prev) => prev.map((r) => (r.id === leadId ? { ...r, stage: newStage } : r)));
@@ -55,7 +57,7 @@ export default function LeadsTable({ leads, stages }: { leads: Lead[]; stages: s
       <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
-            {["Name", "Contact", "Driving For", "Source", "Stage", "Received"].map((h) => (
+            {["Name", "Contact", "Driving for", "Source", "Stage", "Received"].map((h) => (
               <th key={h} style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 }}>
                 {h}
               </th>
@@ -72,13 +74,13 @@ export default function LeadsTable({ leads, stages }: { leads: Lead[]; stages: s
                 )}
               </td>
               <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
-                <div>{lead.phone}</div>
+                <div>{formatPhone(lead.phone)}</div>
                 {lead.email && <div style={{ fontSize: 12 }}>{lead.email}</div>}
               </td>
               <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>
                 {lead.platforms.length > 0 ? lead.platforms.join(", ") : "—"}
               </td>
-              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{lead.source ?? "—"}</td>
+              <td style={{ padding: "12px 16px", color: "var(--text-secondary)" }}>{lead.source ? sentenceCase(lead.source) : "—"}</td>
               <td style={{ padding: "12px 16px" }}>
                 <select
                   value={lead.stage}

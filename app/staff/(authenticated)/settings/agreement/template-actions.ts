@@ -47,14 +47,14 @@ function cleanVariables(v: Record<string, string>): Record<string, string> {
 
 function mapError(message: string | undefined): string {
   const m = (message ?? "").toLowerCase();
-  if (m.includes("permission")) return "You don't have permission to change the agreement.";
+  if (m.includes("permission")) return "You don’t have permission to change the agreement.";
   if (m.includes("not_a_draft")) return "That version is approved and locked. Make a new draft to change it.";
   if (m.includes("counsel_notes_open")) return "This text still has [Counsel: ...] notes. Confirm to approve it anyway.";
-  if (m.includes("invalid_template")) return "The agreement text isn't valid.";
-  return "Couldn't save. Please try again.";
+  if (m.includes("invalid_template")) return "The agreement text isn’t valid.";
+  return "Couldn’t save. Please try again.";
 }
 
-/** Create a draft from Zivo's starter text, or (copyFromId) from an existing version. */
+/** Create a draft from Zivo’s starter text, or (copyFromId) from an existing version. */
 export async function createAgreementDraft(copyFromId?: string): Promise<{ success: boolean; id?: string; error?: string }> {
   let template: AgreementTemplate = { intro: STARTER_INTRO, clauses: STARTER_CLAUSES };
   let variables: Record<string, string> = { ...STARTER_VARIABLES };

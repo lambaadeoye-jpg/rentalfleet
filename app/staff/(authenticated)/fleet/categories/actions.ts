@@ -27,12 +27,12 @@ export async function addVehicleCategory(name: string, description: string): Pro
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to manage vehicle categories." };
+      return { success: false, error: "You don’t have permission to manage vehicle categories." };
     }
     if (error.message?.toLowerCase().includes("duplicate") || error.message?.toLowerCase().includes("unique")) {
       return { success: false, error: "A category with that name already exists." };
     }
-    return { success: false, error: "Couldn't add that category. Please try again." };
+    return { success: false, error: "Couldn’t add that category. Please try again." };
   }
 
   revalidatePath("/staff/fleet/categories");
@@ -45,9 +45,9 @@ export async function toggleVehicleCategoryActive(categoryId: string, active: bo
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to manage vehicle categories." };
+      return { success: false, error: "You don’t have permission to manage vehicle categories." };
     }
-    return { success: false, error: "Couldn't update that category." };
+    return { success: false, error: "Couldn’t update that category." };
   }
 
   revalidatePath("/staff/fleet/categories");

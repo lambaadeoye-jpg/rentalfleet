@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Car, Wallet, FileText, LifeBuoy } from "lucide-react";
+import { sentenceCase } from "@/lib/format-label";
+import { greeting } from "@/lib/greeting";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +12,7 @@ export default async function PortalDashboard() {
   } = await supabase.auth.getUser();
 
   // No manual customer_id filtering anywhere below -- RLS (0020) scopes
-  // every one of these queries to the signed-in customer's own rows
+  // every one of these queries to the signed-in customer’s own rows
   // automatically. A customer with no active rental correctly gets an
   // empty result, not an error.
   const { data: customer } = await supabase
@@ -31,11 +33,11 @@ export default async function PortalDashboard() {
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 20, marginBottom: 4 }}>
-        Good {new Date().getHours() < 12 ? "morning" : "afternoon"}, {customer?.first_name ?? "there"}.
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>
+        {greeting()}, {customer?.first_name ?? "there"}.
       </h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
-        Here&apos;s your rental and what needs your attention.
+        Here&rsquo;s your rental and what needs your attention.
       </p>
 
       {rental ? (
@@ -50,10 +52,9 @@ export default async function PortalDashboard() {
                 fontWeight: 700,
                 padding: "3px 10px",
                 borderRadius: 999,
-                textTransform: "capitalize",
               }}
             >
-              {rental.status}
+              {sentenceCase(rental.status)}
             </span>
           </div>
           <p style={{ fontSize: 16, fontWeight: 600, marginBottom: 2 }}>
@@ -65,14 +66,14 @@ export default async function PortalDashboard() {
         </div>
       ) : (
         <div className="card" style={{ marginBottom: 16 }}>
-          <p className="muted-text">You don&apos;t have an active rental yet.</p>
+          <p className="muted-text">You don&rsquo;t have an active rental yet.</p>
         </div>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
         <a href="/portal/rental" className="card" style={{ textDecoration: "none", color: "var(--text)" }}>
           <Car size={18} color="var(--teal)" style={{ marginBottom: 6 }} />
-          <div style={{ fontSize: 13, fontWeight: 700 }}>My Rental</div>
+          <div style={{ fontSize: 13, fontWeight: 700 }}>My rental</div>
         </a>
         <a href="/portal/money" className="card" style={{ textDecoration: "none", color: "var(--text)" }}>
           <Wallet size={18} color="var(--teal)" style={{ marginBottom: 6 }} />

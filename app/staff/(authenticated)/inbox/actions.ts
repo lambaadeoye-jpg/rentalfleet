@@ -39,7 +39,7 @@ export async function getConversations(): Promise<ConversationSummary[]> {
     // Only human-readable events. Voice audit rows (call_identified,
     // auth_succeeded, tool_*...) share this table and must not render as
     // blank "Unknown" conversations. callback_request rows ARE shown --
-    // that's how an unmatched caller's request reaches staff.
+    // that’s how an unmatched caller’s request reaches staff.
     .in("event_type", ["message", "callback_request"])
     .order("created_at", { ascending: false })
     .limit(200);
@@ -116,7 +116,7 @@ export async function sendReply(fields: {
   message: string;
 }): Promise<{ success: boolean; error?: string }> {
   if (!fields.message.trim()) {
-    return { success: false, error: "Message can't be empty." };
+    return { success: false, error: "Message can’t be empty." };
   }
   if (!fields.phone.trim()) {
     return { success: false, error: "No phone number on file for this conversation." };
@@ -143,9 +143,9 @@ export async function sendReply(fields: {
 
   if (insertError) {
     if (insertError.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to send messages." };
+      return { success: false, error: "You don’t have permission to send messages." };
     }
-    return { success: false, error: "Couldn't send that message. Please try again." };
+    return { success: false, error: "Couldn’t send that message. Please try again." };
   }
 
   void fireN8nWebhook(N8N_WEBHOOK_PATHS.inboxSendReply, {
@@ -174,8 +174,8 @@ export async function markConversationHandled(eventId: string): Promise<{ succes
     .eq("id", eventId)
     .eq("direction", "inbound")
     .select("id");
-  if (error) return { success: false, error: "Couldn't mark that as handled." };
-  if (!data || data.length === 0) return { success: false, error: "Couldn't mark that as handled." };
+  if (error) return { success: false, error: "Couldn’t mark that as handled." };
+  if (!data || data.length === 0) return { success: false, error: "Couldn’t mark that as handled." };
 
   revalidatePath("/staff/inbox");
   revalidatePath("/staff", "layout");

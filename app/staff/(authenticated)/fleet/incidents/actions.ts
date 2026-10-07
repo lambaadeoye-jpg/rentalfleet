@@ -81,9 +81,9 @@ export async function logIncident(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to log incidents." };
+      return { success: false, error: "You don’t have permission to log incidents." };
     }
-    return { success: false, error: "Couldn't log that incident. Please try again." };
+    return { success: false, error: "Couldn’t log that incident. Please try again." };
   }
 
   void logAuditEvent({
@@ -109,9 +109,9 @@ export async function resolveIncident(incidentId: string): Promise<{ success: bo
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to update incidents." };
+      return { success: false, error: "You don’t have permission to update incidents." };
     }
-    return { success: false, error: "Couldn't resolve that incident." };
+    return { success: false, error: "Couldn’t resolve that incident." };
   }
 
   void logAuditEvent({

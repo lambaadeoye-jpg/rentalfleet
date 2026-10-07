@@ -10,9 +10,9 @@ import { createClient } from "@/lib/supabase/server";
 // /staff/team, including every future field_staff hire, would have had
 // no way to log back in after their first session.
 //
-// shouldCreateUser: false, matching /portal's pattern -- staff sign-in
+// shouldCreateUser: false, matching /portal’s pattern -- staff sign-in
 // only works for a membership that already exists (created via the
-// invite flow), this isn't a signup path.
+// invite flow), this isn’t a signup path.
 export async function sendStaffMagicLink(email: string): Promise<{ success: boolean; error?: string }> {
   const trimmed = email.trim();
   if (!trimmed) return { success: false, error: "Enter your email address." };
@@ -32,7 +32,7 @@ export async function sendStaffMagicLink(email: string): Promise<{ success: bool
 
 // Optional password sign-in -- additive only. Magic link above remains
 // the permanent, unconditional fallback for everyone; this just gives
-// admin a faster path if they've chosen to set one (see the profile
+// admin a faster path if they’ve chosen to set one (see the profile
 // page). A field_staff account or a customer with no password ever set
 // simply gets "invalid credentials" here, which is the correct, safe
 // response -- they were never offered this option in the first place.

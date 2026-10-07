@@ -66,7 +66,7 @@ export async function getPricingRules(): Promise<PricingRules | null> {
 
 // Permission-gated at the database level (migration 0038's
 // policy_version_pricing_permission_guard, requiring manage_pricing) --
-// only admin has this by default. The UI reflects that, doesn't duplicate
+// only admin has this by default. The UI reflects that, doesn’t duplicate
 // it.
 export async function updatePricingRules(rules: PricingRules): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
@@ -85,7 +85,7 @@ export async function updatePricingRules(rules: PricingRules): Promise<{ success
       return { success: false, error: "The insured discount must be between 0 and 99 percent." };
     }
     if (ins.uninsured_weekly_deduction_usd != null && !(ins.uninsured_weekly_deduction_usd >= 0)) {
-      return { success: false, error: "The weekly insurance deduction can't be negative." };
+      return { success: false, error: "The weekly insurance deduction can’t be negative." };
     }
     if (ins.approved && (ins.insured_discount_pct == null || ins.uninsured_weekly_deduction_usd == null)) {
       return { success: false, error: "Set both the insured discount and the weekly insurance deduction before approving insurance pricing." };
@@ -115,9 +115,9 @@ export async function updatePricingRules(rules: PricingRules): Promise<{ success
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to change pricing." };
+      return { success: false, error: "You don’t have permission to change pricing." };
     }
-    return { success: false, error: "Couldn't save. Please try again." };
+    return { success: false, error: "Couldn’t save. Please try again." };
   }
 
   if (existing) {

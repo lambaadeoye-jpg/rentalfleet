@@ -7,13 +7,13 @@ import { UPLOAD_TOKEN_RE } from "@/lib/upload-validation";
 import { createCheckoutSession, stripeConfigured } from "@/lib/stripe";
 import { buildSetupSessionBody } from "@/lib/card-update";
 
-const GENERIC = "We couldn't open the card page. Please try again.";
+const GENERIC = "We couldn’t open the card page. Please try again.";
 
 /** Renter ticked the authorization box and tapped Save. Returns the Stripe page to send them to. */
 export async function startCardUpdate(token: string, authorized: boolean): Promise<{ success: true; url: string } | { success: false; error: string }> {
-  if (!UPLOAD_TOKEN_RE.test(token)) return { success: false, error: "This link isn't active. Ask us for a new one." };
+  if (!UPLOAD_TOKEN_RE.test(token)) return { success: false, error: "This link isn’t active. Ask us for a new one." };
   if (!authorized) return { success: false, error: "Please tick the box to confirm." };
-  if (!stripeConfigured()) return { success: false, error: "Card updates aren't available right now. Please contact us." };
+  if (!stripeConfigured()) return { success: false, error: "Card updates aren’t available right now. Please contact us." };
   const admin = createAdminClient();
   if (!admin) return { success: false, error: GENERIC };
 
@@ -24,7 +24,7 @@ export async function startCardUpdate(token: string, authorized: boolean): Promi
   if (error) {
     const m = error.message ?? "";
     if (m.includes("not_open")) return { success: false, error: "Your card has already been updated. Thank you!" };
-    if (m.includes("link_invalid")) return { success: false, error: "This link isn't active. Ask us for a new one." };
+    if (m.includes("link_invalid")) return { success: false, error: "This link isn’t active. Ask us for a new one." };
     return { success: false, error: GENERIC };
   }
   const r = Array.isArray(rows) ? rows[0] : null;

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle } from "lucide-react";
 import { addRedFlagEntry, resolveRedFlagEntry, type RedFlagEntry, type FlaggedLead } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
+import { formatPhone } from "@/lib/format-phone";
 
 export default function RedFlagManager({
   initialEntries,
@@ -29,7 +31,7 @@ export default function RedFlagManager({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't add that entry.");
+      setError(result.error ?? "Couldn’t add that entry.");
       return;
     }
     setFirstName("");
@@ -48,7 +50,7 @@ export default function RedFlagManager({
     setResolvingId(null);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't resolve that entry.");
+      setError(result.error ?? "Couldn’t resolve that entry.");
       return;
     }
     router.refresh();
@@ -87,22 +89,22 @@ export default function RedFlagManager({
         </label>
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
         <button onClick={handleAdd} disabled={loading || !reason.trim()} className="button-primary">
-          {loading ? "Adding..." : "Add to Red Flag List"}
+          {loading ? "Adding..." : "Add to red flag list"}
         </button>
       </div>
 
       {flaggedLeads.length > 0 && (
         <div className="card" style={{ marginBottom: 20, borderColor: "var(--warning, #f59e0b)" }}>
           <h2 style={{ fontSize: 16, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-            <AlertTriangle size={18} color="var(--warning, #f59e0b)" /> Leads That Matched
+            <AlertTriangle size={18} color="var(--warning, #f59e0b)" /> Leads that matched
           </h2>
           {flaggedLeads.map((l) => (
             <div key={l.id} style={{ fontSize: 14, marginBottom: 8 }}>
               <strong>
                 {l.firstName} {l.lastName}
               </strong>{" "}
-              — {l.phone} —{" "}
-              <span style={{ textTransform: "capitalize" }}>{l.matchType.replace(/_/g, " ")}</span> match —{" "}
+              — {formatPhone(l.phone)} —{" "}
+              <span>{sentenceCase(l.matchType.replace(/_/g, " "))}</span> match —{" "}
               {new Date(l.createdAt).toLocaleDateString()}
             </div>
           ))}
@@ -115,7 +117,7 @@ export default function RedFlagManager({
         <div key={e.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
           <div>
             <div style={{ fontWeight: 700 }}>
-              {e.firstName} {e.lastName} {e.phone && `— ${e.phone}`} {e.email && `— ${e.email}`}
+              {e.firstName} {e.lastName} {e.phone && `— ${formatPhone(e.phone)}`} {e.email && `— ${e.email}`}
             </div>
             <div className="muted-text" style={{ fontSize: 13, marginTop: 4 }}>{e.reason}</div>
           </div>

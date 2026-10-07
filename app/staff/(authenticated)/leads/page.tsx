@@ -8,7 +8,7 @@ export default async function LeadsPage() {
   const supabase = await createClient();
 
   // No manual tenant_id filtering -- RLS (0014) scopes this to the
-  // signed-in staff member's own tenant automatically.
+  // signed-in staff member’s own tenant automatically.
   const { data: leads } = await supabase
     .from("lead")
     .select("id, first_name, last_name, email, phone, stage, source, created_at, details_completed_at")
@@ -34,7 +34,7 @@ export default async function LeadsPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Leads</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Leads</h1>
       <p className="muted-text" style={{ marginBottom: 28 }}>
         {leadsWithPlatforms.length} total. Move a lead through the pipeline as you work it.
       </p>

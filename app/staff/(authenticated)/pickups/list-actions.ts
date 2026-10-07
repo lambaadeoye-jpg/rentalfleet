@@ -112,19 +112,19 @@ export async function getPickupsAndDropoffs(): Promise<{ pickups: PickupItem[]; 
         insuranceVerified:
           insurance?.verification_status === "verified_active" || insurance?.verification_status === "expiring_soon",
         // pickup_at is only a real appointment when a location was also
-        // set; scheduleRental's placeholder "now" never has one.
+        // set; scheduleRental’s placeholder "now" never has one.
         pickupAt: (r.booking as any)?.pickup_location_id ? ((r.booking as any)?.pickup_at ?? null) : null,
         pickupLocationId: (r.booking as any)?.pickup_location_id ?? null,
         pickupConfirmedAt: (r as any).pickup_confirmed_at ?? null,
         // Only meaningful once an appointment is set; before that it is
-        // scheduleRental's placeholder, so don't present it as staff's choice.
+        // scheduleRental’s placeholder, so don’t present it as staff’s choice.
         expectedReturnAt: (r.booking as any)?.pickup_location_id ? ((r as any).expected_return_at ?? null) : null,
         dropOffManuallySet: Boolean((r as any).drop_off_manually_set),
         money: await loadMoney(supabase, r),
         followup: {
           needed: Boolean((r as any).needs_human_followup),
           outcome: (r as any).last_call_outcome ?? null,
-          summary: (r as any).last_call_summary ?? ((r as any).missed_pickup_at ? "Missed pickup: the renter didn't arrive. They were texted a link to choose a new time, or reply CHANGE. Resolve this once handled." : null),
+          summary: (r as any).last_call_summary ?? ((r as any).missed_pickup_at ? "Missed pickup: the renter didn’t arrive. They were texted a link to choose a new time, or reply CHANGE. Resolve this once handled." : null),
           at: (r as any).last_call_at ?? null,
           committedTime: (r as any).last_call_committed_time ?? null,
         },

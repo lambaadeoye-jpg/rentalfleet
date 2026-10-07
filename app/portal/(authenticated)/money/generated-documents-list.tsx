@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FileText } from "lucide-react";
 import { getDocumentDownloadUrl, type GeneratedDocumentSummary } from "./documents-actions";
+import { sentenceCase } from "@/lib/format-label";
 
 export default function GeneratedDocumentsList({ documents }: { documents: GeneratedDocumentSummary[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -40,7 +41,7 @@ export default function GeneratedDocumentsList({ documents }: { documents: Gener
         >
           <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
             <FileText size={14} />
-            <span style={{ textTransform: "capitalize" }}>{d.documentType}</span> —{" "}
+            <span>{sentenceCase(d.documentType)}</span> —{" "}
             {new Date(d.generatedAt).toLocaleDateString()}
           </span>
           <span style={{ fontSize: 14, fontWeight: 700 }}>

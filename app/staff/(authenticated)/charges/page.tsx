@@ -8,10 +8,10 @@ export default async function ChargesPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Charges</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Charges</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Tolls, tickets, cleaning, damage, or anything else billed to a renter. Every charge needs
-        approval before it's real -- deductible charges reduce the deposit directly on approval.
+        approval before it’s real — deductible charges reduce the deposit directly on approval.
       </p>
       <ChargesList initialCharges={charges} rentals={rentals} />
     </div>

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-// Supabase's magic link redirects here with a `code` query param. Exchanging
+// Supabase’s magic link redirects here with a `code` query param. Exchanging
 // it for a session is what actually logs the applicant in -- without this
 // route, clicking the email link would land on a page with no session at all.
 export async function GET(request: Request) {

@@ -13,7 +13,7 @@ export default function PaymentSettingsForm({ initial }: { initial: PaymentSetti
     setBusy(true); setMsg(null);
     const res = await savePaymentSettings(enabled, slotPay);
     setBusy(false);
-    setMsg(res.success ? { ok: true, text: "Saved." } : { ok: false, text: res.error ?? "Couldn't save." });
+    setMsg(res.success ? { ok: true, text: "Saved." } : { ok: false, text: res.error ?? "Couldn’t save." });
   }
 
   return (
@@ -22,7 +22,7 @@ export default function PaymentSettingsForm({ initial }: { initial: PaymentSetti
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 12 }}>
         {initial.stripeReady
           ? "Stripe is connected. Renters pay the first week plus deposit on a secure Stripe page; their card is saved for weekly rent."
-          : "Stripe isn't connected yet. Add the Stripe keys in Netlify, then come back and switch this on."}
+          : "Stripe isn’t connected yet. Add the Stripe keys in Netlify, then come back and switch this on."}
       </p>
       <label className="checkbox-item" style={{ marginBottom: 8 }}>
         <input type="checkbox" checked={enabled} onChange={(e) => { setEnabled(e.target.checked); if (!e.target.checked) setSlotPay(false); }} />

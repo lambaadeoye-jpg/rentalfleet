@@ -11,13 +11,15 @@ import CancelCard from "./cancel-card";
 import DepositCard from "./deposit-card";
 import { getPaymentStatus } from "../payment-actions";
 import { getAgreementStatus } from "../agreement-actions";
+import { sentenceCase } from "@/lib/format-label";
+import { formatPhone } from "@/lib/format-phone";
 
 export const dynamic = "force-dynamic";
 
 const DOCUMENT_LABELS: Record<string, string> = {
-  drivers_license: "Driver's License",
-  proof_of_residence: "Proof of Residence",
-  insurance_card: "Insurance Card",
+  drivers_license: "Driver’s License",
+  proof_of_residence: "Proof of residence",
+  insurance_card: "Insurance card",
 };
 
 export default async function ApplicationDetailPage({
@@ -29,9 +31,9 @@ export default async function ApplicationDetailPage({
   const supabase = await createClient();
 
   // No manual tenant_id filtering -- RLS (0014) scopes this application row,
-  // and everything joined off it, to the signed-in staff member's own
+  // and everything joined off it, to the signed-in staff member’s own
   // tenant. A staff member from another tenant gets a null `application`
-  // here, not someone else's data.
+  // here, not someone else’s data.
   const { data: application } = await supabase
     .from("application")
     .select(
@@ -45,7 +47,7 @@ export default async function ApplicationDetailPage({
       <div style={{ padding: "32px 40px" }}>
         <p className="error-text">Application not found.</p>
         <Link href="/staff/applications" style={{ color: "var(--teal)" }}>
-          Back to Applications
+          Back to applications
         </Link>
       </div>
     );
@@ -93,7 +95,7 @@ export default async function ApplicationDetailPage({
 
   // Signed URLs generated server-side, respecting the same staff storage
   // RLS (0026) as everything else -- a staff member without access to this
-  // tenant's documents gets null here, not a working URL.
+  // tenant’s documents gets null here, not a working URL.
   const documentsWithUrls = await Promise.all(
     (documents ?? []).map(async (doc) => ({
       ...doc,
@@ -108,13 +110,13 @@ export default async function ApplicationDetailPage({
       <Link href="/staff/applications" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>
         ← Back to Applications
       </Link>
-      <h1 style={{ fontSize: 22, margin: "8px 0 4px" }}>
+      <h1 style={{ fontSize: 24, margin: "8px 0 4px" }}>
         {customer?.first_name || customer?.last_name
           ? `${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`.trim()
           : "(name not yet provided)"}
       </h1>
       <p className="muted-text" style={{ marginBottom: 28 }}>
-        {customer?.phone ?? "No phone"} {customer?.email ? `· ${customer.email}` : ""}
+        {customer?.phone ? formatPhone(customer.phone) : "No phone"} {customer?.email ? `· ${customer.email}` : ""}
       </p>
 
       <div className="grid-3" style={{ marginBottom: 24 }}>
@@ -125,7 +127,7 @@ export default async function ApplicationDetailPage({
           </p>
         </div>
         <div className="card">
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Driving For</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Driving for</p>
           <p style={{ fontWeight: 600 }}>{platforms.length > 0 ? platforms.join(", ") : "Not yet selected"}</p>
         </div>
         <div className="card">
@@ -159,8 +161,8 @@ export default async function ApplicationDetailPage({
         <h2 style={{ fontSize: 16, marginBottom: 12 }}>Decision</h2>
         {isDecided ? (
           <div>
-            <p style={{ fontWeight: 700, marginBottom: 4, textTransform: "capitalize" }}>
-              {application.status.replace(/_/g, " ")}
+            <p style={{ fontWeight: 700, marginBottom: 4 }}>
+              {sentenceCase(application.status)}
             </p>
             {application.decision_reason && (
               <p className="muted-text" style={{ fontSize: 14, marginBottom: 4 }}>{application.decision_reason}</p>
@@ -174,14 +176,14 @@ export default async function ApplicationDetailPage({
               <div style={{ marginTop: 8 }}>
                 <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>
                   A rental already exists for this customer —{" "}
-                  <span style={{ textTransform: "capitalize" }}>{existingRental.status}</span>.
+                  <span>{sentenceCase(existingRental.status)}</span>.
                 </p>
                 <a
                   href={existingRental.status === "scheduled" ? "/staff/pickups" : `/staff/customers/${customerId}`}
                   className="button-secondary"
                   style={{ color: "var(--text)", borderColor: "var(--border)", display: "inline-block" }}
                 >
-                  {existingRental.status === "scheduled" ? "Go to Pickups & Dropoffs" : "View Customer 360"}
+                  {existingRental.status === "scheduled" ? "Go to pickups & dropoffs" : "View Customer 360"}
                 </a>
               </div>
             )}

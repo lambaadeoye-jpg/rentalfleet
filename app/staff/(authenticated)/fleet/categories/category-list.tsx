@@ -18,7 +18,7 @@ export default function CategoryList({ initialCategories }: { initialCategories:
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't add that category.");
+      setError(result.error ?? "Couldn’t add that category.");
       return;
     }
     setName("");
@@ -45,7 +45,7 @@ export default function CategoryList({ initialCategories }: { initialCategories:
         </label>
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
         <button onClick={handleAdd} disabled={loading} className="button-primary">
-          {loading ? "Adding..." : "Add Category"}
+          {loading ? "Adding..." : "Add category"}
         </button>
       </div>
 

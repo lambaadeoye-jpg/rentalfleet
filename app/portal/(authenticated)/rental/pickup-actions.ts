@@ -101,7 +101,7 @@ export async function getPickerState(): Promise<PickerState> {
 }
 
 export async function listPickupSlots(locationId: string, fromDate?: string): Promise<{ success: boolean; slots: Slot[]; error?: string }> {
-  if (!UUID_RE.test(locationId)) return { success: false, slots: [], error: "That pickup location isn't available." };
+  if (!UUID_RE.test(locationId)) return { success: false, slots: [], error: "That pickup location isn’t available." };
   if (fromDate && !DATE_RE.test(fromDate)) return { success: false, slots: [], error: "Something went wrong. Please try again." };
   const ctx = await getContext();
   if (!ctx) return { success: false, slots: [], error: "Please sign in again." };
@@ -122,7 +122,7 @@ export async function bookPickupSlot(
   locationId: string,
   startsAtIso: string
 ): Promise<{ success: boolean; status?: "confirmed" | "held"; expiresAt?: string; error?: string }> {
-  if (!UUID_RE.test(locationId)) return { success: false, error: "That pickup location isn't available." };
+  if (!UUID_RE.test(locationId)) return { success: false, error: "That pickup location isn’t available." };
   const when = new Date(startsAtIso);
   if (Number.isNaN(when.getTime())) return { success: false, error: "Something went wrong. Please try again." };
   const ctx = await getContext();

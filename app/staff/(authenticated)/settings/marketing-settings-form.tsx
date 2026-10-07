@@ -24,7 +24,7 @@ export default function MarketingSettingsForm({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't save. Please try again.");
+      setError(result.error ?? "Couldn’t save. Please try again.");
       return;
     }
     setSaved(true);
@@ -41,7 +41,7 @@ export default function MarketingSettingsForm({
         />
       </label>
       <p className="muted-text" style={{ fontSize: 12, marginBottom: 16 }}>
-        Rarely changes -- this is your Google Business Profile's review link.
+        Rarely changes — this is your Google Business Profile’s review link.
       </p>
 
       <label className="field">
@@ -53,15 +53,15 @@ export default function MarketingSettingsForm({
         />
       </label>
       <p className="muted-text" style={{ fontSize: 12, marginBottom: 16 }}>
-        Update this whenever a new ad campaign starts -- every future pickup review request
-        will point to whatever's saved here.
+        Update this whenever a new ad campaign starts — every future pickup review request
+        will point to whatever’s saved here.
       </p>
 
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
       {saved && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 14, marginBottom: 12 }}>Saved.</p>}
 
       <button onClick={handleSave} disabled={loading} className="button-primary">
-        {loading ? "Saving..." : "Save Settings"}
+        {loading ? "Saving..." : "Save settings"}
       </button>
     </div>
   );

@@ -28,7 +28,7 @@ export default function InsuranceTable({ rows }: { rows: Row[] }) {
     setSavingId(null);
 
     if (!result.success) {
-      setErrorById((prev) => ({ ...prev, [id]: result.error ?? "Couldn't update." }));
+      setErrorById((prev) => ({ ...prev, [id]: result.error ?? "Couldn’t update." }));
       return;
     }
     setData((prev) =>
@@ -39,7 +39,7 @@ export default function InsuranceTable({ rows }: { rows: Row[] }) {
   const filtered = filter === "all" ? data : data.filter((r) => r.verification_status === filter);
 
   if (data.length === 0) {
-    return <p className="muted-text">No insurance policies on file yet -- these come from the Application Workspace's Insurance step.</p>;
+    return <p className="muted-text">No insurance policies on file yet — these come from the application workspace’s insurance step.</p>;
   }
 
   return (
@@ -68,7 +68,7 @@ export default function InsuranceTable({ rows }: { rows: Row[] }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border)", textAlign: "left" }}>
-              {["Customer", "Provider", "Expires", "Last Verified", "Status"].map((h) => (
+              {["Customer", "Provider", "Expires", "Last verified", "Status"].map((h) => (
                 <th key={h} style={{ padding: "12px 16px", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 }}>
                   {h}
                 </th>

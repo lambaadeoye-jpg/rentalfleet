@@ -54,9 +54,9 @@ export async function addLocation(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to manage locations." };
+      return { success: false, error: "You don’t have permission to manage locations." };
     }
-    return { success: false, error: "Couldn't add that location. Please try again." };
+    return { success: false, error: "Couldn’t add that location. Please try again." };
   }
 
   revalidatePath("/staff/fleet/locations");
@@ -69,9 +69,9 @@ export async function toggleLocationActive(locationId: string, active: boolean):
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to manage locations." };
+      return { success: false, error: "You don’t have permission to manage locations." };
     }
-    return { success: false, error: "Couldn't update that location." };
+    return { success: false, error: "Couldn’t update that location." };
   }
 
   revalidatePath("/staff/fleet/locations");

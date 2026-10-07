@@ -16,6 +16,7 @@ import {
   linkEmailForResume,
   type AdditionalDriverInput,
 } from "./actions";
+import { formatPhone } from "@/lib/format-phone";
 
 type GigPlatform = { id: string; code: string; name: string };
 
@@ -50,8 +51,8 @@ export default function Workspace({
   // Optional, non-blocking: lets an applicant who started anonymously add
   // an email later so they CAN resume on another device if they want to --
   // never required to start or continue on the same device/browser.
-  // Pre-filled (not auto-submitted) when they arrived via the lead form's
-  // "Continue to Full Application" bridge -- they already typed this once,
+  // Pre-filled (not auto-submitted) when they arrived via the lead form’s
+  // "Continue to full application" bridge -- they already typed this once,
   // no reason to make them type it again, just confirm.
   const [showEmailBanner, setShowEmailBanner] = useState(!data.email);
   const [resumeEmail, setResumeEmail] = useState(initialEmail ?? "");
@@ -64,7 +65,7 @@ export default function Workspace({
     const result = await linkEmailForResume(resumeEmail);
     if (!result.success) {
       setEmailStatus("error");
-      setEmailError(result.error ?? "Couldn't save that. Please try again.");
+      setEmailError(result.error ?? "Couldn’t save that. Please try again.");
       return;
     }
     setEmailStatus("sent");
@@ -119,7 +120,7 @@ export default function Workspace({
     }
 
     if (!result.success) {
-      alert(result.error ?? "Couldn't save that step. Please try again.");
+      alert(result.error ?? "Couldn’t save that step. Please try again.");
       return;
     }
 
@@ -131,7 +132,7 @@ export default function Workspace({
   async function handleSubmitApplication() {
     const result = await submitApplication(data.applicationId);
     if (!result.success) {
-      alert(result.error ?? "Couldn't submit. Please try again.");
+      alert(result.error ?? "Couldn’t submit. Please try again.");
       return;
     }
     setSubmitted(true);
@@ -139,7 +140,7 @@ export default function Workspace({
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 20px 120px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Let&apos;s get you approved.</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Let&rsquo;s get you approved.</h1>
       <p className="muted-text" style={{ marginBottom: 8 }}>
         We just need a few more details to determine your eligibility. Your progress is saved
         automatically as you go — leave anytime and pick up where you left off.
@@ -245,7 +246,7 @@ export default function Workspace({
       <div className="card">
         {step === "personal" && (
           <>
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>What&apos;s your legal name?</h2>
+            <h2 style={{ fontSize: 16, marginBottom: 16 }}>What&rsquo;s your legal name?</h2>
             <div className="form-row">
               <label className="field">
                 <span style={{ fontSize: 13, fontWeight: 600 }}>First name</span>
@@ -265,9 +266,9 @@ export default function Workspace({
 
         {step === "license" && (
           <>
-            <h2 style={{ fontSize: 18, marginBottom: 4 }}>Driver&apos;s license</h2>
+            <h2 style={{ fontSize: 16, marginBottom: 4 }}>Driver&rsquo;s license</h2>
             <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
-              We ask for this to confirm your identity and keep your application moving — it&apos;s
+              We ask for this to confirm your identity and keep your application moving — it&rsquo;s
               never shared beyond what your application requires.
             </p>
             <div className="form-row">
@@ -288,7 +289,7 @@ export default function Workspace({
                 onChange={(e) => setLicenseExpiry(e.target.value)}
               />
             </label>
-            <DocumentUpload customerId={data.customerId} documentType="drivers_license" label="Upload driver's license" />
+            <DocumentUpload customerId={data.customerId} documentType="drivers_license" label="Upload driver’s license" />
             <DocumentUpload
               customerId={data.customerId}
               documentType="proof_of_residence"
@@ -299,7 +300,7 @@ export default function Workspace({
 
         {step === "work" && (
           <>
-            <h2 style={{ fontSize: 18, marginBottom: 4 }}>What are you driving for?</h2>
+            <h2 style={{ fontSize: 16, marginBottom: 4 }}>What are you driving for?</h2>
             <p className="muted-text" style={{ marginBottom: 16 }}>Select all that apply.</p>
             <div className="checkbox-grid">
               {platforms.map((p) => (
@@ -326,7 +327,7 @@ export default function Workspace({
                     checked={drivingStatus === "already_driving"}
                     onChange={() => setDrivingStatus("already_driving")}
                   />
-                  I&apos;m already driving / approved on a platform
+                  I&rsquo;m already driving / approved on a platform
                 </label>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                   <input
@@ -335,7 +336,7 @@ export default function Workspace({
                     checked={drivingStatus === "ready_to_start"}
                     onChange={() => setDrivingStatus("ready_to_start")}
                   />
-                  I&apos;m new / not yet approved
+                  I&rsquo;m new / not yet approved
                 </label>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                   <input
@@ -368,10 +369,10 @@ export default function Workspace({
 
         {step === "insurance" && (
           <>
-            <h2 style={{ fontSize: 18, marginBottom: 4 }}>Insurance information</h2>
+            <h2 style={{ fontSize: 16, marginBottom: 4 }}>Insurance information</h2>
             <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
-              We ask so we can confirm you&apos;re covered before you drive — bring your own
-              policy, or ask us about options once you&apos;re approved.
+              We ask so we can confirm you&rsquo;re covered before you drive — bring your own
+              policy, or ask us about options once you&rsquo;re approved.
             </p>
             <div className="field" style={{ marginBottom: 16 }}>
               <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
@@ -390,7 +391,7 @@ export default function Workspace({
             </div>
             {hasOwnInsurance === false && (
               <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
-                No problem — that&apos;s not a blocker. We&apos;ll follow up about getting you set up
+                No problem — that&rsquo;s not a blocker. We&rsquo;ll follow up about getting you set up
                 with coverage as part of the process.
               </p>
             )}
@@ -417,7 +418,7 @@ export default function Workspace({
 
         {step === "drivers" && (
           <>
-            <h2 style={{ fontSize: 18, marginBottom: 4 }}>Will anyone else be driving?</h2>
+            <h2 style={{ fontSize: 16, marginBottom: 4 }}>Will anyone else be driving?</h2>
             <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
               A spouse, roommate, or anyone else who might drive the car needs to be on file too.
               You can always add someone later from your account.
@@ -529,14 +530,14 @@ export default function Workspace({
 
         {step === "review" && (
           <>
-            <h2 style={{ fontSize: 18, marginBottom: 16 }}>Review &amp; submit</h2>
+            <h2 style={{ fontSize: 16, marginBottom: 16 }}>Review &amp; submit</h2>
             {submitted ? (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <Check size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
                 <p style={{ fontWeight: 700, marginBottom: 4 }}>Application submitted</p>
                 <p className="muted-text" style={{ marginBottom: 4 }}>
-                  You&apos;ll get an automatic confirmation within minutes. From there, many
-                  applicants complete the full process in under 24 hours when everything&apos;s
+                  You&rsquo;ll get an automatic confirmation within minutes. From there, many
+                  applicants complete the full process in under 24 hours when everything&rsquo;s
                   submitted promptly.
                 </p>
               </div>
@@ -544,7 +545,7 @@ export default function Workspace({
               <>
                 <ul style={{ paddingLeft: 18, color: "var(--text-secondary)", fontSize: 14, marginBottom: 12 }}>
                   <li>
-                    {firstName} {lastName} — {phone}
+                    {firstName} {lastName} — {formatPhone(phone)}
                   </li>
                   <li>
                     License: {licenseState} {licenseNumberRef || "(not yet provided)"}
@@ -573,7 +574,7 @@ export default function Workspace({
                   </li>
                 </ul>
                 <p className="muted-text" style={{ fontSize: 13, marginBottom: 20 }}>
-                  Submitting doesn&apos;t charge you anything — we&apos;ll always show you the
+                  Submitting doesn&rsquo;t charge you anything — we&rsquo;ll always show you the
                   exact cost before you pay.
                 </p>
                 <button onClick={handleSubmitApplication} className="button-primary" style={{ width: "100%" }}>
@@ -608,13 +609,13 @@ export default function Workspace({
               <Phone size={13} style={{ verticalAlign: "-2px", marginRight: 3 }} />
               Call {PHONE_DISPLAY}
             </a>{" "}
-            and we&apos;ll walk you through it.
+            and we&rsquo;ll walk you through it.
           </>
         ) : (
           <>
             Email{" "}
             <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>{SUPPORT_EMAIL}</a>{" "}
-            and we&apos;ll walk you through it.
+            and we&rsquo;ll walk you through it.
           </>
         )}
       </p>

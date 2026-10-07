@@ -37,7 +37,7 @@ export default function LeadForm({
   const searchParams = useSearchParams();
   const referralCode = searchParams.get("ref") ?? undefined;
   // Real bug found in testing: the success card is much shorter than the
-  // full form it replaces. The page's total height collapses, but the
+  // full form it replaces. The page’s total height collapses, but the
   // browser keeps its scroll position in pixels, not tied to content --
   // so the viewport ends up pointed at whatever now sits at that old
   // offset (a lower section), never showing the success message at all.
@@ -123,7 +123,7 @@ export default function LeadForm({
       }
       setSubmitted(true);
     } catch {
-      setStep2Note("We couldn't save those last details, but your request is saved and we'll follow up.");
+      setStep2Note("We couldn’t save those last details, but your request is saved and we’ll follow up.");
       setSubmitted(true);
     } finally {
       setLoading(false);
@@ -146,21 +146,21 @@ export default function LeadForm({
     return (
       <div ref={successRef} className="card" style={{ textAlign: "center", padding: 48 }}>
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
-        <h3 style={{ fontSize: 22, marginBottom: 8 }}>Thanks — we've got your request.</h3>
+        <h3 style={{ fontSize: 22, marginBottom: 8 }}>Thanks — we’ve got your request.</h3>
         <p className="muted-text" style={{ marginBottom: step2Note ? 8 : 20 }}>
-          Check your email for a confirmation. If you opted in to texts and calls, we may reach out within minutes (8am to 9pm Central). Otherwise we'll follow up with the next step.
+          Check your email for a confirmation. If you opted in to texts and calls, we may reach out within minutes (8am to 9pm Central). Otherwise we’ll follow up with the next step.
         </p>
         {step2Note && <p className="muted-text" style={{ marginBottom: 20, fontSize: 13 }}>{step2Note}</p>}
         {/* Bridge to the real Application Workspace -- previously there was
             no path forward for someone ready to go further immediately;
-            they'd just see this message with nowhere else to go. */}
-        <p style={{ fontSize: 14, marginBottom: 12 }}>Already know you're ready?</p>
+            they’d just see this message with nowhere else to go. */}
+        <p style={{ fontSize: 14, marginBottom: 12 }}>Already know you’re ready?</p>
         <a
           href={submittedEmail ? `/apply?email=${encodeURIComponent(submittedEmail)}` : "/apply"}
           className="button-primary"
           style={{ display: "inline-flex" }}
         >
-          Continue to Full Application
+          Continue to full application
         </a>
       </div>
     );
@@ -171,7 +171,7 @@ export default function LeadForm({
       <form ref={formTopRef} onSubmit={handleStep2} className="card" style={{ scrollMarginTop: 80 }}>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Step 2 of 2</p>
         <h3 style={{ fontSize: 20, marginBottom: 4 }}>
-          Thanks{saved.firstName ? `, ${saved.firstName}` : ""}. We&apos;ve got your request.
+          Thanks{saved.firstName ? `, ${saved.firstName}` : ""}. We&rsquo;ve got your request.
         </h3>
         <p className="muted-text" style={{ marginBottom: 20 }}>
           A few more details help us match you to the right car. Takes under a minute.
@@ -249,7 +249,7 @@ export default function LeadForm({
           className="muted-text"
           style={{ display: "block", margin: "12px auto 0", background: "none", border: 0, cursor: "pointer", fontSize: 13, textDecoration: "underline" }}
         >
-          I&apos;ll finish later
+          I&rsquo;ll finish later
         </button>
       </form>
     );
@@ -258,7 +258,7 @@ export default function LeadForm({
   return (
     <form onSubmit={handleStep1} className="card">
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Step 1 of 2</p>
-      <h3 style={{ fontSize: 20, marginBottom: 4 }}>Let&apos;s find the right vehicle for your work.</h3>
+      <h3 style={{ fontSize: 20, marginBottom: 4 }}>Let&rsquo;s find the right vehicle for your work.</h3>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Takes about a minute. No document uploads here — just the basics.
       </p>
@@ -296,7 +296,7 @@ export default function LeadForm({
         {otherSelected && (
           <input
             name="otherPlatformDetail"
-            placeholder="Tell us what you're driving for"
+            placeholder="Tell us what you’re driving for"
             style={{ marginTop: 10 }}
           />
         )}
@@ -320,11 +320,11 @@ export default function LeadForm({
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
 
       <button type="submit" className="button-primary" disabled={loading} style={{ width: "100%" }}>
-        {loading ? "Saving..." : "Check My Availability"}
+        {loading ? "Saving..." : "Check my availability"}
       </button>
       <LegalLinks style={{ textAlign: "center", marginTop: 10 }} />
       <p className="muted-text" style={{ textAlign: "center", marginTop: 10, fontSize: 13 }}>
-        No spam. No obligation. We&apos;ll follow up shortly after you submit.
+        No spam. No obligation. We&rsquo;ll follow up shortly after you submit.
       </p>
     </form>
   );

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Phone } from "lucide-react";
 
 // Sticky bottom bar on phones: Call plus the main action. Hides while either form is on screen
-// so it never covers a form's own button. The main action scrolls to the nearest form.
+// so it never covers a form’s own button. The main action scrolls to the nearest form.
 export default function MobileCtaBar({ phoneLive, phoneDisplay, phoneTel }: { phoneLive: boolean; phoneDisplay: string; phoneTel: string }) {
   const [formVisible, setFormVisible] = useState(false);
 
@@ -39,7 +39,7 @@ export default function MobileCtaBar({ phoneLive, phoneDisplay, phoneTel }: { ph
           Call
         </a>
       )}
-      <a href="#apply" onClick={goToForm} data-cta="mobile_bar" className="mobile-cta-main">Find My Car</a>
+      <a href="#apply" onClick={goToForm} data-cta="mobile_bar" className="mobile-cta-main">Find my car</a>
     </div>
   );
 }

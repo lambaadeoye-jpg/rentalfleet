@@ -70,8 +70,8 @@ export async function savePickupSettings(enabled: boolean, holdMinutes: number):
   ];
   const { error } = await supabase.from("tenant_setting").upsert(rows, { onConflict: "tenant_id,key" });
   if (error) {
-    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don't have permission to change this setting." };
-    return { success: false, error: "Couldn't save. Please try again." };
+    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don’t have permission to change this setting." };
+    return { success: false, error: "Couldn’t save. Please try again." };
   }
   revalidatePath("/staff/settings");
   return { success: true };
@@ -99,9 +99,9 @@ export async function saveLocationHours(locationId: string, week: WeeklyRuleInpu
   const { error } = await supabase.rpc("set_location_pickup_hours", { p_location_id: locationId, p_rules: payload });
   if (error) {
     const m = error.message?.toLowerCase() ?? "";
-    if (m.includes("permission")) return { success: false, error: "You don't have permission to change pickup hours." };
+    if (m.includes("permission")) return { success: false, error: "You don’t have permission to change pickup hours." };
     if (m.includes("location_not_found")) return { success: false, error: "Location not found." };
-    return { success: false, error: "Couldn't save. Please try again." };
+    return { success: false, error: "Couldn’t save. Please try again." };
   }
   revalidatePath("/staff/settings");
   return { success: true };

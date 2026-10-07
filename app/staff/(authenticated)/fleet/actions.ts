@@ -21,7 +21,7 @@ export async function createVehicle(input: NewVehicleInput): Promise<{ success: 
 
   // This INSERT is permission-gated at the database level (migration 0021's
   // guard_manage_fleet trigger, requiring the manage_fleet permission) --
-  // same pattern as application decisions. The UI doesn't duplicate that
+  // same pattern as application decisions. The UI doesn’t duplicate that
   // check; it just reflects whatever the database actually decides.
   const { error } = await supabase.from("vehicle").insert({
     tenant_id: tenant.id,
@@ -37,12 +37,12 @@ export async function createVehicle(input: NewVehicleInput): Promise<{ success: 
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to add vehicles." };
+      return { success: false, error: "You don’t have permission to add vehicles." };
     }
     if (error.message?.toLowerCase().includes("uq_vehicle_tenant_vin")) {
       return { success: false, error: "A vehicle with that VIN already exists." };
     }
-    return { success: false, error: "Couldn't add that vehicle. Please try again." };
+    return { success: false, error: "Couldn’t add that vehicle. Please try again." };
   }
 
   revalidatePath("/staff/fleet");
@@ -63,12 +63,12 @@ export async function updateVehicleStatus(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to change vehicle status." };
+      return { success: false, error: "You don’t have permission to change vehicle status." };
     }
     if (error.message?.toLowerCase().includes("not an allowed state transition")) {
-      return { success: false, error: `That status change isn't allowed from the vehicle's current status.` };
+      return { success: false, error: `That status change isn’t allowed from the vehicle’s current status.` };
     }
-    return { success: false, error: "Couldn't update that vehicle. Please try again." };
+    return { success: false, error: "Couldn’t update that vehicle. Please try again." };
   }
 
   revalidatePath("/staff/fleet");

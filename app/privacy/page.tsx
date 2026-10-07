@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import LegalPage from "../legal-page";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy",
+  title: "Privacy policy",
   description: "How Zivo collects, uses, and protects your information.",
   alternates: { canonical: "/privacy" },
 };
@@ -11,7 +11,7 @@ const h = { fontSize: 20, margin: "32px 0 8px" } as const;
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy">
+    <LegalPage title="Privacy policy">
       <p>
         This policy explains what Zivo Mobility LLC (&ldquo;Zivo,&rdquo; &ldquo;we&rdquo;) collects when you request or
         rent a vehicle through rentzivo.com, how we use it, and the choices you have.
@@ -21,7 +21,7 @@ export default function PrivacyPage() {
       <ul>
         <li>Contact details: name, mobile number, and email.</li>
         <li>Rental details: the driving platforms you work for, your desired start date, vehicle preferences, and your messages to us.</li>
-        <li>Application and rental documents you choose to upload, such as a driver&apos;s license and proof of insurance, and the agreement you sign.</li>
+        <li>Application and rental documents you choose to upload, such as a driver&rsquo;s license and proof of insurance, and the agreement you sign.</li>
         <li>Payment details. Card numbers are handled by our payment processor, Stripe. We keep only the card brand, last four digits, and expiry date.</li>
         <li>How you reached us: the page, link, or ad that brought you here, and basic technical data such as IP address and browser type.</li>
         <li>Text messages and call records between you and Zivo.</li>

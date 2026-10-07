@@ -37,7 +37,7 @@ async function sendNow(): Promise<string | undefined> {
   const admin = createAdminClient();
   if (!admin) return "Approved. It will be sent shortly.";
   const r = await processRefunds(admin);
-  if (r.skipped === "stripe_not_configured") return "Approved, but Stripe isn't connected yet, so nothing was sent.";
+  if (r.skipped === "stripe_not_configured") return "Approved, but Stripe isn’t connected yet, so nothing was sent.";
   if (r.failed > 0) return "Approved, but the card refund failed. See the error on this refund and tap Retry.";
   return undefined;
 }
@@ -50,8 +50,8 @@ export async function decideRefund(refundId: string, approve: boolean, note: str
     const m = error.message ?? "";
     if (m.includes("not_pending")) return { success: false, error: "This refund was already decided." };
     if (m.includes("manage_pricing_policy")) return { success: false, error: "This refund is over the approval limit. An admin needs to approve it." };
-    if (m.includes("Permission denied")) return { success: false, error: "You don't have permission to approve refunds." };
-    return { success: false, error: "Couldn't save. Please try again." };
+    if (m.includes("Permission denied")) return { success: false, error: "You don’t have permission to approve refunds." };
+    return { success: false, error: "Couldn’t save. Please try again." };
   }
   const warn = approve ? await sendNow() : undefined;
   revalidatePath("/staff/refunds");
@@ -62,7 +62,7 @@ export async function retryRefund(refundId: string): Promise<Result> {
   if (!UUID_RE.test(refundId)) return { success: false, error: "Refund not found." };
   const supabase = await createClient();
   const { error } = await supabase.rpc("retry_refund", { p_refund_id: refundId });
-  if (error) return { success: false, error: error.message?.includes("not_failed") ? "Only a failed refund can be retried." : "Couldn't retry. Please try again." };
+  if (error) return { success: false, error: error.message?.includes("not_failed") ? "Only a failed refund can be retried." : "Couldn’t retry. Please try again." };
   const warn = await sendNow();
   revalidatePath("/staff/refunds");
   return { success: true, note: warn };

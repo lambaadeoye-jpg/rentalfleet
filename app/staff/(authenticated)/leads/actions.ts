@@ -11,7 +11,7 @@ export async function updateLeadStage(
   const { error } = await supabase.from("lead").update({ stage }).eq("id", leadId);
 
   if (error) {
-    return { success: false, error: "Couldn't update that lead. Please try again." };
+    return { success: false, error: "Couldn’t update that lead. Please try again." };
   }
 
   revalidatePath("/staff/leads");

@@ -17,14 +17,14 @@ export default function SwitchSettingsForm({ initial }: { initial: SwitchState[]
     setBusyKey(null);
     if (!res.success) {
       setState((s) => ({ ...s, [key]: prev }));
-      setMsg({ ok: false, text: res.error ?? "Couldn't save." });
+      setMsg({ ok: false, text: res.error ?? "Couldn’t save." });
     } else {
       setMsg({ ok: true, text: "Saved." });
     }
   }
 
   return (
-    <div className="card" style={{ marginBottom: 24 }}>
+    <div className="card" id="automation-switches" style={{ marginBottom: 24 }}>
       <h2 style={{ fontSize: 16, marginBottom: 6 }}>Automation switches</h2>
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 12 }}>
         Each switch saves as soon as you click it. Turning one off takes effect immediately.

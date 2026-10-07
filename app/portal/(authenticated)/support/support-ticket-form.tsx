@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LifeBuoy } from "lucide-react";
 import { createSupportTicket } from "../../actions";
+import { sentenceCase } from "@/lib/format-label";
 
 type Ticket = { id: string; subject: string; status: string; created_at: string };
 
@@ -24,7 +25,7 @@ export default function SupportTicketForm({ initialTickets }: { initialTickets: 
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't submit. Please try again.");
+      setError(result.error ?? "Couldn’t submit. Please try again.");
       return;
     }
     setSubject("");
@@ -34,21 +35,21 @@ export default function SupportTicketForm({ initialTickets }: { initialTickets: 
   return (
     <>
       <div className="card" style={{ marginBottom: 16 }}>
-        <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>What do you need help with?</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>What do you need help with?</h2>
         <textarea
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           rows={3}
-          placeholder="e.g. My payment didn't go through"
+          placeholder="e.g. My payment didn’t go through"
           style={{ marginBottom: 10 }}
         />
         {error && <p className="error-text" style={{ marginBottom: 10 }}>{error}</p>}
         <button onClick={handleSubmit} disabled={loading} className="button-primary" style={{ width: "100%" }}>
-          {loading ? "Submitting..." : "Submit Request"}
+          {loading ? "Submitting..." : "Submit request"}
         </button>
       </div>
 
-      <h2 style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>Your Requests</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>Your requests</h2>
       {initialTickets.length === 0 ? (
         <p className="muted-text">No requests yet.</p>
       ) : (
@@ -57,8 +58,8 @@ export default function SupportTicketForm({ initialTickets }: { initialTickets: 
             <LifeBuoy size={16} color="var(--teal)" style={{ marginTop: 2 }} />
             <div>
               <div style={{ fontSize: 14, fontWeight: 600 }}>{t.subject}</div>
-              <div className="muted-text" style={{ fontSize: 12, textTransform: "capitalize" }}>
-                {t.status} • {new Date(t.created_at).toLocaleDateString()}
+              <div className="muted-text" style={{ fontSize: 12 }}>
+                {sentenceCase(t.status)} • {new Date(t.created_at).toLocaleDateString()}
               </div>
             </div>
           </div>

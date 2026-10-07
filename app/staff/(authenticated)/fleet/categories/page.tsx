@@ -8,9 +8,9 @@ export default async function CategoriesPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Vehicle Categories</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Vehicle categories</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
-        Renters select a category, never a specific VIN -- these are what they choose from.
+        Renters select a category, never a specific VIN — these are what they choose from.
       </p>
       <CategoryList initialCategories={categories} />
     </div>

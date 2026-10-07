@@ -7,8 +7,8 @@ const NAV_ITEMS = [
   { href: "/portal", label: "Home", icon: Home },
   { href: "/portal/rental", label: "Rental", icon: Car },
   { href: "/portal/money", label: "Money", icon: Wallet },
-  { href: "/portal/documents", label: "Docs", icon: FileText },
-  { href: "/portal/support", label: "Help", icon: LifeBuoy },
+  { href: "/portal/documents", label: "Documents", icon: FileText },
+  { href: "/portal/support", label: "Support", icon: LifeBuoy },
 ] as const;
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -18,7 +18,7 @@ export default async function PortalLayout({ children }: { children: React.React
   } = await supabase.auth.getUser();
 
   // Second line of defense beyond middleware -- same pattern as the staff
-  // portal's layout.
+  // portal’s layout.
   if (!user) {
     redirect("/portal/login");
   }
@@ -35,13 +35,13 @@ export default async function PortalLayout({ children }: { children: React.React
           zIndex: 40,
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 15 }}>My Account</span>
+        <span style={{ fontWeight: 700, fontSize: 15 }}>My account</span>
       </header>
 
-      <main>{children}</main>
+      <main className="app-shell" style={{ maxWidth: 720, margin: "0 auto" }}>{children}</main>
 
       {/* Mobile-first bottom tab bar -- the customer portal is explicitly
-          mobile-first per the design system spec, unlike the staff portal's
+          mobile-first per the design system spec, unlike the staff portal’s
           desktop-first sidebar. */}
       <nav
         style={{

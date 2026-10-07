@@ -27,7 +27,7 @@ export async function generateDamageReport(
   const tenant = rental.tenant as any;
   const customer = rental.customer as any;
 
-  // Pull the return inspection's photos, if any were captured.
+  // Pull the return inspection’s photos, if any were captured.
   const { data: inspection } = await supabase
     .from("inspection")
     .select("id")
@@ -68,7 +68,7 @@ export async function generateDamageReport(
     });
   } catch (error) {
     console.error("[damage-report] PDF generation failed:", error);
-    return { success: false, error: "Couldn't generate the report. Please try again." };
+    return { success: false, error: "Couldn’t generate the report. Please try again." };
   }
 
   const path = `${rental.tenant_id}/damage-report-${Date.now()}.pdf`;
@@ -76,7 +76,7 @@ export async function generateDamageReport(
     .from("generated-documents")
     .upload(path, pdfBytes, { contentType: "application/pdf" });
 
-  if (uploadError) return { success: false, error: "Couldn't save the report. Please try again." };
+  if (uploadError) return { success: false, error: "Couldn’t save the report. Please try again." };
 
   const {
     data: { user },
@@ -101,9 +101,9 @@ export async function generateDamageReport(
 
   if (docError || !doc) {
     if (docError?.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to generate a damage report." };
+      return { success: false, error: "You don’t have permission to generate a damage report." };
     }
-    return { success: false, error: "Report was saved but couldn't be recorded. Please try again." };
+    return { success: false, error: "Report was saved but couldn’t be recorded. Please try again." };
   }
 
   void logAuditEvent({

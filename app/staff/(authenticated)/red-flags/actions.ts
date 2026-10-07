@@ -103,9 +103,9 @@ export async function addRedFlagEntry(fields: {
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to add to the red flag list." };
+      return { success: false, error: "You don’t have permission to add to the red flag list." };
     }
-    return { success: false, error: "Couldn't add that entry. Please try again." };
+    return { success: false, error: "Couldn’t add that entry. Please try again." };
   }
 
   void logAuditEvent({
@@ -143,9 +143,9 @@ export async function resolveRedFlagEntry(entryId: string, note: string): Promis
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to resolve entries." };
+      return { success: false, error: "You don’t have permission to resolve entries." };
     }
-    return { success: false, error: "Couldn't resolve that entry." };
+    return { success: false, error: "Couldn’t resolve that entry." };
   }
 
   void logAuditEvent({

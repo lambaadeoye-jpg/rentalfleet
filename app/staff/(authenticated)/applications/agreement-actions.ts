@@ -11,7 +11,7 @@ import {
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const MISSING_LABELS: Record<string, string> = {
-  renter_name: "renter's name", vehicle: "an assigned vehicle", term: "the rent (set the rate or daily quote)", rent_line: "the rent",
+  renter_name: "renter’s name", vehicle: "an assigned vehicle", term: "the rent (set the rate or daily quote)", rent_line: "the rent",
   deposit: "the deposit amount", return_location: "a pickup location", late_window_hours: "approved cancellation rules",
   noshow_grace_hours: "approved cancellation rules", rebook_days: "approved cancellation rules", toll_window_days: "approved cancellation rules",
   free_cancellations: "approved cancellation rules", early_fee: "approved cancellation rules", late_fee: "approved cancellation rules",
@@ -88,8 +88,8 @@ export async function createSigningLink(rentalId: string): Promise<{ success: bo
   }
   const returnLocation = loc ? [loc.name, [loc.address_line1, loc.city, loc.state].filter(Boolean).join(", ")].filter(Boolean).join(", ") : null;
 
-  // Cancellation figures: the rental's own snapshot when it has an approved
-  // policy, otherwise today's approved policy.
+  // Cancellation figures: the rental’s own snapshot when it has an approved
+  // policy, otherwise today’s approved policy.
   let cancellation = ((rental.governing_policy_snapshot as any)?.cancellation ?? null) as RentalFacts["cancellation"];
   if (!cancellation || cancellation.approved !== true) {
     const { data: policy } = await supabase.from("policy_version").select("rules").eq("tenant_id", rental.tenant_id).eq("policy_type", "pricing_and_mileage").maybeSingle();
@@ -116,7 +116,7 @@ export async function createSigningLink(rentalId: string): Promise<{ success: bo
   const result = renderAgreement(version.clauses as AgreementTemplate, values);
   if (!result.ok) {
     const needs = [...new Set(result.missing.map((m) => MISSING_LABELS[m] ?? m))];
-    return { success: false, error: `The agreement can't be created yet. Still needed: ${needs.join("; ")}.` };
+    return { success: false, error: `The agreement can’t be created yet. Still needed: ${needs.join("; ")}.` };
   }
 
   const { token, hash } = generateUploadToken();
@@ -130,9 +130,9 @@ export async function createSigningLink(rentalId: string): Promise<{ success: bo
   });
   if (error) {
     const m = error.message ?? "";
-    if (m.includes("already_signed")) return { success: false, error: "This rental's agreement is already signed." };
+    if (m.includes("already_signed")) return { success: false, error: "This rental’s agreement is already signed." };
     if (m.includes("version_not_approved")) return { success: false, error: "No approved agreement yet." };
-    return { success: false, error: "Couldn't create the link. Please try again." };
+    return { success: false, error: "Couldn’t create the link. Please try again." };
   }
   revalidatePath("/staff/applications");
   return { success: true, url: signLinkUrl(token) };

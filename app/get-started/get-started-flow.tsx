@@ -116,24 +116,24 @@ export default function GetStartedFlow() {
               marginBottom: 16,
             }}
           >
-            APPLICATION RECEIVED
+            Application received
           </p>
-          <h1 style={{ fontSize: 30, marginBottom: 12 }}>Thanks — you&apos;re all set.</h1>
+          <h1 style={{ fontSize: 30, marginBottom: 12 }}>Thanks — you&rsquo;re all set.</h1>
           <p className="muted-text" style={{ fontSize: 16, marginBottom: 32 }}>
-            We&apos;ve got your info. <strong>A member of our team will call you shortly</strong> to go
+            We&rsquo;ve got your info. <strong>A member of our team will call you shortly</strong> to go
             over the next steps and get you on the road.
           </p>
 
           <div className="card" style={{ textAlign: "left" }}>
-            <p style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.5, color: "var(--teal)", marginBottom: 16 }}>
-              WHAT HAPPENS NEXT
+            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", marginBottom: 16 }}>
+              What happens next
             </p>
             <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
               <Phone size={20} color="var(--teal)" style={{ flexShrink: 0, marginTop: 2 }} />
               <div>
-                <p style={{ fontWeight: 700, marginBottom: 2 }}>We&apos;ll call you</p>
+                <p style={{ fontWeight: 700, marginBottom: 2 }}>We&rsquo;ll call you</p>
                 <p className="muted-text" style={{ fontSize: 14 }}>
-                  We&apos;ll reach out by phone to confirm your details and answer any questions.
+                  We&rsquo;ll reach out by phone to confirm your details and answer any questions.
                 </p>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function GetStartedFlow() {
               <div>
                 <p style={{ fontWeight: 700, marginBottom: 2 }}>Check your email</p>
                 <p className="muted-text" style={{ fontSize: 14 }}>
-                  You&apos;ll get a confirmation email with everything you need to keep moving.
+                  You&rsquo;ll get a confirmation email with everything you need to keep moving.
                 </p>
               </div>
             </div>
@@ -151,7 +151,7 @@ export default function GetStartedFlow() {
               <div>
                 <p style={{ fontWeight: 700, marginBottom: 2 }}>Watch for a text</p>
                 <p className="muted-text" style={{ fontSize: 14 }}>
-                  We&apos;ll also text you so you don&apos;t miss a thing.
+                  We&rsquo;ll also text you so you don&rsquo;t miss a thing.
                 </p>
               </div>
             </div>
@@ -159,7 +159,7 @@ export default function GetStartedFlow() {
 
           <p className="muted-text" style={{ fontSize: 13, marginTop: 20 }}>
             Keep your phone handy and add {PHONE_DISPLAY} to your contacts so our call, email, and
-            text don&apos;t get missed.
+            text don&rsquo;t get missed.
           </p>
         </div>
       </div>
@@ -174,7 +174,7 @@ export default function GetStartedFlow() {
               literally) would mean saying it on question one of four --
               manufactured momentum, not honest framing. A real step
               counter is accurate at every step instead of just
-              borrowing a competitor's psychological device because it
+              borrowing a competitor’s psychological device because it
               converts well for them. */}
           <span className="muted-text">STEP {stepIndex + 1} OF {STEPS.length}</span>
           <span style={{ color: "var(--teal)" }}>{progress}%</span>
@@ -202,20 +202,20 @@ export default function GetStartedFlow() {
         </div>
 
         {/* Headline and subtext stay the SAME across every step, matching
-            the benchmark -- one stable frame the person sees throughout,
+            the benchmark — one stable frame the person sees throughout,
             only the question underneath changes. Not step-conditional. */}
         <h1 style={{ fontSize: 26, marginBottom: 8, textAlign: "center" }}>
-          You&apos;re one step from <em style={{ color: "var(--teal)", fontStyle: "italic" }}>the keys</em>.
+          You&rsquo;re one step from <em style={{ color: "var(--teal)", fontStyle: "italic" }}>the keys</em>.
         </h1>
         <p className="muted-text" style={{ textAlign: "center", marginBottom: 28 }}>
-          Answer a few quick questions and we&apos;ll get you moving fast — no credit check,
+          Answer a few quick questions and we&rsquo;ll get you moving fast — no credit check,
           unlimited mileage, and insurance already included.
         </p>
 
         <div className="card">
           {step === "license" && (
             <>
-              <p style={{ fontWeight: 700, marginBottom: 16 }}>Do you currently hold a valid driver&apos;s license? *</p>
+              <p style={{ fontWeight: 700, marginBottom: 16 }}>Do you currently hold a valid driver&rsquo;s license? *</p>
               {[
                 { label: "Yes", value: true },
                 { label: "No", value: false },
@@ -236,8 +236,8 @@ export default function GetStartedFlow() {
               </p>
               {(
                 [
-                  { label: "Yes, I'm already driving", value: "already_driving" },
-                  { label: "Not yet, but I'm ready to start", value: "ready_to_start" },
+                  { label: "Yes, I’m already driving", value: "already_driving" },
+                  { label: "Not yet, but I’m ready to start", value: "ready_to_start" },
                   { label: "No", value: "no" },
                 ] as { label: string; value: DrivingStatus }[]
               ).map((opt) => (
@@ -255,7 +255,7 @@ export default function GetStartedFlow() {
               {(
                 [
                   { label: "Today", value: "today" },
-                  { label: "This Week", value: "this_week" },
+                  { label: "This week", value: "this_week" },
                   { label: "Within 2 weeks", value: "within_2_weeks" },
                   { label: "Just checking my options", value: "just_checking" },
                 ] as { label: string; value: Urgency }[]
@@ -272,11 +272,11 @@ export default function GetStartedFlow() {
             <>
               <div className="form-row">
                 <div className="field">
-                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>First Name *</label>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>First name *</label>
                   <input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First name" />
                 </div>
                 <div className="field">
-                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Last Name *</label>
+                  <label style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>Last name *</label>
                   <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last name" />
                 </div>
               </div>

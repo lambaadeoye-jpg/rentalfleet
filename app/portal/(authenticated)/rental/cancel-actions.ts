@@ -22,7 +22,7 @@ export async function previewMyCancellation(): Promise<Res> {
   const { data, error } = await c.admin.rpc("request_cancellation", { p_rental_id: c.rentalId, p_reason: "renter_cancelled", p_initiator: "renter", p_note: null, p_dry_run: true });
   if (error) return { success: false, error: cancelErrorMessage(error.message) };
   const s = parseSettlement(Array.isArray(data) ? data[0] : null);
-  return s ? { success: true, settlement: s } : { success: false, error: "Couldn't work out the refund." };
+  return s ? { success: true, settlement: s } : { success: false, error: "Couldn’t work out the refund." };
 }
 
 export async function cancelMyRental(): Promise<Res> {

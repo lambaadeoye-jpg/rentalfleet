@@ -13,8 +13,8 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
   if (done) {
     return (
       <main style={box}>
-        <h1 style={{ fontSize: 24, marginBottom: 8 }}>You&apos;re unsubscribed</h1>
-        <p className="muted-text">We won&apos;t send you marketing emails anymore. Messages about an active application or rental can still be sent.</p>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>You&rsquo;re unsubscribed</h1>
+        <p className="muted-text">We won&rsquo;t send you marketing emails anymore. Messages about an active application or rental can still be sent.</p>
         <p style={{ marginTop: 20 }}><a href="/">Back to Zivo</a></p>
       </main>
     );
@@ -22,8 +22,8 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
   if (!email) {
     return (
       <main style={box}>
-        <h1 style={{ fontSize: 24, marginBottom: 8 }}>This link isn&apos;t valid</h1>
-        <p className="muted-text">Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and we&apos;ll take you off the list.</p>
+        <h1 style={{ fontSize: 24, marginBottom: 8 }}>This link isn&rsquo;t valid</h1>
+        <p className="muted-text">Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and we&rsquo;ll take you off the list.</p>
       </main>
     );
   }

@@ -8,7 +8,7 @@ export default async function FleetPage() {
   const supabase = await createClient();
 
   // No manual tenant_id filtering -- RLS (0014) scopes both of these to
-  // the signed-in staff member's own tenant automatically.
+  // the signed-in staff member’s own tenant automatically.
   const [{ data: vehicles }, { data: categories }] = await Promise.all([
     supabase
       .from("vehicle")
@@ -26,7 +26,7 @@ export default async function FleetPage() {
     <div style={{ padding: "32px 40px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <div>
-          <h1 style={{ fontSize: 22, marginBottom: 4 }}>Fleet</h1>
+          <h1 style={{ fontSize: 24, marginBottom: 4 }}>Fleet</h1>
           <p className="muted-text">{vehiclesWithCategory.length} vehicles.</p>
         </div>
         <div style={{ display: "flex", gap: 10 }}>

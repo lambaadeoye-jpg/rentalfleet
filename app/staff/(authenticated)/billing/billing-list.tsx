@@ -25,14 +25,14 @@ export default function BillingList({ rows }: { rows: BillingRow[] }) {
 
   async function copy() {
     if (!link) return;
-    try { await navigator.clipboard.writeText(link.url); setCopied(true); } catch { setErr("Couldn't copy. Select the link and copy it by hand."); }
+    try { await navigator.clipboard.writeText(link.url); setCopied(true); } catch { setErr("Couldn’t copy. Select the link and copy it by hand."); }
   }
 
   async function toggle(r: BillingRow) {
     setBusy(r.rentalId); setErr(null);
     const res = await setPaused(r.rentalId, !r.paused);
     setBusy(null);
-    if (!res.success) setErr(res.error ?? "Couldn't update."); else router.refresh();
+    if (!res.success) setErr(res.error ?? "Couldn’t update."); else router.refresh();
   }
 
   if (rows.length === 0) return <p className="muted-text">No active weekly rentals yet.</p>;

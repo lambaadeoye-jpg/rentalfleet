@@ -1,12 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { greeting } from "@/lib/greeting";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  // Field staff have no reason to land on a metrics dashboard they can't
+  // Field staff have no reason to land on a metrics dashboard they can’t
   // act on -- their one relevant page is Pickups & Dropoffs. Redirect
   // rather than showing them a page full of numbers about leads and
   // applications they have no permission to work with.
@@ -26,7 +27,7 @@ export default async function DashboardPage() {
   }
 
   // No manual tenant_id filtering anywhere here -- RLS (0014) scopes every
-  // one of these queries to the signed-in staff member's own tenant.
+  // one of these queries to the signed-in staff member’s own tenant.
   const [{ count: newLeads }, { count: pendingApplications }, { count: totalLeads }, { count: activeRentals }] =
     await Promise.all([
       supabase.from("lead").select("*", { count: "exact", head: true }).eq("stage", "new"),
@@ -37,28 +38,28 @@ export default async function DashboardPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Good morning.</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>{greeting()}.</h1>
       <p className="muted-text" style={{ marginBottom: 28 }}>
-        Here&apos;s what needs your attention.
+        Here&rsquo;s what needs your attention.
       </p>
 
       <div className="grid-3">
         <div className="card">
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>New Leads</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>New leads</p>
           <p style={{ fontSize: 32, fontWeight: 800 }}>{newLeads ?? 0}</p>
         </div>
         <div className="card">
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Applications to Review</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Applications to review</p>
           <p style={{ fontSize: 32, fontWeight: 800, color: (pendingApplications ?? 0) > 0 ? "var(--warning, #f59e0b)" : undefined }}>
             {pendingApplications ?? 0}
           </p>
         </div>
         <div className="card">
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Total Leads (all time)</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Total leads (all time)</p>
           <p style={{ fontSize: 32, fontWeight: 800 }}>{totalLeads ?? 0}</p>
         </div>
         <div className="card">
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Active Rentals</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Active rentals</p>
           <p style={{ fontSize: 32, fontWeight: 800 }}>{activeRentals ?? 0}</p>
         </div>
       </div>

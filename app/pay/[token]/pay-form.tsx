@@ -10,14 +10,14 @@ export default function PayForm({ token, terms, totalLabel }: { token: string; t
 
   async function pay() {
     setError(null);
-    if (!ok) { setError("Please tick the box to confirm you've read the cancellation and refund terms."); return; }
+    if (!ok) { setError("Please tick the box to confirm you’ve read the cancellation and refund terms."); return; }
     setBusy(true);
     try {
       const res = await startCheckout(token, ok);
       if (!res.success) { setError(res.error); setBusy(false); return; }
       window.location.href = res.url;
     } catch {
-      setError("We couldn't start the payment. Please try again.");
+      setError("We couldn’t start the payment. Please try again.");
       setBusy(false);
     }
   }
@@ -25,7 +25,7 @@ export default function PayForm({ token, terms, totalLabel }: { token: string; t
   return (
     <>
       <div className="card" style={{ marginBottom: 14 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 8 }}>Cancellation and refund terms</h2>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Cancellation and refund terms</h2>
         <ul style={{ paddingLeft: 18, fontSize: 14, lineHeight: 1.5 }}>
           {terms.map((t, i) => <li key={i} style={{ marginBottom: 6 }}>{t}</li>)}
         </ul>

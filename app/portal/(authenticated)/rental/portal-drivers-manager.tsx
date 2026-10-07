@@ -40,7 +40,7 @@ export default function PortalDriversManager({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't save. Please try again.");
+      setError(result.error ?? "Couldn’t save. Please try again.");
       return;
     }
     setDrivers(updated);
@@ -54,7 +54,7 @@ export default function PortalDriversManager({
     const updated = drivers.filter((_, i) => i !== index);
     const result = await saveAdditionalDrivers(customerId, updated);
     if (!result.success) {
-      setError(result.error ?? "Couldn't remove that driver.");
+      setError(result.error ?? "Couldn’t remove that driver.");
       return;
     }
     setDrivers(updated);
@@ -105,7 +105,7 @@ export default function PortalDriversManager({
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={handleAdd} disabled={loading} className="button-primary">
-              {loading ? "Saving..." : "Save Driver"}
+              {loading ? "Saving..." : "Save driver"}
             </button>
             <button onClick={() => setAdding(false)} className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
               Cancel

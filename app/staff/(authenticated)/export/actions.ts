@@ -4,9 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 
 // Real gap named explicitly in your own spec ("Data export must support
 // customers, vehicles, bookings, rentals, payments, charges, invoices,
-// documents and reports") but never built. Scoped to what's actually
-// real right now -- invoices don't exist without a payment processor,
-// and "reports" isn't a single exportable table. CSV generated
+// documents and reports") but never built. Scoped to what’s actually
+// real right now -- invoices don’t exist without a payment processor,
+// and "reports" isn’t a single exportable table. CSV generated
 // server-side, returned as text for the client to download as a Blob.
 
 function toCsv(rows: Record<string, unknown>[]): string {

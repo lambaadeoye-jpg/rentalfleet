@@ -9,9 +9,9 @@ import { validateRentalWindow, defaultDropoff, isDefaultDropoff } from "@/lib/re
 import { computeWeeklyRate, computeDailyTotal, resolveDeposit, ACCEPTED_PAYMENT_METHODS, type InsuranceArrangement } from "@/lib/rental-rate";
 import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
 
-// Daily-plan total for a window, adjusted for the renter's insurance
+// Daily-plan total for a window, adjusted for the renter’s insurance
 // arrangement. Legacy rentals (no arrangement recorded) keep the standard
-// price. Returns null when the daily price can't be computed.
+// price. Returns null when the daily price can’t be computed.
 async function requoteDaily(
   supabase: Awaited<ReturnType<typeof createClient>>,
   tenantId: string,
@@ -55,12 +55,12 @@ export async function previewRentalRate(
   if (!deposit.ok) return { ok: false, error: deposit.error };
 
   if (rentalOption === "weekly") {
-    if (!rules.weekly_approved || !rules.weekly_rate_usd) return { ok: false, error: "Weekly pricing isn't approved on the Pricing page." };
+    if (!rules.weekly_approved || !rules.weekly_rate_usd) return { ok: false, error: "Weekly pricing isn’t approved on the Pricing page." };
     const w = computeWeeklyRate(rules.weekly_rate_usd, arrangement, rules.insurance);
     return w.ok ? { ok: true, rent: w.amount, base: w.base, deposit: deposit.amount, perLabel: "per week" } : { ok: false, error: w.error };
   }
   const standard = calculateDailyRentalPrice(7, rules.daily);
-  if (standard === null) return { ok: false, error: "Daily pricing isn't approved on the Pricing page." };
+  if (standard === null) return { ok: false, error: "Daily pricing isn’t approved on the Pricing page." };
   const d = computeDailyTotal(standard, 7, arrangement, rules.insurance);
   return d.ok ? { ok: true, rent: d.amount, base: d.base, deposit: deposit.amount, perLabel: "for the first 7 days" } : { ok: false, error: d.error };
 }
@@ -85,7 +85,7 @@ export async function getAvailableVehicles(): Promise<AvailableVehicle[]> {
 
 // ---------------------------------------------------------------------------
 // OFFICE: schedule a rental for an approved application. Ends at
-// 'scheduled' -- deliberately does NOT hand over the vehicle. That's a
+// 'scheduled' -- deliberately does NOT hand over the vehicle. That’s a
 // separate action (confirmPickup, below) for a reason: the person
 // physically handing over keys may be a different, more junior person
 // than whoever manages applications and fleet status. This function needs
@@ -145,7 +145,7 @@ export async function scheduleRental(
 
   // Explicit guard, not just reliance on `days` happening to be hardcoded
   // to 7 above. The 7-day minimum is a real, locked business rule (not
-  // just marketing copy -- it's stated on the homepage FAQ, but nothing
+  // just marketing copy -- it’s stated on the homepage FAQ, but nothing
   // in code actually enforced it before this). If a future change ever
   // turns `days` into a real parameter instead of a constant, this stops
   // a violation at the source rather than relying on the current value
@@ -155,7 +155,7 @@ export async function scheduleRental(
   }
 
   // Insurance arrangement: staff may choose, otherwise it follows the
-  // renter's own answer on the application. Never guessed.
+  // renter’s own answer on the application. Never guessed.
   const arrangement: InsuranceArrangement | null =
     insuranceArrangement ??
     (application.has_own_insurance === true ? "own" : application.has_own_insurance === false ? "via_provider" : null);
@@ -170,13 +170,13 @@ export async function scheduleRental(
   let agreedWeeklyRate: number | null = null;
   if (rentalOption === "daily") {
     const standard = calculateDailyRentalPrice(days, dailyRules);
-    if (standard === null) return { success: false, error: "Daily pricing isn't approved on the Pricing page." };
+    if (standard === null) return { success: false, error: "Daily pricing isn’t approved on the Pricing page." };
     const adjusted = computeDailyTotal(standard, days, arrangement, rules.insurance);
     if (!adjusted.ok) return { success: false, error: adjusted.error };
     quotedAmount = adjusted.amount;
   } else {
     if (!rules.weekly_approved || !rules.weekly_rate_usd) {
-      return { success: false, error: "Weekly pricing isn't approved on the Pricing page." };
+      return { success: false, error: "Weekly pricing isn’t approved on the Pricing page." };
     }
     const weekly = computeWeeklyRate(rules.weekly_rate_usd, arrangement, rules.insurance);
     if (!weekly.ok) return { success: false, error: weekly.error };
@@ -201,7 +201,7 @@ export async function scheduleRental(
     .select("id")
     .single();
 
-  if (bookingError || !booking) return { success: false, error: "Couldn't create the booking. Please try again." };
+  if (bookingError || !booking) return { success: false, error: "Couldn’t create the booking. Please try again." };
 
   const { data: rental, error: rentalError } = await supabase
     .from("rental")
@@ -219,14 +219,14 @@ export async function scheduleRental(
     .select("id")
     .single();
 
-  if (rentalError || !rental) return { success: false, error: "Couldn't create the rental. Please try again." };
+  if (rentalError || !rental) return { success: false, error: "Couldn’t create the rental. Please try again." };
 
   for (const status of ["approved", "scheduled"] as const) {
     const { error } = await supabase.from("rental").update({ status }).eq("id", rental.id);
     if (error) {
       const msg = error.message?.toLowerCase().includes("permission")
-        ? "You don't have permission to schedule a rental."
-        : `Couldn't move the rental to "${status}".`;
+        ? "You don’t have permission to schedule a rental."
+        : `Couldn’t move the rental to "${status}".`;
       return { success: false, error: msg };
     }
   }
@@ -239,16 +239,16 @@ export async function scheduleRental(
   });
   if (segmentError) {
     const msg = segmentError.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to assign a vehicle."
-      : "Couldn't assign the vehicle. Please try again.";
+      ? "You don’t have permission to assign a vehicle."
+      : "Couldn’t assign the vehicle. Please try again.";
     return { success: false, error: msg };
   }
 
   const { error: vehicleError } = await supabase.from("vehicle").update({ status: "reserved" }).eq("id", vehicleId);
   if (vehicleError) {
     const msg = vehicleError.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to update vehicle status."
-      : "Couldn't reserve the vehicle.";
+      ? "You don’t have permission to update vehicle status."
+      : "Couldn’t reserve the vehicle.";
     return { success: false, error: msg };
   }
 
@@ -302,7 +302,7 @@ export async function getPickupLocations(): Promise<PickupLocationOption[]> {
 // (quoted_amount set), the quote is recomputed for the real number of
 // days from the admin-editable pricing policy; weekly bookings carry no
 // quoted amount, so none is created. Changing the appointment clears
-// pickup_confirmed_at: a renter who confirmed the OLD time hasn't
+// pickup_confirmed_at: a renter who confirmed the OLD time hasn’t
 // confirmed this one. Does not touch rental status, vehicle or payments
 // (including any payment_schedule due date).
 // ---------------------------------------------------------------------------
@@ -318,7 +318,7 @@ export async function setPickupAppointment(
   if (Number.isNaN(pickupAt.getTime())) return { success: false, error: "Enter a valid pickup date and time." };
   // Drop-off defaults to pickup + 7 days automatically; staff may override.
   const returnAt = returnAtIso ? new Date(returnAtIso) : defaultDropoff(pickupAt);
-  if (pickupAt.getTime() < Date.now() - 5 * 60 * 1000) return { success: false, error: "Pickup time can't be in the past." };
+  if (pickupAt.getTime() < Date.now() - 5 * 60 * 1000) return { success: false, error: "Pickup time can’t be in the past." };
   if (!locationId) return { success: false, error: "Choose a pickup location." };
 
   const window = validateRentalWindow(pickupAt, returnAt);
@@ -347,8 +347,8 @@ export async function setPickupAppointment(
   };
 
   // Daily-plan bookings were quoted for a fixed 7 days at scheduling time.
-  // Re-quote for the real window (with the renter's insurance arrangement)
-  // so the stored amount can't be stale.
+  // Re-quote for the real window (with the renter’s insurance arrangement)
+  // so the stored amount can’t be stale.
   if (booking.quoted_amount !== null) {
     const requoted = await requoteDaily(supabase, rental.tenant_id, window.days, (rental as any).insurance_arrangement ?? null);
     if (requoted !== null) bookingUpdate.quoted_amount = requoted;
@@ -357,8 +357,8 @@ export async function setPickupAppointment(
   const { error: bookingError } = await supabase.from("booking").update(bookingUpdate).eq("id", booking.id);
   if (bookingError) {
     const msg = bookingError.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to set the appointment."
-      : "Couldn't save the appointment. Please try again.";
+      ? "You don’t have permission to set the appointment."
+      : "Couldn’t save the appointment. Please try again.";
     return { success: false, error: msg };
   }
 
@@ -370,14 +370,14 @@ export async function setPickupAppointment(
       pickup_confirmed_at: null,
     })
     .eq("id", rentalId);
-  if (rentalError) return { success: false, error: "Saved the pickup time but couldn't save the drop-off date. Please try again." };
+  if (rentalError) return { success: false, error: "Saved the pickup time but couldn’t save the drop-off date. Please try again." };
 
   revalidatePath("/staff/pickups");
   return { success: true };
 }
 
 // ---------------------------------------------------------------------------
-// STAFF: change a rental's drop-off date at ANY time before it is returned
+// STAFF: change a rental’s drop-off date at ANY time before it is returned
 // (scheduled, active, extended, ...). Counted from the real pickup moment
 // once the rental has started, otherwise from the planned appointment.
 // Enforces the locked 7-day minimum. Always marks the date as a staff
@@ -406,7 +406,7 @@ export async function setDropoffDate(
     .maybeSingle();
   if (!rental) return { success: false, error: "Rental not found." };
   if (rental.actual_return_at || !DROPOFF_EDITABLE_STATUSES.includes(rental.status)) {
-    return { success: false, error: "This rental is no longer open, so its drop-off date can't be changed." };
+    return { success: false, error: "This rental is no longer open, so its drop-off date can’t be changed." };
   }
 
   const { data: booking } = rental.booking_id
@@ -428,8 +428,8 @@ export async function setDropoffDate(
     const { error: bookingError } = await supabase.from("booking").update(bookingUpdate).eq("id", booking.id);
     if (bookingError) {
       const msg = bookingError.message?.toLowerCase().includes("permission")
-        ? "You don't have permission to change the drop-off date."
-        : "Couldn't save the drop-off date. Please try again.";
+        ? "You don’t have permission to change the drop-off date."
+        : "Couldn’t save the drop-off date. Please try again.";
       return { success: false, error: msg };
     }
   }
@@ -438,7 +438,7 @@ export async function setDropoffDate(
     .from("rental")
     .update({ expected_return_at: returnAt.toISOString(), drop_off_manually_set: true })
     .eq("id", rentalId);
-  if (rentalError) return { success: false, error: "Couldn't save the drop-off date. Please try again." };
+  if (rentalError) return { success: false, error: "Couldn’t save the drop-off date. Please try again." };
 
   await logAuditEvent({
     tenantId: rental.tenant_id,
@@ -547,7 +547,7 @@ export async function confirmPickup(
     .single();
 
   if (!rental) return { success: false, error: "Rental not found." };
-  if (rental.status !== "scheduled") return { success: false, error: "This rental isn't in scheduled status." };
+  if (rental.status !== "scheduled") return { success: false, error: "This rental isn’t in scheduled status." };
 
   const segment = (rental.rental_segment as any)?.[0];
   if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
@@ -615,10 +615,10 @@ export async function confirmPickup(
 
   if (rentalUpdateError) {
     const msg = rentalUpdateError.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to confirm pickup."
+      ? "You don’t have permission to confirm pickup."
       : rentalUpdateError.message?.toLowerCase().includes("renter insurance is not verified")
-        ? "This customer's insurance isn't verified as active yet."
-        : "Couldn't confirm pickup. Please try again.";
+        ? "This customer’s insurance isn’t verified as active yet."
+        : "Couldn’t confirm pickup. Please try again.";
     return { success: false, error: msg };
   }
 
@@ -634,8 +634,8 @@ export async function confirmPickup(
     .eq("id", segment.vehicle_id);
   if (vehicleError) {
     const msg = vehicleError.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to mark the vehicle rented."
-      : "Couldn't update the vehicle.";
+      ? "You don’t have permission to mark the vehicle rented."
+      : "Couldn’t update the vehicle.";
     return { success: false, error: msg };
   }
 
@@ -694,7 +694,7 @@ export async function confirmDropoff(
     .single();
 
   if (!rental) return { success: false, error: "Rental not found." };
-  if (rental.status !== "active") return { success: false, error: "This rental isn't currently active." };
+  if (rental.status !== "active") return { success: false, error: "This rental isn’t currently active." };
 
   const segment = (rental.rental_segment as any)?.[0];
   if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
@@ -705,8 +705,8 @@ export async function confirmDropoff(
     const { error } = await supabase.from("rental").update({ status }).eq("id", rentalId);
     if (error) {
       const msg = error.message?.toLowerCase().includes("permission")
-        ? "You don't have permission to confirm dropoff."
-        : `Couldn't move the rental to "${status}".`;
+        ? "You don’t have permission to confirm dropoff."
+        : `Couldn’t move the rental to "${status}".`;
       return { success: false, error: msg };
     }
   }
@@ -724,8 +724,8 @@ export async function confirmDropoff(
     .eq("id", segment.vehicle_id);
   if (vehicleError) {
     const msg = vehicleError.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to free up the vehicle."
-      : "Couldn't update the vehicle.";
+      ? "You don’t have permission to free up the vehicle."
+      : "Couldn’t update the vehicle.";
     return { success: false, error: msg };
   }
 
@@ -756,7 +756,7 @@ export async function recordPayment(
   const supabase = await createClient();
 
   if (!(ACCEPTED_PAYMENT_METHODS as readonly string[]).includes(methodType)) {
-    return { success: false, error: "Only card payments are accepted (in the renter's own name). Cash isn't accepted." };
+    return { success: false, error: "Only card payments are accepted (in the renter’s own name). Cash isn’t accepted." };
   }
   if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "Enter a valid amount." };
   if (kind !== "rent" && kind !== "deposit") return { success: false, error: "Choose rent or deposit." };
@@ -794,8 +794,8 @@ export async function recordPayment(
 
   if (error) {
     const msg = error.message?.toLowerCase().includes("permission")
-      ? "You don't have permission to record a payment."
-      : "Couldn't record that payment. Please try again.";
+      ? "You don’t have permission to record a payment."
+      : "Couldn’t record that payment. Please try again.";
     return { success: false, error: msg };
   }
 
@@ -857,8 +857,8 @@ export async function recordPayment(
 }
 
 // ---------------------------------------------------------------------------
-// ADMIN: change a rental's insurance arrangement after scheduling (e.g. the
-// renter's own policy lapses, or they buy cover through a provider). The
+// ADMIN: change a rental’s insurance arrangement after scheduling (e.g. the
+// renter’s own policy lapses, or they buy cover through a provider). The
 // rate is recomputed from the CURRENT pricing rules. Weekly plan: the
 // payment schedule amount changes from the next payment on (rent already
 // paid is untouched). Daily plan: only while still scheduled. Requires the
@@ -873,7 +873,7 @@ export async function changeRentalInsurance(
   const supabase = await createClient();
 
   const { data: allowed } = await supabase.rpc("can_manage_pricing");
-  if (allowed !== true) return { success: false, error: "You don't have permission to change a renter's rate." };
+  if (allowed !== true) return { success: false, error: "You don’t have permission to change a renter’s rate." };
 
   const { data: rental } = await supabase
     .from("rental")
@@ -882,9 +882,9 @@ export async function changeRentalInsurance(
     .maybeSingle();
   if (!rental) return { success: false, error: "Rental not found." };
   if (rental.actual_return_at || !["scheduled", "active", "extended"].includes(rental.status)) {
-    return { success: false, error: "This rental is closed, so its rate can't be changed." };
+    return { success: false, error: "This rental is closed, so its rate can’t be changed." };
   }
-  if (rental.insurance_arrangement === arrangement) return { success: false, error: "That's already this rental's arrangement." };
+  if (rental.insurance_arrangement === arrangement) return { success: false, error: "That’s already this rental’s arrangement." };
 
   const { data: policy } = await supabase
     .from("policy_version")
@@ -905,13 +905,13 @@ export async function changeRentalInsurance(
       .eq("rental_id", rentalId)
       .eq("status", "active")
       .eq("cadence", "weekly");
-    if (schedError) return { success: false, error: "Couldn't update the payment schedule. Nothing was changed." };
+    if (schedError) return { success: false, error: "Couldn’t update the payment schedule. Nothing was changed." };
 
     const { error: rentalError } = await supabase
       .from("rental")
       .update({ insurance_arrangement: arrangement, agreed_weekly_rate_usd: weekly.amount })
       .eq("id", rentalId);
-    if (rentalError) return { success: false, error: "The schedule was updated but the rental record wasn't. Please contact support." };
+    if (rentalError) return { success: false, error: "The schedule was updated but the rental record wasn’t. Please contact support." };
 
     void logAuditEvent({
       tenantId: rental.tenant_id,
@@ -927,9 +927,9 @@ export async function changeRentalInsurance(
   }
 
   // Daily plan: the whole term was priced up front, so only a rental that
-  // hasn't started can be re-priced.
+  // hasn’t started can be re-priced.
   if (rental.status !== "scheduled") {
-    return { success: false, error: "A daily rental that has already started can't be re-priced here." };
+    return { success: false, error: "A daily rental that has already started can’t be re-priced here." };
   }
   if (!rental.booking_id) return { success: false, error: "No booking found for this rental." };
   const { data: booking } = await supabase
@@ -942,12 +942,12 @@ export async function changeRentalInsurance(
   if (!window.ok) return { success: false, error: window.error };
 
   const requoted = await requoteDaily(supabase, rental.tenant_id, window.days, arrangement);
-  if (requoted === null) return { success: false, error: "Couldn't compute the daily price. Check the Pricing page." };
+  if (requoted === null) return { success: false, error: "Couldn’t compute the daily price. Check the Pricing page." };
 
   const { error: bookingError } = await supabase.from("booking").update({ quoted_amount: requoted }).eq("id", booking.id);
-  if (bookingError) return { success: false, error: "Couldn't update the quote. Nothing was changed." };
+  if (bookingError) return { success: false, error: "Couldn’t update the quote. Nothing was changed." };
   const { error: rentalError } = await supabase.from("rental").update({ insurance_arrangement: arrangement }).eq("id", rentalId);
-  if (rentalError) return { success: false, error: "The quote was updated but the rental record wasn't. Please contact support." };
+  if (rentalError) return { success: false, error: "The quote was updated but the rental record wasn’t. Please contact support." };
 
   void logAuditEvent({
     tenantId: rental.tenant_id,
@@ -964,9 +964,9 @@ export async function changeRentalInsurance(
 
 // ---------------------------------------------------------------------------
 // STAFF: mark a pickup-call follow-up as handled. The reminder assistant
-// raises needs_human_followup when a renter needs to reschedule, can't make
+// raises needs_human_followup when a renter needs to reschedule, can’t make
 // it, or needs help; this clears it once a person has dealt with it. Does
-// not touch the rental's status, appointment or payments.
+// not touch the rental’s status, appointment or payments.
 // ---------------------------------------------------------------------------
 export async function resolvePickupFollowup(rentalId: string): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
@@ -980,7 +980,7 @@ export async function resolvePickupFollowup(rentalId: string): Promise<{ success
   if (!rental.needs_human_followup) return { success: true };
 
   const { error } = await supabase.from("rental").update({ needs_human_followup: false }).eq("id", rentalId);
-  if (error) return { success: false, error: "Couldn't mark that as handled. Please try again." };
+  if (error) return { success: false, error: "Couldn’t mark that as handled. Please try again." };
 
   void logAuditEvent({
     tenantId: rental.tenant_id,

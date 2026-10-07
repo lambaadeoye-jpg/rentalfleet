@@ -17,7 +17,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't save. Please try again.");
+      setError(result.error ?? "Couldn’t save. Please try again.");
       return;
     }
     setSaved(true);
@@ -29,7 +29,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 4 }}>Daily Rental</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
-          A locked business rule (V2.1) -- shown here for visibility and future flexibility,
+          A locked business rule (V2.1) — shown here for visibility and future flexibility,
           already active.
         </p>
         <div className="form-row">
@@ -72,7 +72,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
       <div className="card">
         <h2 style={{ fontSize: 16, marginBottom: 4 }}>Weekly Rental</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
-          Not yet approved -- no weekly rentals will get a payment schedule until you set a real
+          Not yet approved — no weekly rentals will get a payment schedule until you set a real
           rate and check the box below.
         </p>
         <label className="field">
@@ -95,10 +95,10 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* DEPOSIT */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Refundable Deposit</h2>
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Refundable deposit</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           One amount for every renter, between $100 and $200. Separate from rent; both are
-          collected before pickup. Card only (renter&apos;s own name) -- no cash.
+          collected before pickup. Card only (renter&rsquo;s own name) — no cash.
         </p>
         <label className="field">
           <span style={{ fontSize: 13, fontWeight: 600 }}>Deposit ($100-$200)</span>
@@ -116,19 +116,19 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             checked={rules.deposit.approved}
             onChange={(e) => setRules({ ...rules, deposit: { ...rules.deposit, approved: e.target.checked } })}
           />
-          Approved for use (rentals can&apos;t be scheduled until this is set and approved)
+          Approved for use (rentals can&rsquo;t be scheduled until this is set and approved)
         </label>
       </div>
 
       {/* INSURANCE */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Insurance Pricing (staff only)</h2>
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Insurance pricing (staff only)</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Renters with their own insurance get a percentage off the rental fee. Renters without
           insurance buy cover themselves from a provider (Bonzah, RentalCover, ...) and pay
           that provider directly, so a fixed weekly amount comes off what they pay us. Applies
           to both daily and weekly rentals (daily uses the weekly amount / 7 per day). Renters
-          aren&apos;t shown this -- staff communicate the final numbers after approval.
+          aren&rsquo;t shown this — staff communicate the final numbers after approval.
         </p>
         <div className="form-row">
           <label className="field">
@@ -159,13 +159,13 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             checked={rules.insurance.approved}
             onChange={(e) => setRules({ ...rules, insurance: { ...rules.insurance, approved: e.target.checked } })}
           />
-          Approved for use (rentals can&apos;t be scheduled until this is set and approved)
+          Approved for use (rentals can&rsquo;t be scheduled until this is set and approved)
         </label>
       </div>
 
       {/* CANCELLATION AND REFUNDS */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Cancellation &amp; Refunds</h2>
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Cancellation &amp; refunds</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Money paid before pickup is refunded to the original card. Fees come out of the rent
           only; the deposit is always refunded in full before pickup. After pickup a started
@@ -263,7 +263,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
 
       {/* LATE FEE */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Late Fee</h2>
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Late fee</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Grace period of 0 means the fee applies starting the day after the due date, per your
           instruction.
@@ -294,13 +294,13 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             checked={rules.late_fee.approved}
             onChange={(e) => setRules({ ...rules, late_fee: { ...rules.late_fee, approved: e.target.checked } })}
           />
-          Approved for use (late fees won&apos;t auto-apply until this is checked and an amount is set)
+          Approved for use (late fees won&rsquo;t auto-apply until this is checked and an amount is set)
         </label>
       </div>
 
       {/* REFERRAL */}
       <div className="card">
-        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Referral Bonus</h2>
+        <h2 style={{ fontSize: 16, marginBottom: 4 }}>Referral bonus</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
           Paid to the referrer once the referred renter completes their first full paid week.
           Requires staff approval before it becomes usable, even once set here.
@@ -364,7 +364,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             checked={rules.referral.approved}
             onChange={(e) => setRules({ ...rules, referral: { ...rules.referral, approved: e.target.checked } })}
           />
-          Approved for use (referrals won&apos;t be approvable on the Referrals page until this is checked and an amount is set)
+          Approved for use (referrals won&rsquo;t be approvable on the Referrals page until this is checked and an amount is set)
         </label>
       </div>
 
@@ -372,7 +372,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
       {saved && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 14 }}>Saved.</p>}
 
       <button onClick={handleSave} disabled={loading} className="button-primary" style={{ alignSelf: "flex-start" }}>
-        {loading ? "Saving..." : "Save Pricing"}
+        {loading ? "Saving..." : "Save pricing"}
       </button>
     </div>
   );

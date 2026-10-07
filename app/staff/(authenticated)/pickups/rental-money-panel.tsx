@@ -7,7 +7,7 @@ import type { RentalMoney } from "./list-actions";
 
 const usd = (n: number | null) => (n === null ? "—" : `$${n.toFixed(2)}`);
 
-// Staff-only: the renter's agreed rate, what's been collected, and how to
+// Staff-only: the renter’s agreed rate, what’s been collected, and how to
 // record rent / deposit payments (card only) or change the insurance
 // arrangement. Renters never see this panel.
 export default function RentalMoneyPanel({ rentalId, money }: { rentalId: string; money: RentalMoney }) {
@@ -40,7 +40,7 @@ export default function RentalMoneyPanel({ rentalId, money }: { rentalId: string
     const result = await recordPayment(rentalId, Number(amount), "card", kind);
     setPayLoading(false);
     if (!result.success) {
-      setPayError(result.error ?? "Couldn't record that payment. Please try again.");
+      setPayError(result.error ?? "Couldn’t record that payment. Please try again.");
       return;
     }
     setAmount("");
@@ -49,14 +49,14 @@ export default function RentalMoneyPanel({ rentalId, money }: { rentalId: string
   }
 
   async function handleChangeArrangement() {
-    if (!window.confirm("Change this renter's insurance arrangement? Their rate is recalculated from the current pricing and applies from the next payment.")) return;
+    if (!window.confirm("Change this renter’s insurance arrangement? Their rate is recalculated from the current pricing and applies from the next payment.")) return;
     setRateError(null);
     setRateSaved(null);
     setRateLoading(true);
     const result = await changeRentalInsurance(rentalId, arrangement as "own" | "via_provider");
     setRateLoading(false);
     if (!result.success) {
-      setRateError(result.error ?? "Couldn't change the rate.");
+      setRateError(result.error ?? "Couldn’t change the rate.");
       return;
     }
     setRateSaved(result.newWeeklyRate != null ? `Updated. New weekly rate: ${usd(result.newWeeklyRate)}.` : "Updated.");
@@ -92,11 +92,11 @@ export default function RentalMoneyPanel({ rentalId, money }: { rentalId: string
           <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} />
         </label>
       </div>
-      <p className="muted-text" style={{ fontSize: 12, marginBottom: 8 }}>Card only, in the renter&apos;s own name. No cash.</p>
+      <p className="muted-text" style={{ fontSize: 12, marginBottom: 8 }}>Card only, in the renter&rsquo;s own name. No cash.</p>
       {payError && <p className="error-text" style={{ fontSize: 13, marginBottom: 8 }}>{payError}</p>}
       {paySaved && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 13, marginBottom: 8 }}>Payment recorded.</p>}
       <button onClick={handlePay} disabled={payLoading} className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)", marginBottom: 16 }}>
-        {payLoading ? "Recording..." : "Record Payment"}
+        {payLoading ? "Recording..." : "Record payment"}
       </button>
 
       {money.arrangement && (

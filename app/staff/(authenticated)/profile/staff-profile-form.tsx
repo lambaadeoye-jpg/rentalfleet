@@ -30,7 +30,7 @@ export default function StaffProfileForm({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't save. Please try again.");
+      setError(result.error ?? "Couldn’t save. Please try again.");
       return;
     }
     setSaved(true);
@@ -44,7 +44,7 @@ export default function StaffProfileForm({
     setPasswordLoading(false);
 
     if (!result.success) {
-      setPasswordError(result.error ?? "Couldn't set password. Please try again.");
+      setPasswordError(result.error ?? "Couldn’t set password. Please try again.");
       return;
     }
     setPassword("");
@@ -73,9 +73,9 @@ export default function StaffProfileForm({
 
       {isAdmin && (
         <div className="card">
-          <h2 style={{ fontSize: 15, marginBottom: 4 }}>Password sign-in (optional)</h2>
+          <h2 style={{ fontSize: 16, marginBottom: 4 }}>Password sign-in (optional)</h2>
           <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
-            Purely optional convenience -- the sign-in link by email always works regardless,
+            Purely optional convenience — the sign-in link by email always works regardless,
             whether or not you set a password here.
           </p>
           <label className="field">
@@ -92,12 +92,12 @@ export default function StaffProfileForm({
           {passwordError && <p className="error-text" style={{ marginBottom: 12 }}>{passwordError}</p>}
           {passwordSaved && (
             <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 14, marginBottom: 12 }}>
-              Password set. You can now sign in with it, or keep using the email link -- both work.
+              Password set. You can now sign in with it, or keep using the email link — both work.
             </p>
           )}
 
           <button onClick={handleSetPassword} disabled={passwordLoading || !password} className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
-            {passwordLoading ? "Setting..." : "Set Password"}
+            {passwordLoading ? "Setting..." : "Set password"}
           </button>
         </div>
       )}

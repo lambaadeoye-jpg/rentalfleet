@@ -8,7 +8,7 @@ export default async function RecoveryPage() {
 
   return (
     <div style={{ padding: "32px 40px" }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>Recovery</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>Recovery</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>
         Delinquent rentals and recovery-related costs (tolls, tickets, cleaning, fuel shortage,
         storage) chargeable against the security deposit once approved.

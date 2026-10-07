@@ -7,7 +7,7 @@ export default async function StaffOnboardPage() {
   const supabase = await createClient();
 
   // Authorization here is entirely inside accept_staff_invite() itself --
-  // it independently re-derives the caller's real email from auth.uid()
+  // it independently re-derives the caller’s real email from auth.uid()
   // and only provisions if a genuine pending staff_invite matches it. This
   // page is just the trigger point, not part of the security boundary.
   const { error } = await supabase.rpc("accept_staff_invite");

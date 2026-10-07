@@ -30,7 +30,7 @@ export default function AddVehicleForm({ categories }: { categories: Category[] 
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't add that vehicle. Please try again.");
+      setError(result.error ?? "Couldn’t add that vehicle. Please try again.");
       return;
     }
 
@@ -42,7 +42,7 @@ export default function AddVehicleForm({ categories }: { categories: Category[] 
     return (
       <button onClick={() => setOpen(true)} className="button-primary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
         <Plus size={16} />
-        Add Vehicle
+        Add vehicle
       </button>
     );
   }
@@ -102,7 +102,7 @@ export default function AddVehicleForm({ categories }: { categories: Category[] 
 
       <div style={{ display: "flex", gap: 10 }}>
         <button type="submit" className="button-primary" disabled={loading}>
-          {loading ? "Adding..." : "Add Vehicle"}
+          {loading ? "Adding..." : "Add vehicle"}
         </button>
         <button
           type="button"

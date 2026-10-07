@@ -120,9 +120,9 @@ export async function approveReferral(referralId: string): Promise<{ success: bo
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to approve referrals." };
+      return { success: false, error: "You don’t have permission to approve referrals." };
     }
-    return { success: false, error: "Couldn't approve that referral. Please try again." };
+    return { success: false, error: "Couldn’t approve that referral. Please try again." };
   }
 
   // Issues the actual credit -- append-only ledger entry, same pattern

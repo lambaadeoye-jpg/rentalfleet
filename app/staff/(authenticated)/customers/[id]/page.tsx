@@ -4,6 +4,8 @@ import ApplyReferralCreditForm from "./apply-referral-credit-form";
 import DamageReportForm from "./damage-report-form";
 import NotesSection from "./notes-section";
 import { getCustomerNotes } from "./notes-actions";
+import { sentenceCase } from "@/lib/format-label";
+import { formatPhone } from "@/lib/format-phone";
 
 export const dynamic = "force-dynamic";
 
@@ -53,21 +55,21 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   return (
     <div style={{ padding: "32px 40px", maxWidth: 900 }}>
-      <h1 style={{ fontSize: 22, marginBottom: 4 }}>
+      <h1 style={{ fontSize: 24, marginBottom: 4 }}>
         {customer.first_name} {customer.last_name}
       </h1>
       <p className="muted-text" style={{ marginBottom: 24 }}>
-        {customer.email ?? "No email"} · {customer.phone ?? "No phone"} ·{" "}
-        <span style={{ textTransform: "capitalize" }}>{customer.status}</span>
+        {customer.email ?? "No email"} · {customer.phone ? formatPhone(customer.phone) : "No phone"} ·{" "}
+        <span>{sentenceCase(customer.status)}</span>
       </p>
 
       <div className="grid-3" style={{ marginBottom: 28 }}>
         <div className="card">
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Total Paid</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Total paid</p>
           <p style={{ fontSize: 24, fontWeight: 800 }}>${totalPaid.toFixed(2)}</p>
         </div>
         <div className="card">
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Total Charges</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Total charges</p>
           <p style={{ fontSize: 24, fontWeight: 800 }}>${totalCharges.toFixed(2)}</p>
         </div>
         <div className="card">
@@ -76,11 +78,11 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         </div>
       </div>
 
-      <Section title="Lead / CRM History">
+      <Section title="Lead / CRM history">
         {!leads?.length && <Empty text="No lead record on file." />}
         {leads?.map((l) => (
           <Row key={l.id}>
-            <strong style={{ textTransform: "capitalize" }}>{l.stage}</strong> via {l.source ?? "unknown source"}
+            <strong>{sentenceCase(l.stage)}</strong> via {l.source ?? "unknown source"}
             {l.campaign ? ` (${l.campaign})` : ""} — {new Date(l.created_at).toLocaleDateString()}
           </Row>
         ))}
@@ -90,7 +92,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         {!applications?.length && <Empty text="No applications on file." />}
         {applications?.map((a) => (
           <Row key={a.id}>
-            <strong style={{ textTransform: "capitalize" }}>{a.status.replace(/_/g, " ")}</strong>
+            <strong>{sentenceCase(a.status.replace(/_/g, " "))}</strong>
             {a.decision_reason ? ` — ${a.decision_reason}` : ""}
             {a.decision_at ? ` (decided ${new Date(a.decision_at).toLocaleDateString()})` : ""}
           </Row>
@@ -105,7 +107,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
           return (
             <Row key={r.id}>
               <div>
-                <strong style={{ textTransform: "capitalize" }}>{r.status}</strong>
+                <strong>{sentenceCase(r.status)}</strong>
                 {vehicle ? ` — ${vehicle.year} ${vehicle.make} ${vehicle.model} (${vehicle.vin})` : ""}
                 {r.actual_return_at && ` — returned ${new Date(r.actual_return_at).toLocaleDateString()}`}
               </div>
@@ -119,7 +121,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         })}
       </Section>
 
-      <Section title="Referral Credit">
+      <Section title="Referral credit">
         <div style={{ padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <p className="muted-text" style={{ fontSize: 13 }}>Available balance</p>
@@ -132,7 +134,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       <Section title="Payments">        {!payments?.length && <Empty text="No payments recorded." />}
         {payments?.map((p) => (
           <Row key={p.id}>
-            ${Number(p.amount).toFixed(2)} via {p.method_type} — <span style={{ textTransform: "capitalize" }}>{p.status}</span>
+            ${Number(p.amount).toFixed(2)} via {p.method_type} — <span>{sentenceCase(p.status)}</span>
             {p.paid_at && ` (${new Date(p.paid_at).toLocaleDateString()})`}
           </Row>
         ))}
@@ -142,7 +144,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         {!charges?.length && <Empty text="No charges on file." />}
         {charges?.map((c) => (
           <Row key={c.id}>
-            <span style={{ textTransform: "capitalize" }}>{c.charge_type.replace(/_/g, " ")}</span> — $
+            <span>{sentenceCase(c.charge_type.replace(/_/g, " "))}</span> — $
             {Number(c.amount).toFixed(2)} ({c.approval_status})
           </Row>
         ))}
@@ -152,18 +154,18 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         {!insurance?.length && <Empty text="No insurance policies on file." />}
         {insurance?.map((i) => (
           <Row key={i.id}>
-            <span style={{ textTransform: "capitalize" }}>{i.policy_type}</span> — {i.provider ?? "Unknown provider"} —{" "}
-            <span style={{ textTransform: "capitalize" }}>{i.verification_status?.replace(/_/g, " ")}</span>
+            <span>{sentenceCase(i.policy_type)}</span> — {i.provider ?? "Unknown provider"} —{" "}
+            <span>{sentenceCase(i.verification_status?.replace(/_/g, " "))}</span>
             {i.effective_to && ` (expires ${new Date(i.effective_to).toLocaleDateString()})`}
           </Row>
         ))}
       </Section>
 
-      <Section title="Authorized Drivers">
+      <Section title="Authorized drivers">
         {!drivers?.length && <Empty text="No authorized drivers on file." />}
         {drivers?.map((d) => (
           <Row key={d.id}>
-            {d.first_name} {d.last_name} — <span style={{ textTransform: "capitalize" }}>{d.status}</span>
+            {d.first_name} {d.last_name} — <span>{sentenceCase(d.status)}</span>
             {d.license_expiry && ` (license expires ${new Date(d.license_expiry).toLocaleDateString()})`}
           </Row>
         ))}
@@ -173,17 +175,17 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
         {!documents?.length && <Empty text="No documents on file." />}
         {documents?.map((d) => (
           <Row key={d.id}>
-            <span style={{ textTransform: "capitalize" }}>{d.document_type.replace(/_/g, " ")}</span> —{" "}
-            <span style={{ textTransform: "capitalize" }}>{d.status}</span>
+            <span>{sentenceCase(d.document_type.replace(/_/g, " "))}</span> —{" "}
+            <span>{sentenceCase(d.status)}</span>
           </Row>
         ))}
       </Section>
 
-      <Section title="Support Tickets">
+      <Section title="Support tickets">
         {!tickets?.length && <Empty text="No support tickets on file." />}
         {tickets?.map((t) => (
           <Row key={t.id}>
-            <strong>{t.subject}</strong> — <span style={{ textTransform: "capitalize" }}>{t.status}</span> (
+            <strong>{t.subject}</strong> — <span>{sentenceCase(t.status)}</span> (
             {t.priority})
           </Row>
         ))}
@@ -199,7 +201,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 10 }}>{title}</h2>
+      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 10 }}>{title}</h2>
       <div className="card" style={{ padding: 0 }}>
         {children}
       </div>

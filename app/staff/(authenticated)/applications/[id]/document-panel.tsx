@@ -26,7 +26,7 @@ function Row({ applicationId, doc }: { applicationId: string; doc: DocRow }) {
     setError(null);
     const res = await reviewDocument(applicationId, doc.id, status, note);
     setBusy(false);
-    if (!res.success) setError(res.error ?? "Couldn't save.");
+    if (!res.success) setError(res.error ?? "Couldn’t save.");
     else setRejecting(false);
   }
 
@@ -85,7 +85,7 @@ function LinkCard({ applicationId, missing }: { applicationId: string; missing: 
     setCopied(false);
     const res = await createUploadLink(applicationId, types);
     setBusy(false);
-    if (!res.success || !res.url) { setError(res.error ?? "Couldn't create the link."); return; }
+    if (!res.success || !res.url) { setError(res.error ?? "Couldn’t create the link."); return; }
     setUrl(res.url);
     setHours(res.hours ?? 72);
   }
@@ -97,7 +97,7 @@ function LinkCard({ applicationId, missing }: { applicationId: string; missing: 
 
   return (
     <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-      <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>Request documents by link</h3>
+      <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 6 }}>Request documents by link</h3>
       <p className="muted-text" style={{ fontSize: 12, marginBottom: 10 }}>
         Makes a private link the renter opens on their phone, no sign-in. It replaces any earlier link and expires in {hours} hours.
       </p>

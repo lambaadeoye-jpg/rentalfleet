@@ -19,9 +19,9 @@ export async function updateInsuranceStatus(
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
-      return { success: false, error: "You don't have permission to change insurance status." };
+      return { success: false, error: "You don’t have permission to change insurance status." };
     }
-    return { success: false, error: "Couldn't update that. Please try again." };
+    return { success: false, error: "Couldn’t update that. Please try again." };
   }
 
   revalidatePath("/staff/insurance");

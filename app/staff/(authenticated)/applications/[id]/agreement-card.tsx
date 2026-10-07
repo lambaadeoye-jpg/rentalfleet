@@ -15,7 +15,7 @@ export default function AgreementCard({ rentalId, status }: { rentalId: string; 
     setCopied(false);
     const res = await createSigningLink(rentalId);
     setBusy(false);
-    if (!res.success || !res.url) setError(res.error ?? "Couldn't create the link.");
+    if (!res.success || !res.url) setError(res.error ?? "Couldn’t create the link.");
     else setUrl(res.url);
   }
 

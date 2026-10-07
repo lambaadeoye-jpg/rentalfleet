@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { MessageSquare } from "lucide-react";
 import { getConversationMessages, markConversationHandled, sendReply, type ConversationSummary, type ConversationMessage } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
+import { formatPhone } from "@/lib/format-phone";
 
 export default function InboxClient({ initialConversations }: { initialConversations: ConversationSummary[] }) {
   const [conversations, setConversations] = useState(initialConversations);
@@ -31,7 +33,7 @@ export default function InboxClient({ initialConversations }: { initialConversat
     setError(null);
     const result = await markConversationHandled(selected.lastEventId);
     if (!result.success) {
-      setError(result.error ?? "Couldn't mark that as handled.");
+      setError(result.error ?? "Couldn’t mark that as handled.");
       return;
     }
     const updated = { ...selected, needsReply: false };
@@ -53,7 +55,7 @@ export default function InboxClient({ initialConversations }: { initialConversat
     setSending(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't send that message.");
+      setError(result.error ?? "Couldn’t send that message.");
       return;
     }
     setReplyText("");
@@ -96,8 +98,8 @@ export default function InboxClient({ initialConversations }: { initialConversat
               {c.lastDirection === "outbound" ? "You: " : ""}
               {c.lastMessage}
             </div>
-            <div className="muted-text" style={{ fontSize: 11, textTransform: "uppercase", marginTop: 2 }}>
-              {c.channel} · {new Date(c.lastMessageAt).toLocaleDateString()}
+            <div className="muted-text" style={{ fontSize: 11, marginTop: 2 }}>
+              {c.channel.toLowerCase() === "sms" ? "SMS" : sentenceCase(c.channel)} · {new Date(c.lastMessageAt).toLocaleDateString()}
             </div>
           </button>
         ))}
@@ -115,7 +117,7 @@ export default function InboxClient({ initialConversations }: { initialConversat
             <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 12, marginBottom: 12 }}>
               <strong>{selected.displayName}</strong>{" "}
               <span className="muted-text" style={{ fontSize: 13 }}>
-                {selected.phone}
+                {formatPhone(selected.phone)}
               </span>
               {selected.needsReply && (
                 <button type="button" onClick={handleMarkHandled} className="btn btn-secondary" style={{ float: "right", fontSize: 13, padding: "4px 10px" }}>

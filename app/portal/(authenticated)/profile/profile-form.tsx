@@ -29,7 +29,7 @@ export default function ProfileForm({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't save. Please try again.");
+      setError(result.error ?? "Couldn’t save. Please try again.");
       return;
     }
     setSaved(true);
@@ -60,7 +60,7 @@ export default function ProfileForm({
       {saved && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 13, marginBottom: 12 }}>Saved.</p>}
 
       <button onClick={handleSave} disabled={loading} className="button-primary">
-        {loading ? "Saving..." : "Save Changes"}
+        {loading ? "Saving..." : "Save changes"}
       </button>
     </div>
   );

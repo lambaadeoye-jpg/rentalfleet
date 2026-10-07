@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import GetStartedFlow from "./get-started-flow";
 
 export const metadata: Metadata = {
-  title: "Get Started | Zivo",
-  description: "Answer a few quick questions and we'll call you to get you on the road.",
+  title: "Get started | Zivo",
+  description: "Answer a few quick questions and we’ll call you to get you on the road.",
   robots: { index: false }, // a lead-capture flow, not content meant to rank on its own
 };
 

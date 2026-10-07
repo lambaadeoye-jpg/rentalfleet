@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { inviteStaffMember } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
 
 type Role = { id: string; name: string };
 
@@ -27,7 +28,7 @@ export default function InviteForm({ roles }: { roles: Role[] }) {
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't send that invite. Please try again.");
+      setError(result.error ?? "Couldn’t send that invite. Please try again.");
       return;
     }
 
@@ -40,7 +41,7 @@ export default function InviteForm({ roles }: { roles: Role[] }) {
     return (
       <button onClick={() => setOpen(true)} className="button-primary" style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
         <Plus size={16} />
-        Invite Staff Member
+        Invite staff member
       </button>
     );
   }
@@ -61,8 +62,8 @@ export default function InviteForm({ roles }: { roles: Role[] }) {
             Select a role
           </option>
           {roles.map((r) => (
-            <option key={r.id} value={r.id} style={{ textTransform: "capitalize" }}>
-              {r.name}
+            <option key={r.id} value={r.id}>
+              {sentenceCase(r.name)}
             </option>
           ))}
         </select>
@@ -72,7 +73,7 @@ export default function InviteForm({ roles }: { roles: Role[] }) {
 
       <div style={{ display: "flex", gap: 10 }}>
         <button type="submit" className="button-primary" disabled={loading}>
-          {loading ? "Sending..." : "Send Invite"}
+          {loading ? "Sending..." : "Send invite"}
         </button>
         <button
           type="button"

@@ -50,7 +50,7 @@ export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: b
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div className="card" style={{ width: 360, textAlign: "center" }}>
           <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
-          <h1 style={{ fontSize: 20, marginBottom: 8 }}>Check your email</h1>
+          <h1 style={{ fontSize: 24, marginBottom: 8 }}>Check your email</h1>
           <p className="muted-text">
             We sent a secure sign-in link to <strong>{email}</strong>.
           </p>
@@ -67,7 +67,7 @@ export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: b
         ) : (
           <KeyRound size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
         )}
-        <h1 style={{ fontSize: 20, marginBottom: 4 }}>Fleet Rental OS</h1>
+        <h1 style={{ fontSize: 24, marginBottom: 4 }}>Staff sign in</h1>
 
         {inactiveTimeout && (
           <p style={{ fontSize: 13, color: "var(--warning, #b45309)", marginBottom: 12 }}>
@@ -77,7 +77,7 @@ export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: b
 
         <p className="muted-text" style={{ marginBottom: 20 }}>
           {mode === "magic-link"
-            ? "Enter your email and we'll send a secure sign-in link -- no password needed."
+            ? "Enter your email and we’ll send a secure sign-in link — no password needed."
             : "Sign in with your email and password."}
         </p>
 

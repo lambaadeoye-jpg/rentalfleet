@@ -30,18 +30,18 @@ function VersionEditor({ v }: { v: TemplateVersion }) {
     setBusy(true);
     const res = await saveAgreementDraft(v.id, title, current, vars);
     setBusy(false);
-    setMsg(res.success ? { ok: true, text: "Draft saved." } : { ok: false, text: res.error ?? "Couldn't save." });
+    setMsg(res.success ? { ok: true, text: "Draft saved." } : { ok: false, text: res.error ?? "Couldn’t save." });
   }
 
   async function approve(ack: boolean) {
     setBusy(true);
     // Save first so what is approved is exactly what is on screen.
     const saved = await saveAgreementDraft(v.id, title, current, vars);
-    if (!saved.success) { setBusy(false); setMsg({ ok: false, text: saved.error ?? "Couldn't save." }); return; }
+    if (!saved.success) { setBusy(false); setMsg({ ok: false, text: saved.error ?? "Couldn’t save." }); return; }
     const res = await approveAgreementVersion(v.id, ack);
     setBusy(false);
     if (res.needsAck) { setConfirmNotes(true); return; }
-    if (!res.success) { setMsg({ ok: false, text: res.error ?? "Couldn't approve." }); return; }
+    if (!res.success) { setMsg({ ok: false, text: res.error ?? "Couldn’t approve." }); return; }
     setConfirmNotes(false);
     router.refresh();
   }
@@ -50,7 +50,7 @@ function VersionEditor({ v }: { v: TemplateVersion }) {
     setBusy(true);
     const res = await createAgreementDraft(v.id);
     setBusy(false);
-    if (!res.success) setMsg({ ok: false, text: res.error ?? "Couldn't copy." });
+    if (!res.success) setMsg({ ok: false, text: res.error ?? "Couldn’t copy." });
     else router.refresh();
   }
 
@@ -98,7 +98,7 @@ function VersionEditor({ v }: { v: TemplateVersion }) {
         </button>
       )}
 
-      <h3 style={{ fontSize: 14, margin: "20px 0 6px" }}>Fixed values used in the text</h3>
+      <h3 style={{ fontSize: 15, margin: "20px 0 6px" }}>Fixed values used in the text</h3>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 10 }}>
         {VARIABLE_KEYS.map((k) => (
           <label className="field" key={k}>
@@ -147,7 +147,7 @@ export default function AgreementEditor({ versions }: { versions: TemplateVersio
     setBusy(true);
     const res = await createAgreementDraft();
     setBusy(false);
-    if (!res.success) setError(res.error ?? "Couldn't create the draft.");
+    if (!res.success) setError(res.error ?? "Couldn’t create the draft.");
     else router.refresh();
   }
 
@@ -155,8 +155,8 @@ export default function AgreementEditor({ versions }: { versions: TemplateVersio
     <>
       {versions.length === 0 && (
         <div className="card">
-          <p style={{ marginBottom: 12 }}>No agreement yet. Start from Zivo&apos;s draft (19 clauses, written for counsel to review) and edit it.</p>
-          <button className="button-primary" disabled={busy} onClick={start}>Start from Zivo&apos;s draft</button>
+          <p style={{ marginBottom: 12 }}>No agreement yet. Start from Zivo&rsquo;s draft (19 clauses, written for counsel to review) and edit it.</p>
+          <button className="button-primary" disabled={busy} onClick={start}>Start from Zivo&rsquo;s draft</button>
           {error && <p className="error-text" style={{ marginTop: 8 }}>{error}</p>}
         </div>
       )}

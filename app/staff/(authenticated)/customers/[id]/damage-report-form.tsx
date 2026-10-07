@@ -16,7 +16,7 @@ export default function DamageReportForm({ rentalId }: { rentalId: string }) {
     setLoading(false);
 
     if (!res.success) {
-      setResult({ success: false, message: res.error ?? "Couldn't generate the report." });
+      setResult({ success: false, message: res.error ?? "Couldn’t generate the report." });
       return;
     }
     setResult({ success: true, message: "Damage report generated and sent to the renter." });
@@ -26,7 +26,7 @@ export default function DamageReportForm({ rentalId }: { rentalId: string }) {
   if (!open) {
     return (
       <button onClick={() => setOpen(true)} className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
-        Generate Damage Report
+        Generate damage report
       </button>
     );
   }
@@ -46,7 +46,7 @@ export default function DamageReportForm({ rentalId }: { rentalId: string }) {
         </p>
       )}
       <button onClick={handleGenerate} disabled={loading || !description.trim()} className="button-primary">
-        {loading ? "Generating..." : "Generate & Send"}
+        {loading ? "Generating..." : "Generate & send"}
       </button>
     </div>
   );

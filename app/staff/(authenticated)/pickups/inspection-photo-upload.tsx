@@ -31,7 +31,7 @@ export default function InspectionPhotoUpload({
     setUploading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't upload that photo.");
+      setError(result.error ?? "Couldn’t upload that photo.");
       return;
     }
     setCount((c) => c + 1);
@@ -56,7 +56,7 @@ export default function InspectionPhotoUpload({
       {error && <p className="error-text" style={{ fontSize: 12, marginTop: 4 }}>{error}</p>}
       <p className="muted-text" style={{ fontSize: 12, marginTop: 4 }}>
         <Camera size={12} style={{ display: "inline", marginRight: 4 }} />
-        Optional but recommended -- real protection in a damage dispute.
+        Optional but recommended — real protection in a damage dispute.
       </p>
     </div>
   );

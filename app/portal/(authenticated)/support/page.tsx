@@ -13,13 +13,13 @@ export default async function PortalSupportPage() {
 
   return (
     <div style={{ padding: "24px 20px" }}>
-      <h1 style={{ fontSize: 20, marginBottom: 16 }}>Support</h1>
+      <h1 style={{ fontSize: 24, marginBottom: 16 }}>Support</h1>
       <SupportTicketForm initialTickets={tickets ?? []} />
       <a
         href="/portal/profile"
         style={{ display: "block", textAlign: "center", marginTop: 24, color: "var(--teal)", fontSize: 13, fontWeight: 600 }}
       >
-        Edit Profile
+        Edit profile
       </a>
     </div>
   );

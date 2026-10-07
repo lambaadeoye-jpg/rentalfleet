@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { openRecoveryCase, type RecoveryCaseSummary, type DelinquentRentalOption } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
 
 export default function RecoveryList({
   initialCases,
@@ -31,7 +32,7 @@ export default function RecoveryList({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't open that case.");
+      setError(result.error ?? "Couldn’t open that case.");
       return;
     }
     setRentalId("");
@@ -65,7 +66,7 @@ export default function RecoveryList({
         </label>
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
         <button onClick={handleOpen} disabled={loading || !rentalId || !reason.trim()} className="button-primary">
-          {loading ? "Opening..." : "Open Case"}
+          {loading ? "Opening..." : "Open case"}
         </button>
       </div>
 
@@ -76,7 +77,7 @@ export default function RecoveryList({
           <div className="card" style={{ marginBottom: 10, cursor: "pointer" }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
               <strong>{c.customerName}</strong>
-              <span style={{ textTransform: "capitalize" }}>{c.status.replace(/_/g, " ")}</span>
+              <span>{sentenceCase(c.status.replace(/_/g, " "))}</span>
             </div>
             <div className="muted-text" style={{ fontSize: 13, marginTop: 4 }}>
               Balance due: ${c.balanceDue.toFixed(2)} · {c.authorizedAt ? "Authorized" : "Not yet authorized"} ·{" "}

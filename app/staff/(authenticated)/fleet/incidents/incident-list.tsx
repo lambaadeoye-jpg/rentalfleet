@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { logIncident, resolveIncident, type IncidentRecord, type VehicleOption, type CustomerOption } from "./actions";
+import { sentenceCase } from "@/lib/format-label";
 
 export default function IncidentList({
   initialIncidents,
@@ -28,7 +29,7 @@ export default function IncidentList({
     setLoading(false);
 
     if (!result.success) {
-      setError(result.error ?? "Couldn't log that incident.");
+      setError(result.error ?? "Couldn’t log that incident.");
       return;
     }
     setIncidentType("");
@@ -44,7 +45,7 @@ export default function IncidentList({
 
     const result = await resolveIncident(incidentId);
     if (!result.success) {
-      setError(result.error ?? "Couldn't resolve that incident.");
+      setError(result.error ?? "Couldn’t resolve that incident.");
       return;
     }
     router.refresh();
@@ -88,7 +89,7 @@ export default function IncidentList({
         </label>
         {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
         <button onClick={handleLog} disabled={loading || !incidentType.trim()} className="button-primary">
-          {loading ? "Logging..." : "Log Incident"}
+          {loading ? "Logging..." : "Log incident"}
         </button>
       </div>
 
@@ -100,7 +101,7 @@ export default function IncidentList({
               {[i.vehicleLabel, i.customerName].filter(Boolean).join(" — ") || "No vehicle/customer linked"}
             </div>
             {i.description && <div className="muted-text" style={{ fontSize: 13, marginTop: 4 }}>{i.description}</div>}
-            <div style={{ fontSize: 12, marginTop: 4, textTransform: "capitalize" }}>{i.status}</div>
+            <div style={{ fontSize: 12, marginTop: 4 }}>{sentenceCase(i.status)}</div>
           </div>
           {i.status === "open" && (
             <button onClick={() => handleResolve(i.id)} className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
