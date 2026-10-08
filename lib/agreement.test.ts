@@ -16,11 +16,11 @@ const facts: RentalFacts = {
 describe("starter template", () => {
   it("is structurally valid with 19 clauses and known placeholders only", () => {
     expect(validateTemplate(template)).toBeNull();
-    expect(STARTER_CLAUSES).toHaveLength(19);
+    expect(STARTER_CLAUSES).toHaveLength(23);
     expect(unknownPlaceholders(template)).toEqual([]);
   });
   it("requires initials on exactly clauses 2,3,4,5,9,10", () => {
-    expect(STARTER_CLAUSES.filter((c) => c.initial).map((c) => c.number)).toEqual([2, 3, 4, 5, 9, 10]);
+    expect(STARTER_CLAUSES.filter((c) => c.initial).map((c) => c.number)).toEqual([3, 10, 11, 13, 14, 15]);
   });
   it("flags open counsel notes", () => expect(hasCounselNotes(template)).toBe(true));
 });
@@ -37,11 +37,18 @@ describe("render", () => {
     expect(r.rendered.intro).toContain("Weekly rent: $185");
     expect(r.rendered.intro).toContain("Deposit: $250");
     expect(r.rendered.intro).toContain("weekly, 1 week");
-    expect(r.rendered.clauses.find((c) => c.number === 4)!.body).toContain("$65 fee");
-    expect(r.rendered.clauses.find((c) => c.number === 8)!.body).toContain("$75");
+    const body = (n: number) => r.rendered.clauses.find((c) => c.number === n)!.body;
+    expect(body(3)).toContain("$6 for each toll");
+    expect(body(3)).toContain("$25 for each ticket");
+    expect(body(4)).toContain("$75");
+    expect(body(13)).toContain("deposit of $250");
+    expect(body(15)).toContain("deductible of $1,000");
+    expect(body(18)).toContain("1.5% per month");
+    expect(body(11)).toContain("gig, ride-hail and delivery platforms");
   });
   it("refuses to render with blanks and names what is missing", () => {
-    const r = renderAgreement(template, buildRentalValues({ ...facts, cancellation: { ...facts.cancellation!, approved: false } }, STARTER_VARIABLES));
+    const withFees: AgreementTemplate = { intro: "Fee {{late_fee}} {{early_fee}} {{late_window_hours}}", clauses: [{ number: 1, title: "T", body: "b", initial: false }] };
+    const r = renderAgreement(withFees, buildRentalValues({ ...facts, cancellation: { ...facts.cancellation!, approved: false } }, STARTER_VARIABLES));
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.missing).toEqual(expect.arrayContaining(["late_fee", "early_fee", "late_window_hours"]));
   });
@@ -91,9 +98,9 @@ describe("signing checks", () => {
     expect(nameMatches("", "Ann", "Baker")).toBe(false);
   });
   it("initials required for each flagged clause", () => {
-    expect(missingInitials(STARTER_CLAUSES, {})).toEqual([2, 3, 4, 5, 9, 10]);
-    expect(missingInitials(STARTER_CLAUSES, { "2": "AB", "3": "AB", "4": "AB", "5": "AB", "9": "AB", "10": "AB" })).toEqual([]);
-    expect(missingInitials(STARTER_CLAUSES, { "2": "A", "3": "AB1", "4": "AB", "5": "AB", "9": "AB", "10": "AB" })).toEqual([2, 3]);
+    expect(missingInitials(STARTER_CLAUSES, {})).toEqual([3, 10, 11, 13, 14, 15]);
+    expect(missingInitials(STARTER_CLAUSES, { "3": "AB", "10": "AB", "11": "AB", "13": "AB", "14": "AB", "15": "AB" })).toEqual([]);
+    expect(missingInitials(STARTER_CLAUSES, { "3": "A", "10": "AB1", "11": "AB", "13": "AB", "14": "AB", "15": "AB" })).toEqual([3, 10]);
   });
   it("initials resemble the name", () => {
     expect(initialsMatchName("AB", "Ann Baker")).toBe(true);

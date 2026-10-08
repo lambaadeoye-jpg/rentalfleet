@@ -155,7 +155,7 @@ export default function AgreementEditor({ versions }: { versions: TemplateVersio
     <>
       {versions.length === 0 && (
         <div className="card">
-          <p style={{ marginBottom: 12 }}>No agreement yet. Start from Zivo&rsquo;s draft (19 clauses, written for counsel to review) and edit it.</p>
+          <p style={{ marginBottom: 12 }}>No agreement yet. Start from Zivo&rsquo;s draft (23 clauses, written for counsel to review) and edit it.</p>
           <button className="button-primary" disabled={busy} onClick={start}>Start from Zivo&rsquo;s draft</button>
           {error && <p className="error-text" style={{ marginTop: 8 }}>{error}</p>}
         </div>
