@@ -36,6 +36,13 @@ describe("refundTermsLines", () => {
     expect(lines.join(" ")).toContain("2 free cancellations");
     expect(lines.join(" ")).toContain("original card only");
   });
+  it("no-refund policy writes no fees and keeps the deposit rule", () => {
+    const lines = refundTermsLines({ approved: true, no_refund: true })!.join(" ");
+    expect(lines).toContain("Rent is not refunded");
+    expect(lines).toContain("deposit is returned in full if you cancel before pickup");
+    expect(lines).toContain("original card only");
+    expect(lines).not.toContain("free cancellations");
+  });
   it("null until approved and complete", () => {
     expect(refundTermsLines(null)).toBeNull();
     expect(refundTermsLines({ ...rules, approved: false })).toBeNull();

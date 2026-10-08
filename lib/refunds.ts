@@ -94,7 +94,9 @@ const usd = (c: number) => `$${(c / 100).toFixed(2)}`;
 /** Plain-language summary shown before a renter or staff member confirms. */
 export function settlementSummary(s: Settlement): string {
   if (s.totalRefundCents === 0 && s.feeCents === 0) return "Nothing has been paid on this rental, so there is nothing to refund.";
-  const fee = s.feeCents > 0 ? `A ${usd(s.feeCents)} ${s.feeKind === "early" ? "cancellation" : "late-cancellation"} fee is kept from the rent. ` : "No fee applies. ";
+  const kept = s.feeCents > 0 && s.rentRefundCents === 0;
+  const fee = kept ? `The rent paid (${usd(s.feeCents)}) is not refunded under the rental agreement. ` : s.feeCents > 0 ? `A ${usd(s.feeCents)} ${s.feeKind === "early" ? "cancellation" : "late-cancellation"} fee is kept from the rent. ` : "No fee applies. ";
+  if (s.totalRefundCents === 0) return `${fee}Nothing goes back to the card.`;
   return `${fee}${usd(s.totalRefundCents)} goes back to the original card${s.depositRefundCents > 0 ? `, including the ${usd(s.depositRefundCents)} deposit in full` : ""}.`;
 }
 

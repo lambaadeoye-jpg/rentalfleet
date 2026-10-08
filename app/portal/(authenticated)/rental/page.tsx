@@ -76,7 +76,7 @@ export default async function PortalRentalPage() {
       {payState.show && (
         <div className="card" style={{ marginBottom: 16 }}>
           <h2 className="card-title card-title--tight">Pay to lock in your rental</h2>
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus refundable deposit, paid by card on a secure Stripe page. Sign your agreement first if you haven&rsquo;t.</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus security deposit, paid by card on a secure Stripe page. Sign your agreement first if you haven&rsquo;t.</p>
           <PayNow />
         </div>
       )}

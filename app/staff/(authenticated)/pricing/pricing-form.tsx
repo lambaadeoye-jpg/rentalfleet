@@ -167,16 +167,29 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
       <div className="card">
         <h2 className="card-title card-title--tight">Cancellation &amp; refunds</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 16 }}>
-          Money paid before pickup is refunded to the original card. Fees come out of the rent
-          only; the deposit is always refunded in full before pickup. After pickup a started
-          week is not prorated. Each rental keeps a snapshot of these numbers.
+          Refunds go to the original card. The deposit is always refunded in full before pickup.
+          After pickup a started week is not prorated. Each rental keeps a snapshot of these settings.
         </p>
+        <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 16, fontSize: 14 }}>
+          <input
+            type="checkbox"
+            style={{ marginTop: 3 }}
+            checked={rules.cancellation.no_refund === true}
+            onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, no_refund: e.target.checked } })}
+          />
+          <span>
+            <strong>No refund of rent once a car is reserved</strong> (matches the rental agreement). Rent is kept if the renter
+            cancels, doesn&rsquo;t arrive or can&rsquo;t meet a requirement at pickup. Zivo&rsquo;s own errors and fraud still refund in full.
+            The fee settings below apply only when this is off.
+          </span>
+        </label>
         <div className="form-row">
           <label className="field">
             <span style={{ fontSize: 13, fontWeight: 600 }}>Late cancel / no-show fee ($)</span>
             <input
               type="number"
               min={0}
+              disabled={rules.cancellation.no_refund === true}
               value={rules.cancellation.late_fee_usd ?? ""}
               onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, late_fee_usd: e.target.value ? Number(e.target.value) : null } })}
             />
@@ -186,6 +199,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             <input
               type="number"
               min={0}
+              disabled={rules.cancellation.no_refund === true}
               value={rules.cancellation.early_fee_usd ?? ""}
               onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, early_fee_usd: e.target.value ? Number(e.target.value) : null } })}
             />
@@ -197,6 +211,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             <input
               type="number"
               min={0}
+              disabled={rules.cancellation.no_refund === true}
               value={rules.cancellation.free_cancellations_per_90d}
               onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, free_cancellations_per_90d: Number(e.target.value) } })}
             />
@@ -206,6 +221,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             <input
               type="number"
               min={1}
+              disabled={rules.cancellation.no_refund === true}
               value={rules.cancellation.late_window_hours}
               onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, late_window_hours: Number(e.target.value) } })}
             />
@@ -217,6 +233,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             <input
               type="number"
               min={0}
+              disabled={rules.cancellation.no_refund === true}
               value={rules.cancellation.noshow_grace_hours}
               onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, noshow_grace_hours: Number(e.target.value) } })}
             />
@@ -226,6 +243,7 @@ export default function PricingForm({ initialRules }: { initialRules: PricingRul
             <input
               type="number"
               min={1}
+              disabled={rules.cancellation.no_refund === true}
               value={rules.cancellation.rebook_days}
               onChange={(e) => setRules({ ...rules, cancellation: { ...rules.cancellation, rebook_days: Number(e.target.value) } })}
             />

@@ -79,7 +79,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
           <p style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}><span>Rent (first week)</span><span>{money(req.rent_cents / 100)}</span></p>
         )}
         {req.deposit_cents > 0 && (
-          <p style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}><span>Refundable deposit</span><span>{money(req.deposit_cents / 100)}</span></p>
+          <p style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}><span>Security deposit</span><span>{money(req.deposit_cents / 100)}</span></p>
         )}
         <p style={{ display: "flex", justifyContent: "space-between", fontSize: 16, fontWeight: 700, borderTop: "1px solid var(--border, #ddd)", paddingTop: 8 }}>
           <span>Total today</span><span>{money(total)}</span>

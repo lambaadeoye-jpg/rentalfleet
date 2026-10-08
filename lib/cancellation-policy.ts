@@ -10,6 +10,10 @@
 //  - Zivo's error / no car ready / fraud found: full refund, no fee.
 //  - Renter can't meet a stated requirement at pickup: late_fee_usd once.
 //  - The refundable deposit always comes back in full before pickup.
+// no_refund (rental agreement clause 14, Oct 2026): once a car is reserved, rent
+// is not refunded when the renter cancels, no-shows or fails a requirement at
+// pickup. Zivo's error and fraud found before pickup still refund in full, and
+// the deposit still comes back in full before pickup.
 // After pickup a started week is never prorated (7-day minimum); that is a
 // rental-time rule, not handled here.
 
@@ -22,6 +26,7 @@ export type CancellationRules = {
   rebook_days: number;
   toll_ticket_window_days: number;
   admin_approval_threshold_usd: number;
+  no_refund: boolean; // rent is kept when the renter cancels or no-shows (fees below then do not apply)
   approved: boolean;
 };
 
@@ -34,6 +39,7 @@ export const DEFAULT_CANCELLATION_RULES: CancellationRules = {
   rebook_days: 7,
   toll_ticket_window_days: 60,
   admin_approval_threshold_usd: 200,
+  no_refund: true,
   approved: false,
 };
 
@@ -74,7 +80,7 @@ export function validateCancellationRules(r: CancellationRules): { ok: true } | 
   if (typeof r.admin_approval_threshold_usd !== "number" || !(r.admin_approval_threshold_usd >= 0) || r.admin_approval_threshold_usd > L.maxApprovalThresholdUsd) {
     return { ok: false, error: `The refund approval limit must be between $0 and $${L.maxApprovalThresholdUsd}.` };
   }
-  if (r.approved && (r.late_fee_usd == null || r.early_fee_usd == null)) {
+  if (r.approved && !r.no_refund && (r.late_fee_usd == null || r.early_fee_usd == null)) {
     return { ok: false, error: "Set both cancellation fees before approving the cancellation policy." };
   }
   return { ok: true };
@@ -129,6 +135,10 @@ export function settlePrePickup(
   }
 
   const rent = Math.max(0, input.rentPaidUsd);
+  if (rules.no_refund && (input.reason === "renter_cancelled" || input.reason === "no_show" || input.reason === "requirement_failed")) {
+    feeKind = "late";
+    fee = rent;
+  }
   fee = cents(Math.min(fee, rent));
   if (fee === 0) feeKind = "none";
   return {

@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
 import {
-  DEFAULT_CANCELLATION_RULES as R,
+  DEFAULT_CANCELLATION_RULES as DEFAULTS,
   settlePrePickup,
   refundNeedsAdminApproval,
   validateCancellationRules,
 } from "./cancellation-policy";
+
+// Fee-based rules (the earlier policy); the default is now no refund of rent.
+const R = { ...DEFAULTS, no_refund: false };
 
 const base = { priorFreeCancellations90d: 0, rentPaidUsd: 450, depositPaidUsd: 150 };
 
@@ -70,5 +73,28 @@ describe("validateCancellationRules", () => {
   it("refuses approval without both fees", () => {
     expect(validateCancellationRules({ ...R, early_fee_usd: null, approved: true }).ok).toBe(false);
     expect(validateCancellationRules({ ...R, early_fee_usd: null, approved: false }).ok).toBe(true);
+  });
+});
+
+describe("no_refund policy (default)", () => {
+  const N = DEFAULTS;
+  it("is on by default", () => expect(N.no_refund).toBe(true));
+  it("keeps all rent when the renter cancels, even well ahead, and still returns the deposit", () => {
+    const s = settlePrePickup({ ...base, reason: "renter_cancelled", hoursUntilPickup: 100 }, N);
+    expect(s).toMatchObject({ feeUsd: 450, feeKind: "late", rentRefundUsd: 0, depositRefundUsd: 150 });
+  });
+  it("keeps rent on a no-show and on a failed requirement", () => {
+    expect(settlePrePickup({ ...base, reason: "no_show", hoursUntilPickup: 0 }, N).rentRefundUsd).toBe(0);
+    expect(settlePrePickup({ ...base, reason: "requirement_failed", hoursUntilPickup: 0 }, N).rentRefundUsd).toBe(0);
+  });
+  it("still refunds everything when Zivo cancels or fraud is found", () => {
+    expect(settlePrePickup({ ...base, reason: "zivo_cancelled", hoursUntilPickup: 5 }, N)).toMatchObject({ feeUsd: 0, rentRefundUsd: 450, depositRefundUsd: 150 });
+    expect(settlePrePickup({ ...base, reason: "fraud_or_identity", hoursUntilPickup: 5 }, N).rentRefundUsd).toBe(450);
+  });
+  it("nothing paid means no fee", () => {
+    expect(settlePrePickup({ ...base, rentPaidUsd: 0, depositPaidUsd: 0, reason: "renter_cancelled", hoursUntilPickup: 100 }, N)).toMatchObject({ feeUsd: 0, feeKind: "none" });
+  });
+  it("approval does not need fees when no_refund is on", () => {
+    expect(validateCancellationRules({ ...N, late_fee_usd: null, early_fee_usd: null, approved: true }).ok).toBe(true);
   });
 });

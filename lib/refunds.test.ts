@@ -29,7 +29,7 @@ describe("settlement wording", () => {
 // The database function _settle_pre_pickup must agree with the TypeScript rules. These are the same
 // cases the scratch-database test ran against it ($300 rent + $200 deposit, default fees).
 describe("rules agree with the database cases", () => {
-  const R = { ...DEFAULT_CANCELLATION_RULES, approved: true };
+  const R = { ...DEFAULT_CANCELLATION_RULES, approved: true, no_refund: false };
   const run = (reason: any, hours: number, prior = 0) => settlePrePickup({ reason, hoursUntilPickup: hours, priorFreeCancellations90d: prior, rentPaidUsd: 300, depositPaidUsd: 200 }, R);
   it("first cancel 3 days out: full $500", () => { const s = run("renter_cancelled", 72); expect([s.feeUsd, s.rentRefundUsd + s.depositRefundUsd]).toEqual([0, 500]); });
   it("3rd cancel in 90 days: $25 early fee, $475", () => { const s = run("renter_cancelled", 72, 2); expect([s.feeUsd, s.rentRefundUsd + s.depositRefundUsd]).toEqual([25, 475]); });

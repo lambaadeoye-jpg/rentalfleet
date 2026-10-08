@@ -49,7 +49,7 @@ export default function CancelRental() {
       {!preview ? (
         <>
           <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>See exactly what you&rsquo;d get back before you decide.</p>
-          <button className="button-secondary" disabled={busy} onClick={start}>{busy ? "Checking..." : "See my refund"}</button>
+          <button className="button-secondary" disabled={busy} onClick={start}>{busy ? "Checking..." : "See what I get back"}</button>
         </>
       ) : (
         <>

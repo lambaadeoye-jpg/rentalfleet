@@ -848,7 +848,7 @@ export async function recordPayment(
       rentalId,
       customerId: rental.customer_id,
       amount,
-      lineLabel: kind === "deposit" ? "Refundable deposit received (card)" : `Rent payment received (${methodType})`,
+      lineLabel: kind === "deposit" ? "Security deposit received (card)" : `Rent payment received (${methodType})`,
       relatedPaymentId: payment.id,
     });
   }

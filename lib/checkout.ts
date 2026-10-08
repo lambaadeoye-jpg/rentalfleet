@@ -41,11 +41,21 @@ export function computeCheckoutAmounts(i: AmountsInput): AmountsResult {
 export type RefundRules = {
   approved?: boolean; late_fee_usd?: number | null; early_fee_usd?: number | null; free_cancellations_per_90d?: number;
   late_window_hours?: number; noshow_grace_hours?: number; rebook_days?: number;
+  no_refund?: boolean;
 };
 
 /** Plain-language terms from the approved cancellation policy. Returns null until the policy is approved and complete. */
 export function refundTermsLines(r: RefundRules | null | undefined): string[] | null {
   if (!r || r.approved !== true) return null;
+  if (r.no_refund === true) {
+    return [
+      "Rent is not refunded if you cancel after reserving, don't arrive for pickup, or can't meet a stated requirement at pickup (valid license, a card in your own name, required documents).",
+      "If Zivo cancels or can't provide the vehicle, or a payment turns out not to have been made by you, you get a full refund of what you paid for it.",
+      "Your security deposit is returned in full if you cancel before pickup. After pickup it covers damage and charges, and you lose all of it for a late return, any damage or smoking in the car, as the rental agreement says.",
+      "If the vehicle breaks down during your rental, we extend the rental to make up the lost time. If your negligence caused it, we may cancel the rest of the rental without a refund.",
+      "Rent already paid for a started week is not prorated or refunded after pickup. Refunds go to the original card only.",
+    ];
+  }
   const need = [r.late_fee_usd, r.early_fee_usd, r.free_cancellations_per_90d, r.late_window_hours, r.noshow_grace_hours, r.rebook_days];
   if (need.some((n) => n === null || n === undefined)) return null;
   return [
