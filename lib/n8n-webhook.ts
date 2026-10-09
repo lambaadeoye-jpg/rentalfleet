@@ -36,6 +36,8 @@ export const N8N_WEBHOOK_PATHS = {
   applicationStarted: "fleet-rental-application-started",
   applicationSubmitted: "fleet-rental-application-submitted",
   applicationDocumentUploaded: "fleet-rental-application-document-uploaded",
+  // A tracker raised a new problem (unplugged, low battery, check engine). Receiver in n8n is optional.
+  telematicsAlert: "fleet-rental-telematics-alert",
 } as const;
 
 export async function fireN8nWebhook(

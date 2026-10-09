@@ -15,6 +15,7 @@
     "@fontsource/plus-jakarta-sans": "^5.3.0",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
+    "leaflet": "^1.9.4",
     "lucide-react": "^1.47.0",
     "next": "^16.3.5",
     "pdf-lib": "^1.17.1",
@@ -22,6 +23,7 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@types/leaflet": "^1.9.12",
     "@types/node": "^20.14.2",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
