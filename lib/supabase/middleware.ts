@@ -1,3 +1,4 @@
+import { runnerCanOpen, RUNNER_HOME } from "@/lib/runner-access";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -100,6 +101,18 @@ export async function updateSession(request: NextRequest) {
     const redirectUrl = new URL("/staff/login", request.url);
     redirectUrl.searchParams.set("redirectedFrom", request.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Field runners may only open their own few pages. The role is read from the database on every
+  // office-page request (one small indexed lookup), never from a cookie the browser could change.
+  if (isStaffArea && user && !runnerCanOpen(request.nextUrl.pathname)) {
+    const { data: membership, error: roleError } = await supabase.from("membership").select("role:role_id(name)").eq("user_id", user.id).maybeSingle();
+    // If the role can't be read, fail closed: send them to the runner home rather than guess.
+    if (roleError || (membership?.role as any)?.name === "field_staff") {
+      const redirectResponse = NextResponse.redirect(new URL(RUNNER_HOME, request.url));
+      for (const cookie of response.cookies.getAll()) redirectResponse.cookies.set(cookie);
+      return redirectResponse;
+    }
   }
 
   // Same pattern for the customer portal -- everything under /portal

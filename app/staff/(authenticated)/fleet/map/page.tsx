@@ -3,6 +3,8 @@ import { loadTrackedVehicles } from "../gps/data";
 import MapLoader from "./map-loader";
 import type { MapPin } from "./fleet-map";
 import { STATE_LABELS, mapsLink, timeAgo } from "@/lib/telematics/status";
+import { createClient } from "@/lib/supabase/server";
+import { currentRoleName } from "@/lib/staff-role";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +18,10 @@ function pinColor(state: string): string {
 }
 
 export default async function FleetMapPage() {
-  const { vehicles, needsMigration } = await loadTrackedVehicles();
+  const { vehicles: allVehicles, needsMigration } = await loadTrackedVehicles();
+  // Runners find cars that are on the lot. They never see where a renter's car is, or who has it.
+  const isRunner = (await currentRoleName(await createClient())) === "field_staff";
+  const vehicles = isRunner ? allVehicles.filter((v) => !v.renter) : allVehicles;
 
   if (needsMigration) {
     return (
@@ -57,8 +62,14 @@ export default async function FleetMapPage() {
     <div className="page">
       <h1 className="page-title">Fleet map</h1>
       <p className="muted-text" style={{ marginBottom: 16 }}>
-        Last known location of every car. Manage trackers on{" "}
-        <Link href="/staff/fleet/gps" style={{ color: "var(--teal-dark)", fontWeight: 600 }}>GPS tracking</Link>.
+        {isRunner ? (
+          "Last known location of the cars that are not out on a rental."
+        ) : (
+          <>
+            Last known location of every car. Manage trackers on{" "}
+            <Link href="/staff/fleet/gps" style={{ color: "var(--teal-dark)", fontWeight: 600 }}>GPS tracking</Link>.
+          </>
+        )}
       </p>
 
       <div className="map-legend">

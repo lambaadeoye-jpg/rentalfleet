@@ -6,9 +6,10 @@ import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { confirmPickup, setPickupAppointment, resolvePickupFollowup, type PickupLocationOption } from "../applications/rental-actions";
 import RentalMoneyPanel from "./rental-money-panel";
 import InspectionPhotoUpload from "./inspection-photo-upload";
-import type { PickupItem } from "./list-actions";
+import type { PickupItem, RunnerOption } from "./list-actions";
+import AssignRunner from "./assign-runner";
 
-export default function PickupCard({ item, locations }: { item: PickupItem; locations: PickupLocationOption[] }) {
+export default function PickupCard({ item, locations, isRunner = false, runners = [] }: { item: PickupItem; locations: PickupLocationOption[]; isRunner?: boolean; runners?: RunnerOption[] }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [startMileage, setStartMileage] = useState("");
@@ -17,7 +18,8 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
   const [error, setError] = useState<string | null>(null);
 
 
-  const readyChecks = item.hasLicenseDocument && item.insuranceVerified;
+  // Runners can’t hand over keys until the agreement is signed (the server enforces this too).
+  const readyChecks = item.hasLicenseDocument && item.insuranceVerified && (!isRunner || item.agreementSigned);
 
   const [followupLoading, setFollowupLoading] = useState(false);
   const [followupError, setFollowupError] = useState<string | null>(null);
@@ -155,6 +157,15 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
               </button>
             </div>
           )}
+          {isRunner ? (
+            <div style={{ marginBottom: 16, fontSize: 14, lineHeight: 1.6 }}>
+              {item.customerPhone && <div>Phone: <a href={`tel:${item.customerPhone}`}>{item.customerPhone}</a></div>}
+              <div>{item.pickupAt ? `Pickup: ${new Date(item.pickupAt).toLocaleString()}` : "No pickup time set yet"}</div>
+            </div>
+          ) : (
+            <AssignRunner rentalId={item.rentalId} current={item.assignedRunnerId} runners={runners} />
+          )}
+          {!isRunner && (<>
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Pickup appointment</p>
           <div className="form-row" style={{ marginBottom: 8 }}>
             <label className="field">
@@ -194,11 +205,13 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
           >
             {apptLoading ? "Saving..." : item.pickupAt ? "Update appointment" : "Set appointment"}
           </button>
+          </>)}
 
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Pre-pickup checklist</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
             <ChecklistRow ok={item.hasLicenseDocument} label="Driver’s license on file" />
             <ChecklistRow ok={item.insuranceVerified} label="Insurance verified" />
+            {isRunner && <ChecklistRow ok={item.agreementSigned} label="Rental agreement signed" />}
           </div>
 
           {!readyChecks && (
@@ -207,7 +220,7 @@ export default function PickupCard({ item, locations }: { item: PickupItem; loca
             </p>
           )}
 
-          <RentalMoneyPanel rentalId={item.rentalId} money={item.money} />
+          <RentalMoneyPanel rentalId={item.rentalId} money={item.money} readOnly={isRunner} />
 
           <InspectionPhotoUpload rentalId={item.rentalId} vehicleId={item.vehicleId} inspectionType="pickup" />
 

@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
+import { currentRoleName } from "@/lib/staff-role";
+import { agreementAllowsHandover } from "@/lib/runner-access";
 import { calculateDailyRentalPrice } from "@/lib/pricing";
 import { validateRentalWindow, defaultDropoff, isDefaultDropoff } from "@/lib/rental-window";
 import { computeWeeklyRate, computeDailyTotal, resolveDeposit, ACCEPTED_PAYMENT_METHODS, type InsuranceArrangement } from "@/lib/rental-rate";
@@ -101,6 +103,7 @@ export async function scheduleRental(
   insuranceArrangement?: InsuranceArrangement
 ): Promise<{ success: boolean; error?: string; rentalId?: string }> {
   const supabase = await createClient();
+  if ((await currentRoleName(supabase)) === "field_staff") return { success: false, error: OFFICE_ONLY } as any;
 
   const { data: application } = await supabase
     .from("application")
@@ -313,6 +316,7 @@ export async function setPickupAppointment(
   locationId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+  if ((await currentRoleName(supabase)) === "field_staff") return { success: false, error: OFFICE_ONLY } as any;
 
   const pickupAt = new Date(pickupAtIso);
   if (Number.isNaN(pickupAt.getTime())) return { success: false, error: "Enter a valid pickup date and time." };
@@ -395,6 +399,7 @@ export async function setDropoffDate(
   returnAtIso: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+  if ((await currentRoleName(supabase)) === "field_staff") return { success: false, error: OFFICE_ONLY } as any;
 
   const returnAt = new Date(returnAtIso);
   if (Number.isNaN(returnAt.getTime())) return { success: false, error: "Enter a valid drop-off date and time." };
@@ -524,6 +529,9 @@ export async function getRentalForChecklist(rentalId: string): Promise<ActiveRen
 }
 
 // ---------------------------------------------------------------------------
+// Runners (field_staff) can see a rental but not change its terms, schedule or money.
+const OFFICE_ONLY = "Only the office can do this.";
+
 // FIELD: confirm actual physical pickup. This is the moment start_mileage
 // gets recorded, the agreement gets acknowledged, and the rental actually
 // becomes active. Requires start_rental (the existing transition gate) --
@@ -548,6 +556,17 @@ export async function confirmPickup(
 
   if (!rental) return { success: false, error: "Rental not found." };
   if (rental.status !== "scheduled") return { success: false, error: "This rental isn’t in scheduled status." };
+
+  // A runner may not hand over keys until the renter has signed the agreement. The office is trusted to judge older rentals.
+  if ((await currentRoleName(supabase)) === "field_staff") {
+    const { count: signedCount } = await supabase
+      .from("signed_document")
+      .select("id", { count: "exact", head: true })
+      .eq("rental_id", rentalId)
+      .not("sign_request_id", "is", null);
+    const gate = agreementAllowsHandover({ signed: (signedCount ?? 0) > 0 });
+    if (!gate.ok) return { success: false, error: gate.message };
+  }
 
   const segment = (rental.rental_segment as any)?.[0];
   if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
@@ -754,6 +773,7 @@ export async function recordPayment(
   kind: "rent" | "deposit" = "rent"
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+  if ((await currentRoleName(supabase)) === "field_staff") return { success: false, error: OFFICE_ONLY } as any;
 
   if (!(ACCEPTED_PAYMENT_METHODS as readonly string[]).includes(methodType)) {
     return { success: false, error: "Only card payments are accepted (in the renter’s own name). Cash isn’t accepted." };
@@ -871,6 +891,7 @@ export async function changeRentalInsurance(
 ): Promise<{ success: boolean; error?: string; newWeeklyRate?: number }> {
   if (arrangement !== "own" && arrangement !== "via_provider") return { success: false, error: "Choose an insurance arrangement." };
   const supabase = await createClient();
+  if ((await currentRoleName(supabase)) === "field_staff") return { success: false, error: OFFICE_ONLY } as any;
 
   const { data: allowed } = await supabase.rpc("can_manage_pricing");
   if (allowed !== true) return { success: false, error: "You don’t have permission to change a renter’s rate." };

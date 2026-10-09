@@ -6,14 +6,15 @@ import DropoffCard from "./dropoff-card";
 export const dynamic = "force-dynamic";
 
 export default async function PickupsPage() {
-  const [{ pickups, dropoffs }, locations] = await Promise.all([getPickupsAndDropoffs(), getPickupLocations()]);
+  const [{ pickups, dropoffs, isRunner, runners }, locations] = await Promise.all([getPickupsAndDropoffs(), getPickupLocations()]);
 
   return (
     <div className="page" style={{ maxWidth: 720 }}>
-      <h1 className="page-title">Pickups &amp; dropoffs</h1>
+      <h1 className="page-title">{isRunner ? "My day" : "Pickups & dropoffs"}</h1>
       <p className="muted-text" style={{ marginBottom: 24 }}>
-        Confirm a vehicle handover or return. Every action here asks you to confirm before it
-        actually happens.
+        {isRunner
+          ? "The handovers and returns assigned to you. Every action here asks you to confirm before it actually happens."
+          : "Confirm a vehicle handover or return. Every action here asks you to confirm before it actually happens."}
       </p>
 
       <h2 className="card-title">
@@ -25,11 +26,11 @@ export default async function PickupsPage() {
         )}
       </h2>
       {pickups.length === 0 ? (
-        <p className="muted-text" style={{ marginBottom: 24, fontSize: 14 }}>Nothing scheduled right now.</p>
+        <p className="muted-text" style={{ marginBottom: 24, fontSize: 14 }}>{isRunner ? "Nothing assigned to you for pickup." : "Nothing scheduled right now."}</p>
       ) : (
         <div style={{ marginBottom: 24 }}>
           {pickups.map((p) => (
-            <PickupCard key={p.rentalId} item={p} locations={locations} />
+            <PickupCard key={p.rentalId} item={p} locations={locations} isRunner={isRunner} runners={runners} />
           ))}
         </div>
       )}
@@ -38,11 +39,11 @@ export default async function PickupsPage() {
         Active rentals ({dropoffs.length})
       </h2>
       {dropoffs.length === 0 ? (
-        <p className="muted-text" style={{ fontSize: 14 }}>No active rentals right now.</p>
+        <p className="muted-text" style={{ fontSize: 14 }}>{isRunner ? "No returns assigned to you." : "No active rentals right now."}</p>
       ) : (
         <div>
           {dropoffs.map((d) => (
-            <DropoffCard key={d.rentalId} item={d} />
+            <DropoffCard key={d.rentalId} item={d} isRunner={isRunner} runners={runners} />
           ))}
         </div>
       )}

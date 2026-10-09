@@ -4,13 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { recordPayment, changeRentalInsurance } from "../applications/rental-actions";
 import type { RentalMoney } from "./list-actions";
+import { cardChargedStatus } from "@/lib/runner-access";
 
 const usd = (n: number | null) => (n === null ? "—" : `$${n.toFixed(2)}`);
 
 // Staff-only: the renter’s agreed rate, what’s been collected, and how to
 // record rent / deposit payments (card only) or change the insurance
 // arrangement. Renters never see this panel.
-export default function RentalMoneyPanel({ rentalId, money }: { rentalId: string; money: RentalMoney }) {
+export default function RentalMoneyPanel({ rentalId, money, readOnly = false }: { rentalId: string; money: RentalMoney; readOnly?: boolean }) {
   const router = useRouter();
   const [kind, setKind] = useState<"rent" | "deposit">("rent");
   const [amount, setAmount] = useState("");
@@ -61,6 +62,27 @@ export default function RentalMoneyPanel({ rentalId, money }: { rentalId: string
     }
     setRateSaved(result.newWeeklyRate != null ? `Updated. New weekly rate: ${usd(result.newWeeklyRate)}.` : "Updated.");
     router.refresh();
+  }
+
+  if (readOnly) {
+    // Runners only confirm the card was charged. No amounts, rates or controls.
+    const status = cardChargedStatus(money);
+    const row = (ok: boolean, label: string) => (
+      <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
+        <span aria-hidden>{ok ? "✓" : "✗"}</span>
+        <span>{label}: {ok ? "card charged" : "not charged yet"}</span>
+      </div>
+    );
+    return (
+      <div style={{ marginBottom: 20 }}>
+        <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Payment</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {row(status.rentPaid, "Rent")}
+          {row(status.depositPaid, "Deposit")}
+        </div>
+        {!status.allPaid && <p className="muted-text" style={{ fontSize: 12, marginTop: 8 }}>Don’t hand over the car until the office confirms the card has been charged.</p>}
+      </div>
+    );
   }
 
   return (

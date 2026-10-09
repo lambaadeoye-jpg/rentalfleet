@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import StaffNav from "../staff-nav";
 import SignOutButton from "./dashboard/sign-out-button";
+import RunnerNav from "../runner-nav";
 
 export default async function StaffLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -164,7 +165,8 @@ export default async function StaffLayout({ children }: { children: React.ReactN
           <span style={{ fontWeight: 700, fontSize: 15 }}>{tenant?.name ?? "Fleet Rental"}</span>
           <SignOutButton />
         </header>
-        <main className="app-shell">{children}</main>
+        <main className="app-shell" style={{ paddingBottom: 88 }}>{children}</main>
+        <RunnerNav />
       </div>
     );
   }

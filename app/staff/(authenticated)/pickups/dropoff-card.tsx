@@ -6,9 +6,10 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { confirmDropoff, setDropoffDate } from "../applications/rental-actions";
 import RentalMoneyPanel from "./rental-money-panel";
 import InspectionPhotoUpload from "./inspection-photo-upload";
-import type { DropoffItem } from "./list-actions";
+import type { DropoffItem, RunnerOption } from "./list-actions";
+import AssignRunner from "./assign-runner";
 
-export default function DropoffCard({ item }: { item: DropoffItem }) {
+export default function DropoffCard({ item, isRunner = false, runners = [] }: { item: DropoffItem; isRunner?: boolean; runners?: RunnerOption[] }) {
   const router = useRouter();
   const [expanded, setExpanded] = useState(false);
   const [endMileage, setEndMileage] = useState("");
@@ -89,7 +90,16 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
 
       {expanded && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
-          {/* Drop-off date: automatic (pickup + 7 days) unless changed here */}
+          {isRunner ? (
+            <div style={{ marginBottom: 16, fontSize: 14, lineHeight: 1.6 }}>
+              {item.customerPhone && <div>Phone: <a href={`tel:${item.customerPhone}`}>{item.customerPhone}</a></div>}
+              <div>Due back: {item.expectedReturnAt ? new Date(item.expectedReturnAt).toLocaleString() : "not set"}</div>
+            </div>
+          ) : (
+            <AssignRunner rentalId={item.rentalId} current={item.assignedRunnerId} runners={runners} />
+          )}
+          {/* Drop-off date: automatic (pickup + 7 days) unless changed here. Runners can't change it. */}
+          {!isRunner && (<>
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Drop-off date</p>
           <label className="field">
             <span style={{ fontSize: 13, fontWeight: 600 }}>
@@ -107,8 +117,9 @@ export default function DropoffCard({ item }: { item: DropoffItem }) {
           >
             {dueLoading ? "Saving..." : "Save drop-off date"}
           </button>
+          </>)}
 
-          <RentalMoneyPanel rentalId={item.rentalId} money={item.money} />
+          <RentalMoneyPanel rentalId={item.rentalId} money={item.money} readOnly={isRunner} />
 
           {/* Confirm dropoff */}
           <InspectionPhotoUpload rentalId={item.rentalId} vehicleId={item.vehicleId} inspectionType="return" />
