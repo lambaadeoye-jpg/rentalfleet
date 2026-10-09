@@ -148,7 +148,7 @@ export async function approveReferral(referralId: string): Promise<{ success: bo
     return { success: false, error: "Couldn’t issue the credit, so the referral was left as qualified. Try again." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: referral.tenant_id,
     action: "referral_approved",
     entityType: "referral",

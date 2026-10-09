@@ -1,6 +1,8 @@
 // Prompts and parsers for the AI parts of the call review. The model never sees phone numbers or emails
 // (transcripts are redacted first) and its output is validated before anything is stored or shown.
 
+import { redact } from "./redact";
+
 export const FAST_MODEL_DEFAULT = "claude-haiku-4-5-20251001";
 export const DEEP_MODEL_DEFAULT = "claude-sonnet-5-5";
 
@@ -88,7 +90,8 @@ function extractJson(text: string): unknown {
   }
 }
 
-const s = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+// Everything the model writes back is redacted again before it is stored: it may echo a number or address.
+const s = (v: unknown, max: number) => (typeof v === "string" ? redact(v.trim()).slice(0, max) : "");
 const arr = (v: unknown, max: number): unknown[] => (Array.isArray(v) ? v.slice(0, max) : []);
 
 export function parseTags(text: string): CallTags | null {

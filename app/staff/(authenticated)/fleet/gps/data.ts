@@ -42,7 +42,7 @@ export async function loadTrackedVehicles(): Promise<{ vehicles: TrackedVehicle[
       .order("created_at", { ascending: true }),
     supabase.from("telematics_alert").select("id, vehicle_id, alert_type, severity, created_at").eq("status", "open").order("created_at", { ascending: false }),
     // Active rentals with their cars and renters, the same way the Pickups page reads them.
-    supabase.from("rental").select("id, customer:customer_id(first_name, last_name), rental_segment(vehicle_id, ends_at)").eq("status", "active"),
+    supabase.from("rental").select("id, customer:customer_id(first_name, last_name), rental_segment(vehicle_id, ends_at)").in("status", ["active", "extended", "return_pending", "delinquent", "suspended", "recovery"]),
   ]);
 
   // The tracking columns arrive with migration 0092. Until it has run, say so instead of showing an empty fleet.

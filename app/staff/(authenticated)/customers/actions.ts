@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { safeSearchTerm, phoneDigits } from "@/lib/search-term";
 
 export type CustomerListItem = {
   id: string;
@@ -19,8 +20,10 @@ export async function searchCustomers(query: string): Promise<CustomerListItem[]
     .order("created_at", { ascending: false })
     .limit(50);
 
-  if (query.trim()) {
-    q = q.or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%`);
+  const term = safeSearchTerm(typeof query === "string" ? query : "");
+  if (term) {
+    const digits = phoneDigits(term);
+    q = q.or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${digits || term}%`);
   }
 
   const { data } = await q;

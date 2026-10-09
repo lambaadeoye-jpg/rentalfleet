@@ -92,10 +92,16 @@ export async function openRecoveryCase(
   if (!authorizationReason.trim()) {
     return { success: false, error: "A reason is required." };
   }
+  if (!Number.isFinite(balanceDue) || balanceDue < 0 || balanceDue > 100000) return { success: false, error: "Enter the balance owed, between $0 and $100,000." };
 
   const supabase = await createClient();
-  const { data: rental } = await supabase.from("rental").select("tenant_id").eq("id", rentalId).single();
+  // The renter comes from the rental itself, never from what the browser sent.
+  const { data: rental } = await supabase.from("rental").select("tenant_id, customer_id").eq("id", rentalId).single();
   if (!rental) return { success: false, error: "Rental not found." };
+  customerId = rental.customer_id;
+
+  const { data: existingCase } = await supabase.from("recovery_case").select("id").eq("rental_id", rentalId).neq("status", "closed").limit(1);
+  if ((existingCase ?? []).length > 0) return { success: false, error: "There is already an open recovery case for this rental." };
 
   const { data: segment } = await supabase
     .from("rental_segment")
@@ -116,7 +122,7 @@ export async function openRecoveryCase(
       customer_id: customerId,
       status: "delinquent",
       balance_due: balanceDue,
-      authorization_reason: authorizationReason.trim(),
+      authorization_reason: authorizationReason.trim().slice(0, 1000),
     })
     .select("id")
     .single();
@@ -128,7 +134,7 @@ export async function openRecoveryCase(
     return { success: false, error: "Couldn’t open a recovery case. Please try again." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "recovery_case_opened",
     entityType: "recovery_case",
@@ -228,11 +234,14 @@ export async function addRecoveryExpense(
   amount: number,
   responsibility: "renter" | "company"
 ): Promise<{ success: boolean; error?: string }> {
-  if (amount <= 0) return { success: false, error: "Enter a positive amount." };
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 50000) return { success: false, error: "Enter an amount between $0.01 and $50,000." };
+  if (responsibility !== "renter" && responsibility !== "company") return { success: false, error: "Choose who is responsible." };
+  amount = Math.round(amount * 100) / 100;
 
   const supabase = await createClient();
-  const { data: recoveryCase } = await supabase.from("recovery_case").select("tenant_id").eq("id", caseId).single();
+  const { data: recoveryCase } = await supabase.from("recovery_case").select("tenant_id, status").eq("id", caseId).single();
   if (!recoveryCase) return { success: false, error: "Recovery case not found." };
+  if (recoveryCase.status === "closed") return { success: false, error: "This case is closed. Open a new one to add costs." };
 
   const { error } = await supabase.from("recovery_expense").insert({
     tenant_id: recoveryCase.tenant_id,

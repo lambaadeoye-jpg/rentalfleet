@@ -106,7 +106,7 @@ export async function generateDamageReport(
     return { success: false, error: "Report was saved but couldn’t be recorded. Please try again." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "damage_report_generated",
     entityType: "generated_document",

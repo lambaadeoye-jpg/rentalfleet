@@ -17,9 +17,17 @@ function Row({ r }: { r: RefundRow }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
-  async function run(fn: () => Promise<{ success: boolean; error?: string; note?: string }>) {
+  async function run(fn: () => Promise<{ success: boolean; error?: string; note?: string }>, confirmText?: string) {
+    if (confirmText && !window.confirm(confirmText)) return;
     setBusy(true); setMsg(null);
-    const res = await fn();
+    let res: { success: boolean; error?: string; note?: string };
+    try {
+      res = await fn();
+    } catch {
+      setBusy(false);
+      setMsg("Something went wrong. Check the refund status before trying again.");
+      return;
+    }
     setBusy(false);
     if (!res.success) { setMsg(res.error ?? "Something went wrong."); return; }
     if (res.note) setMsg(res.note);
@@ -52,17 +60,17 @@ function Row({ r }: { r: RefundRow }) {
       {r.status === "pending_approval" && (
         <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
           <input placeholder="Optional note" value={note} onChange={(e) => setNote(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
-          <button className="button-primary" disabled={busy} onClick={() => run(() => decideRefund(r.id, true, note))}>Approve refund</button>
-          <button className="button-secondary" disabled={busy} onClick={() => run(() => decideRefund(r.id, false, note))}>Reject</button>
+          <button className="button-primary" disabled={busy} onClick={() => run(() => decideRefund(r.id, true, note), `Approve a refund of ${usd(r.totalRefundCents)} to ${r.customerName}? Card money is sent to Stripe right away.`)}>Approve refund</button>
+          <button className="button-secondary" disabled={busy} onClick={() => run(() => decideRefund(r.id, false, note), `Reject this refund for ${r.customerName}?`)}>Reject</button>
         </div>
       )}
       {r.status === "failed" && (
-        <div style={{ marginTop: 10 }}><button className="button-primary" disabled={busy} onClick={() => run(() => retryRefund(r.id))}>Retry</button></div>
+        <div style={{ marginTop: 10 }}><button className="button-primary" disabled={busy} onClick={() => run(() => retryRefund(r.id), `Retry the ${usd(r.totalRefundCents)} card refund for ${r.customerName}?`)}>Retry</button></div>
       )}
       {r.status === "manual_pending" && (
         <div style={{ marginTop: 10, display: "flex", gap: 8, flexWrap: "wrap" }}>
           <input placeholder="How was it refunded?" value={note} onChange={(e) => setNote(e.target.value)} style={{ flex: 1, minWidth: 200 }} />
-          <button className="button-primary" disabled={busy} onClick={() => run(() => markManualRefundDone(r.id, note))}>Mark done</button>
+          <button className="button-primary" disabled={busy} onClick={() => run(() => markManualRefundDone(r.id, note), `Confirm the ${usd(r.manualCents)} was refunded by hand to ${r.customerName}?`)}>Mark done</button>
         </div>
       )}
       {msg && <p className="muted-text" style={{ fontSize: 13, marginTop: 8 }}>{msg}</p>}

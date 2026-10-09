@@ -187,7 +187,7 @@ export async function chargeRenter(tollId: string, feeText: string): Promise<Res
   // The 24-hour payment clock starts when the charge is approved and the renter is told (see approveCharge), not now.
   const { error: linkError } = await supabase.from("toll_transaction").update({ charge_id: charge.id }).eq("id", tollId);
   if (linkError) console.error("[tolls] charge not linked to the toll row:", linkError.message);
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: toll.tenant_id,
     action: "toll_charged",
     entityType: "toll_transaction",
@@ -204,7 +204,7 @@ export async function markTollPaid(tollId: string): Promise<Result> {
   const supabase = await createClient();
   const { data: updated, error } = await supabase.from("toll_transaction").update({ status: "paid" }).eq("id", tollId).eq("status", "charged").select("id, tenant_id");
   if (error || !updated || updated.length === 0) return { success: false, error: "Couldn’t update that. It may already be handled." };
-  void logAuditEvent({ tenantId: updated[0].tenant_id, action: "toll_marked_paid", entityType: "toll_transaction", entityId: tollId, source: "staff_portal" });
+  await logAuditEvent({ tenantId: updated[0].tenant_id, action: "toll_marked_paid", entityType: "toll_transaction", entityId: tollId, source: "staff_portal" });
   revalidatePath("/staff/tolls");
   return { success: true };
 }

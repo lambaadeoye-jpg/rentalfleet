@@ -26,21 +26,24 @@ export async function logAuditEvent(params: {
   source?: string;
 }): Promise<void> {
   try {
+    // entity_id is a uuid column: anything else would be rejected and the event lost, so keep the event with no id.
+    const entityId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.entityId ?? "") ? params.entityId : null;
     const supabase = await createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
-    await supabase.from("audit_event").insert({
+    const { error } = await supabase.from("audit_event").insert({
       tenant_id: params.tenantId,
       actor_user_id: user?.id ?? null,
       action: params.action,
       entity_type: params.entityType,
-      entity_id: params.entityId,
+      entity_id: entityId,
       before_data: params.beforeData ?? null,
       after_data: params.afterData ?? null,
       source: params.source ?? "staff_portal",
     });
+    if (error) console.error("[audit] Insert failed:", params.action, error.message);
   } catch (error) {
     console.error("[audit] Failed to log event:", params.action, error);
   }

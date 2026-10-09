@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { normalizeCall } from "@/lib/call-review/normalize";
 import { reportedOutcome, runChecks, transcriptText } from "@/lib/call-review/checks";
@@ -65,8 +66,7 @@ async function loadRows(db: Db, tenantId: string, start: string, end: string): P
 }
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

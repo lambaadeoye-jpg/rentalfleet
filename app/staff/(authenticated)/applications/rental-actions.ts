@@ -128,6 +128,18 @@ export async function scheduleRental(
   if (!vehicle) return { success: false, error: "Vehicle not found." };
   if (vehicle.status !== "available") return { success: false, error: "That vehicle is no longer available." };
 
+  // One open rental per renter. A double click, or scheduling twice from two tabs, must not create a second one.
+  // (A renter coming back after a finished or cancelled rental is fine.)
+  const { data: openRentals } = await supabase
+    .from("rental")
+    .select("id")
+    .eq("customer_id", application.customer_id)
+    .not("status", "in", "(returned,closed,cancelled,terminated)")
+    .limit(1);
+  if ((openRentals ?? []).length > 0) {
+    return { success: false, error: "This renter already has an open rental. Finish or cancel it before scheduling another." };
+  }
+
   const { data: channel } = await supabase
     .from("booking_channel")
     .select("id")
@@ -189,6 +201,33 @@ export async function scheduleRental(
     agreedWeeklyRate = weekly.amount;
   }
 
+  // Claim the vehicle first, in one step that only succeeds if it is still available, so two people
+  // scheduling the same car can't both get it.
+  const { data: claimedVehicle, error: claimError } = await supabase
+    .from("vehicle")
+    .update({ status: "reserved" })
+    .eq("id", vehicleId)
+    .eq("status", "available")
+    .select("id");
+  if (claimError) {
+    const msg = claimError.message?.toLowerCase().includes("permission")
+      ? "You don’t have permission to update vehicle status."
+      : "Couldn’t reserve the vehicle. Please try again.";
+    return { success: false, error: msg };
+  }
+  if (!claimedVehicle || claimedVehicle.length === 0) return { success: false, error: "That vehicle is no longer available." };
+
+  // If anything below fails, put everything back so no half-made rental or stuck vehicle is left behind.
+  let bookingId: string | null = null;
+  let rentalId: string | null = null;
+  const undo = async (message: string): Promise<{ success: false; error: string }> => {
+    if (rentalId) await supabase.from("rental_segment").delete().eq("rental_id", rentalId);
+    if (rentalId) await supabase.from("rental").update({ status: "cancelled" }).eq("id", rentalId);
+    if (bookingId) await supabase.from("booking").update({ status: "cancelled" }).eq("id", bookingId);
+    await supabase.from("vehicle").update({ status: "available" }).eq("id", vehicleId).eq("status", "reserved");
+    return { success: false, error: message };
+  };
+
   const plannedPickupAt = new Date();
   const plannedReturnAt = new Date(plannedPickupAt.getTime() + days * 24 * 60 * 60 * 1000);
 
@@ -207,7 +246,8 @@ export async function scheduleRental(
     .select("id")
     .single();
 
-  if (bookingError || !booking) return { success: false, error: "Couldn’t create the booking. Please try again." };
+  if (bookingError || !booking) return await undo("Couldn’t create the booking. Please try again.");
+  bookingId = booking.id;
 
   const { data: rental, error: rentalError } = await supabase
     .from("rental")
@@ -225,7 +265,8 @@ export async function scheduleRental(
     .select("id")
     .single();
 
-  if (rentalError || !rental) return { success: false, error: "Couldn’t create the rental. Please try again." };
+  if (rentalError || !rental) return await undo("Couldn’t create the rental. Please try again.");
+  rentalId = rental.id;
 
   for (const status of ["approved", "scheduled"] as const) {
     const { error } = await supabase.from("rental").update({ status }).eq("id", rental.id);
@@ -233,7 +274,7 @@ export async function scheduleRental(
       const msg = error.message?.toLowerCase().includes("permission")
         ? "You don’t have permission to schedule a rental."
         : `Couldn’t move the rental to "${status}".`;
-      return { success: false, error: msg };
+      return await undo(msg);
     }
   }
 
@@ -247,22 +288,14 @@ export async function scheduleRental(
     const msg = segmentError.message?.toLowerCase().includes("permission")
       ? "You don’t have permission to assign a vehicle."
       : "Couldn’t assign the vehicle. Please try again.";
-    return { success: false, error: msg };
-  }
-
-  const { error: vehicleError } = await supabase.from("vehicle").update({ status: "reserved" }).eq("id", vehicleId);
-  if (vehicleError) {
-    const msg = vehicleError.message?.toLowerCase().includes("permission")
-      ? "You don’t have permission to update vehicle status."
-      : "Couldn’t reserve the vehicle.";
-    return { success: false, error: msg };
+    return await undo(msg);
   }
 
   // Weekly payment schedule only created when explicitly approved (0038)
   // -- fixed a real bug where an unapproved draft rate would have been
   // silently used otherwise.
   if (agreedWeeklyRate !== null) {
-    await supabase.from("payment_schedule").insert({
+    const { error: scheduleError } = await supabase.from("payment_schedule").insert({
       tenant_id: application.tenant_id,
       rental_id: rental.id,
       cadence: "weekly",
@@ -270,6 +303,7 @@ export async function scheduleRental(
       amount: agreedWeeklyRate,
       status: "active",
     });
+    if (scheduleError) return await undo("Couldn’t set up the weekly payment schedule. Nothing was scheduled; please try again.");
   }
 
   revalidatePath(`/staff/applications/${applicationId}`);
@@ -705,7 +739,7 @@ export async function confirmPickup(
   const sent = await sendPostPickupMessage(rental.id);
   const rulesSent = sent.sms === "sent" || sent.email === "sent";
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "rental_pickup_confirmed",
     entityType: "rental",
@@ -787,7 +821,7 @@ export async function confirmDropoff(
 
   revalidatePath("/staff/fleet");
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "rental_dropoff_confirmed",
     entityType: "rental",
@@ -815,7 +849,8 @@ export async function recordPayment(
   if (!(ACCEPTED_PAYMENT_METHODS as readonly string[]).includes(methodType)) {
     return { success: false, error: "Only card payments are accepted (in the renter’s own name). Cash isn’t accepted." };
   }
-  if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: "Enter a valid amount." };
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 50000) return { success: false, error: "Enter an amount between $0.01 and $50,000." };
+  amount = Math.round(amount * 100) / 100;
   if (kind !== "rent" && kind !== "deposit") return { success: false, error: "Choose rent or deposit." };
 
   const { data: rental } = await supabase
@@ -865,29 +900,37 @@ export async function recordPayment(
       .eq("rental_id", rentalId)
       .eq("status", "held")
       .maybeSingle();
+    let depositError: unknown = null;
     if (existing) {
-      await supabase
+      const { error: upErr } = await supabase
         .from("deposit")
         .update({
           amount_collected: Number(existing.amount_collected) + amount,
           refundable_amount: Number(existing.refundable_amount ?? existing.amount_collected) + amount,
         })
         .eq("id", existing.id);
+      depositError = upErr;
     } else {
-      await supabase.from("deposit").insert({
+      const { error: insErr } = await supabase.from("deposit").insert({
         tenant_id: rental.tenant_id,
         rental_id: rentalId,
         amount_collected: amount,
         refundable_amount: amount,
         status: "held",
       });
+      depositError = insErr;
+    }
+    if (depositError) {
+      console.error("[recordPayment] deposit hold not updated:", (depositError as { message?: string }).message);
+      await logAuditEvent({ tenantId: rental.tenant_id, action: "payment_recorded", entityType: "payment", entityId: payment?.id ?? rentalId, afterData: { amount, methodType, rentalId, kind, depositHoldFailed: true }, source: "staff_portal" });
+      return { success: false, error: "The payment was saved, but the deposit hold wasn’t updated. Don’t enter it again. Ask an admin to fix the deposit." };
     }
   }
 
   revalidatePath("/staff/fleet");
 
   if (payment) {
-    void logAuditEvent({
+    await logAuditEvent({
       tenantId: rental.tenant_id,
       action: "payment_recorded",
       entityType: "payment",
@@ -971,7 +1014,7 @@ export async function changeRentalInsurance(
       .eq("id", rentalId);
     if (rentalError) return { success: false, error: "The schedule was updated but the rental record wasn’t. Please contact support." };
 
-    void logAuditEvent({
+    await logAuditEvent({
       tenantId: rental.tenant_id,
       action: "rental.insurance_arrangement_changed",
       entityType: "rental",
@@ -1007,7 +1050,7 @@ export async function changeRentalInsurance(
   const { error: rentalError } = await supabase.from("rental").update({ insurance_arrangement: arrangement }).eq("id", rentalId);
   if (rentalError) return { success: false, error: "The quote was updated but the rental record wasn’t. Please contact support." };
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "rental.insurance_arrangement_changed",
     entityType: "rental",
@@ -1040,7 +1083,7 @@ export async function resolvePickupFollowup(rentalId: string): Promise<{ success
   const { error } = await supabase.from("rental").update({ needs_human_followup: false }).eq("id", rentalId);
   if (error) return { success: false, error: "Couldn’t mark that as handled. Please try again." };
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "rental.pickup_followup_resolved",
     entityType: "rental",

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient } from "@supabase/supabase-js";
 
 // Internal-only endpoint, called by the n8n "Application Nudge - Call
@@ -13,8 +14,7 @@ import { createClient } from "@supabase/supabase-js";
 // ever writes the call-tracking fields themselves.
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

@@ -17,7 +17,7 @@ export default async function TeamPage() {
       <InviteForm roles={roles} />
 
       <div style={{ marginTop: 24 }}>
-        <TeamList staff={staff} invites={invites} />
+        <TeamList staff={staff} invites={invites} roles={roles} />
       </div>
     </div>
   );

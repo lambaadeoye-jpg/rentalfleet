@@ -35,12 +35,15 @@ export async function updateSession(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value;
         },
+        // Write onto the one response (and the request, so this same request sees the refreshed session).
+        // Re-creating the response on every call would drop the earlier cookies when the session is split
+        // across several cookies.
         set(name: string, value: string, options: CookieOptions) {
-          response = NextResponse.next({ request: { headers: request.headers } });
+          request.cookies.set(name, value);
           response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: CookieOptions) {
-          response = NextResponse.next({ request: { headers: request.headers } });
+          request.cookies.set(name, "");
           response.cookies.set({ name, value: "", ...options });
         },
       },

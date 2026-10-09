@@ -50,7 +50,7 @@ export async function applyReferralCredit(
     return { success: false, error: "Couldn’t apply that credit. Please try again." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: customer.tenant_id,
     action: "referral_credit_applied",
     entityType: "customer",

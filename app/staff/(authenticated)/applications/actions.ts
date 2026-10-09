@@ -68,7 +68,7 @@ export async function decideApplication(
   });
 
   if (application?.tenant_id) {
-    void logAuditEvent({
+    await logAuditEvent({
       tenantId: application.tenant_id,
       action: "application_decision",
       entityType: "application",

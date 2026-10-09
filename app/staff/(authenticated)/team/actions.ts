@@ -58,8 +58,8 @@ export async function getRoles(): Promise<{ id: string; name: string }[]> {
 // action -- an invite that exists in the database but was never emailed
 // would just be a confusing dead end for whoever created it.
 export async function inviteStaffMember(email: string, roleId: string): Promise<{ success: boolean; error?: string }> {
-  const trimmed = email.trim();
-  if (!trimmed) return { success: false, error: "Enter an email address." };
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { success: false, error: "Enter a valid email address." };
 
   const supabase = await createClient();
   const {
@@ -102,7 +102,8 @@ export async function inviteStaffMember(email: string, roleId: string): Promise<
   if (emailError) {
     // The invite record exists even if the email send failed -- worth
     // surfacing distinctly rather than implying nothing happened.
-    return { success: false, error: `Invite created, but the email couldn’t be sent: ${emailError.message}` };
+    console.error("[team] invite email failed:", emailError.message);
+    return { success: false, error: "The invite was saved, but the email couldn’t be sent. Revoke it and try again in a minute." };
   }
 
   revalidatePath("/staff/team");
@@ -119,6 +120,62 @@ export async function revokeInvite(inviteId: string): Promise<{ success: boolean
     }
     return { success: false, error: "Couldn’t revoke that invite. Please try again." };
   }
+
+  revalidatePath("/staff/team");
+  return { success: true };
+}
+
+async function adminCount(supabase: Awaited<ReturnType<typeof createClient>>): Promise<number> {
+  const { data } = await supabase.from("membership").select("user_id, role:role_id(name)");
+  return (data ?? []).filter((m) => (m.role as any)?.name === "admin").length;
+}
+
+// Takes a person off the team (they can no longer open the staff area). Never yourself, never the last admin.
+export async function removeStaffMember(userId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not signed in." };
+  if (userId === user.id) return { success: false, error: "You can’t remove yourself. Ask another admin." };
+
+  const { data: target } = await supabase.from("membership").select("user_id, role:role_id(name)").eq("user_id", userId).maybeSingle();
+  if (!target) return { success: false, error: "That person isn’t on the team any more. Refresh the page." };
+  if ((target.role as any)?.name === "admin" && (await adminCount(supabase)) <= 1) {
+    return { success: false, error: "That is the only admin. Add another admin first." };
+  }
+
+  const { data: removed, error } = await supabase.from("membership").delete().eq("user_id", userId).select("user_id");
+  if (error) {
+    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don’t have permission to remove staff." };
+    return { success: false, error: "Couldn’t remove that person. Please try again." };
+  }
+  if (!removed || removed.length === 0) return { success: false, error: "Couldn’t remove that person. You may not have permission." };
+
+  revalidatePath("/staff/team");
+  return { success: true };
+}
+
+export async function changeStaffRole(userId: string, roleId: string): Promise<{ success: boolean; error?: string }> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not signed in." };
+  if (userId === user.id) return { success: false, error: "You can’t change your own role. Ask another admin." };
+
+  const [{ data: target }, { data: newRole }] = await Promise.all([
+    supabase.from("membership").select("user_id, role:role_id(name)").eq("user_id", userId).maybeSingle(),
+    supabase.from("role").select("id, name").eq("id", roleId).maybeSingle(),
+  ]);
+  if (!target) return { success: false, error: "That person isn’t on the team any more. Refresh the page." };
+  if (!newRole) return { success: false, error: "Choose a role." };
+  if ((target.role as any)?.name === "admin" && newRole.name !== "admin" && (await adminCount(supabase)) <= 1) {
+    return { success: false, error: "That is the only admin. Add another admin first." };
+  }
+
+  const { data: updated, error } = await supabase.from("membership").update({ role_id: roleId }).eq("user_id", userId).select("user_id");
+  if (error) {
+    if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don’t have permission to change roles." };
+    return { success: false, error: "Couldn’t change the role. Please try again." };
+  }
+  if (!updated || updated.length === 0) return { success: false, error: "Couldn’t change the role. You may not have permission." };
 
   revalidatePath("/staff/team");
   return { success: true };

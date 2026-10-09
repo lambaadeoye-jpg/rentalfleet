@@ -1,4 +1,5 @@
 import { unsubscribeUrl } from "@/lib/unsubscribe";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
@@ -17,8 +18,7 @@ import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
 const RETRY_MINUTES = 5;
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -46,6 +46,15 @@ export async function POST(request: Request) {
     now: new Date(),
   };
 
+  // A text that went out must be marked sent, or a later run could send it again. Retry once, and make noise if it still fails.
+  async function mark(id: string, patch: Record<string, unknown>): Promise<void> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { error } = await supabase.from("outreach_message").update(patch).eq("id", id);
+      if (!error) return;
+      if (attempt === 1) console.error("[outreach] COULD NOT RECORD STATUS (risk of a duplicate send) for", id, error.message);
+    }
+  }
+
   const counts = { sent: 0, skipped: 0, deferred: 0, retry: 0, failed: 0 };
   for (const row of (claimed ?? []) as ClaimedRow[]) {
     let outcome;
@@ -57,9 +66,9 @@ export async function POST(request: Request) {
 
     if (outcome.kind === "sent") {
       counts.sent++;
-      await supabase.from("outreach_message").update({
+      await mark(row.id, {
         status: "sent", sent_at: new Date().toISOString(), provider_message_id: outcome.providerId ?? null, error: null,
-      }).eq("id", row.id);
+      });
       if (row.channel === "sms" && outcome.body) {
         // Show automated texts in the Inbox thread so staff see the full conversation.
         await supabase.from("communication_event").insert({
@@ -71,7 +80,7 @@ export async function POST(request: Request) {
       }
     } else if (outcome.kind === "skipped") {
       counts.skipped++;
-      await supabase.from("outreach_message").update({ status: "skipped", skip_reason: outcome.reason }).eq("id", row.id);
+      await mark(row.id, { status: "skipped", skip_reason: outcome.reason });
     } else if (outcome.kind === "deferred") {
       counts.deferred++;
       // Deferral is not an attempt.
@@ -83,16 +92,16 @@ export async function POST(request: Request) {
         attempts: Math.max(0, row.attempts - 1), skip_reason: null, error: outcome.reason,
       };
       if (outcome.reason !== "sms_provider_not_configured") patch.scheduled_for = outcome.until.toISOString();
-      await supabase.from("outreach_message").update(patch).eq("id", row.id);
+      await mark(row.id, patch);
     } else if (outcome.final) {
       counts.failed++;
-      await supabase.from("outreach_message").update({ status: "failed", error: outcome.error }).eq("id", row.id);
+      await mark(row.id, { status: "failed", error: outcome.error });
     } else {
       counts.retry++;
-      await supabase.from("outreach_message").update({
+      await mark(row.id, {
         status: "queued", claimed_at: null, error: outcome.error,
         scheduled_for: new Date(Date.now() + RETRY_MINUTES * 60 * 1000).toISOString(),
-      }).eq("id", row.id);
+      });
     }
   }
 

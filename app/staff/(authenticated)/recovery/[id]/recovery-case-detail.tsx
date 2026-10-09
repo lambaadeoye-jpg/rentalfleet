@@ -22,8 +22,11 @@ export default function RecoveryCaseDetailClient({ recoveryCase }: { recoveryCas
   const [error, setError] = useState<string | null>(null);
 
   async function handleAuthorize() {
+    if (!window.confirm("Authorize recovery action on this rental? This is a formal step and is recorded under your name.")) return;
+    setError(null);
     setLoading(true);
-    const result = await authorizeRecoveryCase(recoveryCase.id);
+    let result: { success: boolean; error?: string };
+    try { result = await authorizeRecoveryCase(recoveryCase.id); } catch { setLoading(false); setError("Couldn’t authorize. Please try again."); return; }
     setLoading(false);
     if (!result.success) {
       setError(result.error ?? "Couldn’t authorize.");
@@ -33,8 +36,11 @@ export default function RecoveryCaseDetailClient({ recoveryCase }: { recoveryCas
   }
 
   async function handleClose() {
+    if (!window.confirm("Close this recovery case?")) return;
+    setError(null);
     setLoading(true);
-    const result = await closeRecoveryCase(recoveryCase.id);
+    let result: { success: boolean; error?: string };
+    try { result = await closeRecoveryCase(recoveryCase.id); } catch { setLoading(false); setError("Couldn’t close. Please try again."); return; }
     setLoading(false);
     if (!result.success) {
       setError(result.error ?? "Couldn’t close.");
@@ -57,9 +63,11 @@ export default function RecoveryCaseDetailClient({ recoveryCase }: { recoveryCas
   }
 
   async function handleApprove(expenseId: string) {
+    if (!window.confirm("Approve this cost? If the renter is responsible it becomes a charge, taken from their deposit when one is held.")) return;
     setError(null);
     setApprovingId(expenseId);
-    const result = await approveRecoveryExpense(expenseId);
+    let result: { success: boolean; error?: string };
+    try { result = await approveRecoveryExpense(expenseId); } catch { setApprovingId(null); setError("Couldn’t approve that expense. Check the case before trying again."); return; }
     setApprovingId(null);
     if (!result.success) {
       setError(result.error ?? "Couldn’t approve that expense.");

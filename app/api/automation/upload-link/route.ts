@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateUploadToken, uploadLinkUrl } from "@/lib/upload-token";
 import { isUploadDocumentType, UPLOAD_DOCUMENT_TYPES } from "@/lib/upload-validation";
@@ -9,8 +10,7 @@ import { isUploadDocumentType, UPLOAD_DOCUMENT_TYPES } from "@/lib/upload-valida
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const admin = createAdminClient();

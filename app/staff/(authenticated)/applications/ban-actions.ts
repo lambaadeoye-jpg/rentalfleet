@@ -43,7 +43,7 @@ export async function addToDoNotRent(customerId: string, reasonText: string): Pr
     if (error.message?.toLowerCase().includes("permission")) return { success: false, error: "You don’t have permission to change the do-not-rent list." };
     return { success: false, error: "Couldn’t save. Please try again." };
   }
-  void logAuditEvent({ tenantId: c.tenant_id, action: "do_not_rent_added", entityType: "customer", entityId: customerId, afterData: { reason: check.reason }, source: "staff_portal" });
+  await logAuditEvent({ tenantId: c.tenant_id, action: "do_not_rent_added", entityType: "customer", entityId: customerId, afterData: { reason: check.reason }, source: "staff_portal" });
   revalidatePath("/staff/applications");
   return { success: true };
 }
@@ -64,7 +64,7 @@ export async function liftDoNotRent(banId: string): Promise<{ success: boolean; 
     return { success: false, error: "Couldn’t save. Please try again." };
   }
   if (!data || data.length === 0) return { success: false, error: "That ban was already lifted." };
-  void logAuditEvent({ tenantId: data[0].tenant_id, action: "do_not_rent_lifted", entityType: "customer", entityId: data[0].customer_id ?? banId, source: "staff_portal" });
+  await logAuditEvent({ tenantId: data[0].tenant_id, action: "do_not_rent_lifted", entityType: "customer", entityId: data[0].customer_id ?? banId, source: "staff_portal" });
   revalidatePath("/staff/applications");
   return { success: true };
 }

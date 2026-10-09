@@ -108,7 +108,7 @@ export async function addRedFlagEntry(fields: {
     return { success: false, error: "Couldn’t add that entry. Please try again." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: tenantRow.id,
     action: "red_flag_added",
     entityType: "red_flag",
@@ -148,7 +148,7 @@ export async function resolveRedFlagEntry(entryId: string, note: string): Promis
     return { success: false, error: "Couldn’t resolve that entry." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: entry.tenant_id,
     action: "red_flag_resolved",
     entityType: "red_flag",

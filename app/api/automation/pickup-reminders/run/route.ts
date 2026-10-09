@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient } from "@supabase/supabase-js";
 import { decideReminder, type DueMessage } from "@/lib/pickup-reminders";
 import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
@@ -15,8 +16,7 @@ import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
 type Claimed = DueMessage & { id: string; tenant_id: string; rental_id: string; customer_id: string };
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

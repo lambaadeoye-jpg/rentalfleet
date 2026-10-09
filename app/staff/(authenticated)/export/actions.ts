@@ -38,7 +38,7 @@ async function exportTable(
   const { data: { user } } = await supabase.auth.getUser();
   const { data: member } = user ? await supabase.from("membership").select("tenant_id").eq("user_id", user.id).limit(1).maybeSingle() : { data: null };
   if (member?.tenant_id) {
-    void logAuditEvent({ tenantId: member.tenant_id, action: "data_exported", entityType: "export", entityId: member.tenant_id, afterData: { table: name, rows: rows.length }, source: "staff_portal" });
+    await logAuditEvent({ tenantId: member.tenant_id, action: "data_exported", entityType: "export", entityId: member.tenant_id, afterData: { table: name, rows: rows.length }, source: "staff_portal" });
   }
   return toCsv(rows, headers);
 }

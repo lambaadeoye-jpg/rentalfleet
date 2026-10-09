@@ -59,10 +59,12 @@ create table if not exists rental_segment (
 -- authorized_driver.rental_id and customer_document.rental_id were created
 -- without a foreign key because `rental` did not exist yet at that point in
 -- the migration order. Attaching now that it does.
+alter table authorized_driver drop constraint if exists authorized_driver_rental_id_fkey;
 alter table authorized_driver
   add constraint authorized_driver_rental_id_fkey
   foreign key (rental_id) references rental(id);
 
+alter table customer_document drop constraint if exists customer_document_rental_id_fkey;
 alter table customer_document
   add constraint customer_document_rental_id_fkey
   foreign key (rental_id) references rental(id);

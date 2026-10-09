@@ -108,7 +108,7 @@ export async function startMaintenanceJob(input: {
     return { success: true, note: "Job started, but the car’s status didn’t change. Tell the office so nobody books it." };
   }
 
-  void logAuditEvent({ tenantId: car.tenant_id, action: "maintenance_job_started", entityType: "maintenance_work_order", entityId: job.id, afterData: { vehicleId: car.id, performedBy: check.value.performedBy }, source: "staff_portal" });
+  await logAuditEvent({ tenantId: car.tenant_id, action: "maintenance_job_started", entityType: "maintenance_work_order", entityId: job.id, afterData: { vehicleId: car.id, performedBy: check.value.performedBy }, source: "staff_portal" });
   revalidatePath("/staff/fleet/maintenance");
   revalidatePath("/staff/fleet");
   return { success: true };
@@ -177,7 +177,7 @@ export async function finishMaintenanceJob(jobId: string, costText: string, clos
     if (carError) return { success: true, note: "Job saved, but the car’s status didn’t update. Tell the office." };
   }
 
-  void logAuditEvent({ tenantId: job.tenant_id, action: check.outcome === "completed" ? "maintenance_job_completed" : "maintenance_job_submitted", entityType: "maintenance_work_order", entityId: jobId, afterData: { cost: check.cost }, source: "staff_portal" });
+  await logAuditEvent({ tenantId: job.tenant_id, action: check.outcome === "completed" ? "maintenance_job_completed" : "maintenance_job_submitted", entityType: "maintenance_work_order", entityId: jobId, afterData: { cost: check.cost }, source: "staff_portal" });
   revalidatePath("/staff/fleet/maintenance");
   revalidatePath("/staff/fleet");
   return check.outcome === "completed"

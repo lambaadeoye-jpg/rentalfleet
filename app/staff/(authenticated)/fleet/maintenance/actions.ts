@@ -77,11 +77,16 @@ export async function createWorkOrder(
   workType: string,
   notes: string
 ): Promise<{ success: boolean; error?: string; warning?: string }> {
-  if (!vehicleId) return { success: false, error: "Select a vehicle." };
+  if (!vehicleId || !UUID_RE.test(vehicleId)) return { success: false, error: "Select a vehicle." };
 
   const supabase = await createClient();
   const { data: tenantRow } = await supabase.from("tenant").select("id").limit(1).maybeSingle();
   if (!tenantRow) return { success: false, error: "Something went wrong. Please try again." };
+
+  const { data: car } = await supabase.from("vehicle").select("status").eq("id", vehicleId).maybeSingle();
+  if (!car) return { success: false, error: "Vehicle not found." };
+  if (car.status === "rented") return { success: false, error: "That car is out on a rental. End or swap the rental first, then log the work." };
+  if (car.status === "sold" || car.status === "decommissioned") return { success: false, error: "That car is no longer in the fleet." };
 
   const { data: workOrder, error } = await supabase
     .from("maintenance_work_order")
@@ -89,8 +94,8 @@ export async function createWorkOrder(
       tenant_id: tenantRow.id,
       vehicle_id: vehicleId,
       status: "open",
-      work_type: workType.trim() || null,
-      notes: notes.trim() || null,
+      work_type: workType.trim().slice(0, 120) || null,
+      notes: notes.trim().slice(0, 2000) || null,
       downtime_start: new Date().toISOString(),
     })
     .select("id")
@@ -102,6 +107,15 @@ export async function createWorkOrder(
     }
     return { success: false, error: "Couldn’t create that work order. Please try again." };
   }
+
+  await logAuditEvent({
+    tenantId: tenantRow.id,
+    action: "maintenance_work_order_created",
+    entityType: "maintenance_work_order",
+    entityId: workOrder?.id ?? vehicleId,
+    afterData: { vehicleId, workType },
+    source: "staff_portal",
+  });
 
   // Vehicle goes into maintenance status -- matches the already-seeded
   // available/rented -> maintenance transitions (checked against
@@ -121,30 +135,27 @@ export async function createWorkOrder(
     };
   }
 
-  void logAuditEvent({
-    tenantId: tenantRow.id,
-    action: "maintenance_work_order_created",
-    entityType: "maintenance_work_order",
-    entityId: workOrder?.id ?? "",
-    afterData: { vehicleId, workType },
-    source: "staff_portal",
-  });
-
   revalidatePath("/staff/fleet/maintenance");
   revalidatePath("/staff/fleet");
   return { success: true };
 }
 
 export async function completeWorkOrder(workOrderId: string, cost: number | null): Promise<{ success: boolean; error?: string }> {
+  if (!UUID_RE.test(workOrderId)) return { success: false, error: "Something went wrong. Please try again." };
+  if (cost != null && !(Number.isFinite(cost) && cost >= 0 && cost <= 100000)) return { success: false, error: "Enter a cost between $0 and $100,000." };
   const supabase = await createClient();
 
-  const { data: workOrder } = await supabase.from("maintenance_work_order").select("id, tenant_id, vehicle_id").eq("id", workOrderId).single();
+  const { data: workOrder } = await supabase.from("maintenance_work_order").select("id, tenant_id, vehicle_id, status").eq("id", workOrderId).single();
   if (!workOrder) return { success: false, error: "Work order not found." };
+  if (workOrder.status === "completed") return { success: false, error: "That job is already completed." };
 
-  const { error } = await supabase
+  // Only an unfinished job can be completed, and only once (a double click must not run this twice).
+  const { data: done, error } = await supabase
     .from("maintenance_work_order")
     .update({ status: "completed", downtime_end: new Date().toISOString(), cost })
-    .eq("id", workOrderId);
+    .eq("id", workOrderId)
+    .in("status", ["open", "pending_approval"])
+    .select("id");
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
@@ -152,12 +163,17 @@ export async function completeWorkOrder(workOrderId: string, cost: number | null
     }
     return { success: false, error: "Couldn’t update that work order." };
   }
+  if (!done || done.length === 0) return { success: false, error: "That job was already handled. Refresh the page." };
 
-  // Free the vehicle back to available -- matches the already-seeded
-  // maintenance -> available transition.
-  await supabase.from("vehicle").update({ status: "available" }).eq("id", workOrder.vehicle_id);
+  // Free the car only if no other job still has it, and only if it is actually in maintenance.
+  const { count: stillOpen } = await supabase.from("maintenance_work_order").select("id", { count: "exact", head: true }).eq("vehicle_id", workOrder.vehicle_id).in("status", ["open", "pending_approval"]);
+  let warning: string | undefined;
+  if ((stillOpen ?? 0) === 0) {
+    const { error: freeError } = await supabase.from("vehicle").update({ status: "available" }).eq("id", workOrder.vehicle_id).eq("status", "maintenance");
+    if (freeError) warning = "The job is completed, but the car’s status couldn’t be changed. Update it on Fleet.";
+  }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: workOrder.tenant_id,
     action: "maintenance_work_order_completed",
     entityType: "maintenance_work_order",
@@ -168,7 +184,7 @@ export async function completeWorkOrder(workOrderId: string, cost: number | null
 
   revalidatePath("/staff/fleet/maintenance");
   revalidatePath("/staff/fleet");
-  return { success: true };
+  return warning ? { success: true, error: warning } : { success: true };
 }
 
 
@@ -210,14 +226,15 @@ export async function approveWorkOrder(workOrderId: string): Promise<Result> {
   if (w.status !== "pending_approval") return { success: false, error: "This one isn’t waiting for approval." };
 
   const now = new Date().toISOString();
-  const { error } = await supabase.from("maintenance_work_order").update({ status: "completed", approved_at: now, approved_by: me.id, downtime_end: now }).eq("id", workOrderId);
+  const { data: claimed, error } = await supabase.from("maintenance_work_order").update({ status: "completed", approved_at: now, approved_by: me.id, downtime_end: now }).eq("id", workOrderId).eq("status", "pending_approval").select("id");
   if (error) return { success: false, error: "Couldn’t approve that. Please try again." };
+  if (!claimed || claimed.length === 0) return { success: false, error: "That job was already handled. Refresh the page." };
 
-  // Free the car only if no other job still has it.
+  // Free the car only if no other job still has it, and only if it is actually in maintenance.
   const { count: stillOpen } = await supabase.from("maintenance_work_order").select("id", { count: "exact", head: true }).eq("vehicle_id", w.vehicle_id).in("status", ["open", "pending_approval"]);
-  if ((stillOpen ?? 0) === 0) await supabase.from("vehicle").update({ status: "available" }).eq("id", w.vehicle_id);
+  if ((stillOpen ?? 0) === 0) await supabase.from("vehicle").update({ status: "available" }).eq("id", w.vehicle_id).eq("status", "maintenance");
 
-  void logAuditEvent({ tenantId: w.tenant_id, action: "maintenance_job_approved", entityType: "maintenance_work_order", entityId: workOrderId, afterData: { cost: w.cost }, source: "staff_portal" });
+  await logAuditEvent({ tenantId: w.tenant_id, action: "maintenance_job_approved", entityType: "maintenance_work_order", entityId: workOrderId, afterData: { cost: w.cost }, source: "staff_portal" });
   revalidatePath("/staff/fleet/maintenance");
   revalidatePath("/staff/fleet");
   return { success: true };

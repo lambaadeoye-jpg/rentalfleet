@@ -41,9 +41,14 @@ export async function POST(request: Request) {
     params[key] = value;
   });
 
+  // Twilio signs the exact public URL it called. Behind the host's proxy request.url can differ (host, scheme),
+  // so also try the configured public address.
   const signature = request.headers.get("x-twilio-signature");
-  const fullUrl = request.url;
-  if (!signature || !verifyTwilioSignature(fullUrl, params, signature, authToken)) {
+  const reqUrl = new URL(request.url);
+  const siteBase = (process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/$/, "");
+  const candidateUrls = [process.env.TWILIO_INBOUND_URL, siteBase ? `${siteBase}${reqUrl.pathname}${reqUrl.search}` : null, request.url]
+    .filter((u): u is string => Boolean(u));
+  if (!signature || !candidateUrls.some((u) => verifyTwilioSignature(u, params, signature, authToken))) {
     console.error("[sms-inbound] Invalid Twilio signature -- rejecting");
     return new NextResponse("", { status: 403 });
   }
@@ -56,6 +61,12 @@ export async function POST(request: Request) {
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  // Twilio retries on any slow or failed reply. A message we already logged is acknowledged, not processed twice.
+  const { data: seen } = await supabase.from("communication_event").select("id").eq("channel", "sms").eq("direction", "inbound").eq("external_reference", messageSid).limit(1);
+  if (seen && seen.length > 0) {
+    return new NextResponse("<Response></Response>", { status: 200, headers: { "Content-Type": "text/xml" } });
+  }
 
   const { data: tenantRow } = await supabase.from("tenant").select("id").eq("status", "active").limit(1).maybeSingle();
   if (!tenantRow) {

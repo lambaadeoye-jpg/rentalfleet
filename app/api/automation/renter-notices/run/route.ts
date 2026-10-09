@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient } from "@supabase/supabase-js";
 import { decideNotice, type NoticeRow } from "@/lib/renter-notices";
 import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
@@ -15,8 +16,7 @@ import { cardUpdateUrl, CARD_LINK_HOURS } from "@/lib/card-update";
 type Claimed = NoticeRow & { id: string; tenant_id: string; customer_id: string; rental_id: string | null };
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

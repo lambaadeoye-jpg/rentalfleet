@@ -111,7 +111,7 @@ export async function getLicensePhotoUrl(rentalId: string): Promise<{ success: b
   if (!doc?.storage_key) return { success: false, error: "No license photo on file. Call the office." };
   const { data: signed } = await admin.storage.from("applicant-documents").createSignedUrl(doc.storage_key, 120);
   if (!signed?.signedUrl) return { success: false, error: "Couldn’t open the photo. Try again." };
-  void logAuditEvent({ tenantId: c.tenantId, action: "license_photo_viewed", entityType: "rental", entityId: rentalId, source: "staff_portal" });
+  await logAuditEvent({ tenantId: c.tenantId, action: "license_photo_viewed", entityType: "rental", entityId: rentalId, source: "staff_portal" });
   return { success: true, url: signed.signedUrl };
 }
 

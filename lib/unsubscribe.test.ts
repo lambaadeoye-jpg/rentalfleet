@@ -28,3 +28,16 @@ describe("unsubscribe token", () => {
     expect(maskEmail("samuel@example.com")).toBe("s*****@example.com");
   });
 });
+
+describe("unsubscribe token rotation", () => {
+  it("keeps links signed with the first secret valid after a second one is added", () => {
+    const original = process.env.AUTOMATION_API_SECRET;
+    process.env.AUTOMATION_API_SECRET = "one";
+    const token = makeUnsubscribeToken("a@b.com") as string;
+    process.env.AUTOMATION_API_SECRET = "two,one";
+    expect(verifyUnsubscribeToken(token)).toBe("a@b.com");
+    process.env.AUTOMATION_API_SECRET = "two";
+    expect(verifyUnsubscribeToken(token)).toBeNull();
+    if (original === undefined) delete process.env.AUTOMATION_API_SECRET; else process.env.AUTOMATION_API_SECRET = original;
+  });
+});

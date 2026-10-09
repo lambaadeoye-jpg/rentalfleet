@@ -47,7 +47,7 @@ export async function getVehicleOptions(): Promise<VehicleOption[]> {
 
 export async function getCustomerOptions(): Promise<CustomerOption[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("customer").select("id, first_name, last_name").order("created_at", { ascending: false }).limit(100);
+  const { data } = await supabase.from("customer").select("id, first_name, last_name").order("created_at", { ascending: false }).limit(500);
   return (data ?? []).map((c) => ({ id: c.id, label: `${c.first_name} ${c.last_name}` }));
 }
 
@@ -86,7 +86,7 @@ export async function logIncident(
     return { success: false, error: "Couldn’t log that incident. Please try again." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: tenantRow.id,
     action: "incident_logged",
     entityType: "incident",
@@ -114,7 +114,7 @@ export async function resolveIncident(incidentId: string): Promise<{ success: bo
     return { success: false, error: "Couldn’t resolve that incident." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: incident.tenant_id,
     action: "incident_resolved",
     entityType: "incident",

@@ -48,14 +48,24 @@ export default function MaintenanceList({
 
   async function handleComplete(workOrderId: string) {
     const cost = completeCost ? Number(completeCost) : null;
+    if (cost !== null && !Number.isFinite(cost)) { setError("Enter the cost as a number, like 120.50."); return; }
     const confirmed = window.confirm("Mark this work order complete and free the vehicle back to available?");
     if (!confirmed) return;
 
-    const result = await completeWorkOrder(workOrderId, cost);
+    setError(null);
+    setWarning(null);
+    let result: Awaited<ReturnType<typeof completeWorkOrder>>;
+    try {
+      result = await completeWorkOrder(workOrderId, cost);
+    } catch {
+      setError("Couldn’t complete that work order. Please try again.");
+      return;
+    }
     if (!result.success) {
       setError(result.error ?? "Couldn’t complete that work order.");
       return;
     }
+    if (result.error) setWarning(result.error);
     setCompletingId(null);
     setCompleteCost("");
     router.refresh();

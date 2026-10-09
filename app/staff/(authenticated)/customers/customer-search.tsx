@@ -73,6 +73,9 @@ export default function CustomerSearch({
           </tbody>
         </table>
       </div>
+      {customers.length >= 50 && (
+        <p className="muted-text" style={{ fontSize: 13, marginTop: 8 }}>Showing the newest 50. Type a name, email or phone number to find anyone else.</p>
+      )}
     </div>
   );
 }

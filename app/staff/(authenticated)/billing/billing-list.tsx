@@ -29,8 +29,10 @@ export default function BillingList({ rows }: { rows: BillingRow[] }) {
   }
 
   async function toggle(r: BillingRow) {
+    if (!window.confirm(r.paused ? "Turn automatic weekly billing back on for this renter? Their card is charged on the next due date." : "Pause automatic weekly billing for this renter? Nothing is charged until you turn it back on.")) return;
     setBusy(r.rentalId); setErr(null);
-    const res = await setPaused(r.rentalId, !r.paused);
+    let res: { success: boolean; error?: string };
+    try { res = await setPaused(r.rentalId, !r.paused); } catch { setBusy(null); setErr("Couldn’t update. Please try again."); return; }
     setBusy(null);
     if (!res.success) setErr(res.error ?? "Couldn’t update."); else router.refresh();
   }

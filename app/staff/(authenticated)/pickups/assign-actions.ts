@@ -25,7 +25,7 @@ export async function assignRunner(rentalId: string, runnerId: string | null): P
   const { error } = await supabase.from("rental").update({ assigned_runner_id: runnerId }).eq("id", rentalId);
   if (error) return { success: false, error: "Couldn’t save that. Please try again." };
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "rental_runner_assigned",
     entityType: "rental",

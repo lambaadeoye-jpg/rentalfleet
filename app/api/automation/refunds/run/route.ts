@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient } from "@supabase/supabase-js";
 import { processRefunds } from "@/lib/refunds";
 
@@ -6,8 +7,7 @@ import { processRefunds } from "@/lib/refunds";
 // approved refunds to Stripe. Approvals also send immediately; this is the safety net
 // that picks up anything that was approved while Stripe was unreachable or after a crash.
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -36,6 +36,13 @@ type DeviceRow = {
  */
 export async function ingestReadings(db: SupabaseClient, provider: string, readings: TrackerReading[]): Promise<IngestResult> {
   const result: IngestResult = { received: readings.length, stored: 0, unknownDevices: [], newAlerts: [] };
+  // A tracker with a wrong clock must not poison "last seen" or the position cache: drop readings from the
+  // future (beyond clock drift) or older than 30 days, and anything with an unreadable time.
+  const nowMs = Date.now();
+  readings = readings.filter((r) => {
+    const t = Date.parse(r.occurredAt);
+    return Number.isFinite(t) && t <= nowMs + 10 * 60 * 1000 && t >= nowMs - 30 * 24 * 60 * 60 * 1000;
+  });
   if (readings.length === 0) return result;
 
   const wantedIds = [...new Set(readings.map((r) => r.externalDeviceId))];
@@ -97,17 +104,21 @@ export async function ingestReadings(db: SupabaseClient, provider: string, readi
           .eq("status", "open")
           .in("alert_type", [...wanted.keys()]);
         const alreadyOpen = new Set((open ?? []).map((a: { alert_type: string }) => a.alert_type));
-        const fresh = [...wanted.values()].filter((r) => !alreadyOpen.has(r.alertType as string));
+        const candidates = [...wanted.values()].filter((r) => !alreadyOpen.has(r.alertType as string));
+        // One at a time: a unique index allows a single open alert per type per vehicle, so a concurrent
+        // webhook that got there first just means "already open", not a failure.
+        const fresh: TrackerReading[] = [];
+        for (const r of candidates) {
+          const { error: alertError } = await db.from("telematics_alert").insert({
+            tenant_id: device.tenant_id,
+            vehicle_id: device.vehicle_id,
+            alert_type: r.alertType,
+            severity: r.severity ?? "warning",
+          });
+          if (!alertError) fresh.push(r);
+          else if (alertError.code !== "23505") throw new Error(`alert save failed: ${alertError.message}`);
+        }
         if (fresh.length > 0) {
-          const { error: alertError } = await db.from("telematics_alert").insert(
-            fresh.map((r) => ({
-              tenant_id: device.tenant_id,
-              vehicle_id: device.vehicle_id,
-              alert_type: r.alertType,
-              severity: r.severity ?? "warning",
-            }))
-          );
-          if (alertError) throw new Error(`alert save failed: ${alertError.message}`);
           const { data: vehicle } = await db.from("vehicle").select("plate, year, make, model").eq("id", device.vehicle_id).maybeSingle();
           const name = [vehicle?.year, vehicle?.make, vehicle?.model].filter(Boolean).join(" ") || "Vehicle";
           for (const r of fresh) {

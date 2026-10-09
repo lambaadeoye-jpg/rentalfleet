@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
 import { resolveDeposit, DEPOSIT_MIN_USD, DEPOSIT_MAX_USD } from "@/lib/rental-rate";
+import { validatePricingMoney } from "@/lib/pricing-validate";
 import { DEFAULT_CANCELLATION_RULES, validateCancellationRules, type CancellationRules } from "@/lib/cancellation-policy";
 
 export type PricingRules = {
@@ -72,6 +73,9 @@ export async function updatePricingRules(rules: PricingRules): Promise<{ success
   const supabase = await createClient();
 
   // Server-side validation (the form is not a trust boundary).
+  if (!rules || typeof rules !== "object") return { success: false, error: "Couldn’t read the pricing form. Refresh and try again." };
+  const moneyProblem = validatePricingMoney(rules);
+  if (moneyProblem) return { success: false, error: moneyProblem };
   const dep = rules.deposit;
   if (dep?.approved) {
     const v = resolveDeposit(dep);
@@ -121,7 +125,7 @@ export async function updatePricingRules(rules: PricingRules): Promise<{ success
   }
 
   if (existing) {
-    void logAuditEvent({
+    await logAuditEvent({
       tenantId: existing.tenant_id,
       action: "pricing_updated",
       entityType: "policy_version",

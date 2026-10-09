@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient } from "@supabase/supabase-js";
 
 // Internal-only endpoint, called by the n8n "Call Outcome Report" workflow
@@ -32,6 +33,9 @@ const OUTCOME_TO_STAGE: Record<string, string> = {
   // reason -- don't move stage on a call that didn't actually reach anyone.
 };
 
+const STAGE_ORDER = ["new", "attempting_contact", "contacted", "qualified", "application_invited", "application_started",
+  "application_submitted", "screening", "approved", "booking", "converted"];
+
 const OUTCOME_LOST_REASON: Record<string, string> = {
   not_interested: "Not interested (AI qualification call)",
   not_qualified: "Not qualified (AI qualification call)",
@@ -43,8 +47,7 @@ const OUTCOME_LOST_REASON: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -72,22 +75,29 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "leadId and outcome are required" }, { status: 400 });
   }
 
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.leadId)) {
+    return NextResponse.json({ error: "leadId is not valid" }, { status: 400 });
+  }
+
   const supabase = createClient(supabaseUrl, serviceRoleKey);
 
   const updatePayload: Record<string, unknown> = {
     last_call_outcome: body.outcome,
     last_call_at: new Date().toISOString(),
-    last_call_summary: body.summary ?? null,
-    last_call_committed_time: body.committedTime ?? null,
+    last_call_summary: typeof body.summary === "string" ? body.summary.slice(0, 2000) : null,
+    last_call_committed_time: typeof body.committedTime === "string" ? body.committedTime.slice(0, 100) : null,
     needs_human_followup: body.needsHumanFollowup ?? false,
   };
 
   const mappedStage = OUTCOME_TO_STAGE[body.outcome];
   if (mappedStage) {
-    updatePayload.stage = mappedStage;
+    // A late call result must never pull a lead backwards (for example from "application submitted" to "contacted").
+    const { data: current } = await supabase.from("lead").select("stage").eq("id", body.leadId).maybeSingle();
+    const rank = (st: string | null | undefined) => (st ? STAGE_ORDER.indexOf(st) : -1);
+    if (!current || rank(current.stage) < rank(mappedStage)) updatePayload.stage = mappedStage;
   }
   const lostReason = OUTCOME_LOST_REASON[body.outcome];
-  if (lostReason) {
+  if (lostReason && updatePayload.stage !== undefined) {
     updatePayload.lost_reason = lostReason;
   }
 

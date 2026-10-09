@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { callerKey, isLockedOut, LOCKOUT_WINDOW_MINUTES } from "@/lib/caller-lockout";
 
@@ -189,8 +190,7 @@ async function applicationStatus(db: Db, tenantId: string, who: VerifiedCaller) 
 }
 
 export async function POST(request: Request) {
-  const secret = request.headers.get("x-automation-secret");
-  if (!secret || secret !== process.env.AUTOMATION_API_SECRET) {
+  if (!isAutomationAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

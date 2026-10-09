@@ -28,7 +28,7 @@ export async function getCharges(): Promise<ChargeRecord[]> {
     .from("charge")
     .select("id, charge_type, amount, responsibility, approval_status, deposit_id, created_at, customer:customer_id(first_name, last_name)")
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(300);
 
   return (data ?? []).map((c) => {
     const customer = c.customer as any;
@@ -52,7 +52,7 @@ export async function getActiveRentalsForCharging(): Promise<RentalOption[]> {
     .select("id, customer_id, customer:customer_id(first_name, last_name), deposit(id, status)")
     .in("status", ["active", "returned", "closed"])
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(300);
 
   return (data ?? []).map((r) => {
     const customer = r.customer as any;
@@ -75,11 +75,15 @@ export async function logCharge(
   amount: number,
   deductFromDeposit: boolean
 ): Promise<{ success: boolean; error?: string }> {
-  if (amount <= 0) return { success: false, error: "Enter a positive amount." };
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 50000) return { success: false, error: "Enter an amount between $0.01 and $50,000." };
+  if (!(CHARGE_TYPES as readonly string[]).includes(chargeType)) return { success: false, error: "Choose a charge type." };
+  amount = Math.round(amount * 100) / 100;
 
   const supabase = await createClient();
-  const { data: rental } = await supabase.from("rental").select("id, tenant_id").eq("id", rentalId).single();
+  // The renter comes from the rental itself, never from what the browser sent.
+  const { data: rental } = await supabase.from("rental").select("id, tenant_id, customer_id").eq("id", rentalId).single();
   if (!rental) return { success: false, error: "Rental not found." };
+  customerId = rental.customer_id;
 
   let depositId: string | null = null;
   if (deductFromDeposit) {
@@ -116,7 +120,7 @@ export async function logCharge(
     return { success: false, error: "Couldn’t log that charge. Please try again." };
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: rental.tenant_id,
     action: "charge_logged",
     entityType: "charge",
@@ -182,7 +186,7 @@ export async function approveCharge(chargeId: string): Promise<{ success: boolea
     await supabase.from("toll_transaction").update({ pay_by: payByFrom(new Date(), rules.ticketPayHours) }).eq("charge_id", chargeId).eq("kind", "citation");
   }
 
-  void logAuditEvent({
+  await logAuditEvent({
     tenantId: charge.tenant_id,
     action: "charge_approved",
     entityType: "charge",

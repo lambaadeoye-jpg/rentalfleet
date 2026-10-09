@@ -33,9 +33,11 @@ create table if not exists customer_note (
 alter table customer_note enable row level security;
 alter table customer_note force row level security;
 
+drop policy if exists tenant_isolation_select on customer_note;
 create policy tenant_isolation_select on customer_note for select
   using (tenant_id in (select app_current_tenant_ids()) and app_has_permission('approve_driver'));
 
+drop policy if exists tenant_isolation_insert on customer_note;
 create policy tenant_isolation_insert on customer_note for insert
   with check (tenant_id in (select app_current_tenant_ids()));
 
@@ -46,6 +48,7 @@ begin
 end;
 $$ language plpgsql set search_path = public;
 
+drop trigger if exists customer_note_write_guard on customer_note;
 create trigger customer_note_write_guard
   before insert on customer_note
   for each row execute function guard_customer_note_write();
