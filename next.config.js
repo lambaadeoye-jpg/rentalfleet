@@ -11,7 +11,7 @@ const contentSecurityPolicy = `
   default-src 'self';
   script-src 'self' 'unsafe-inline';
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob: https://tile.openstreetmap.org;
+  img-src 'self' data: blob: https://tile.openstreetmap.org ${supabaseUrl};
   font-src 'self';
   connect-src 'self' ${supabaseUrl};
   frame-ancestors 'none';

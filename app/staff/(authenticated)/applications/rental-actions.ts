@@ -2,9 +2,12 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
 import { currentRoleName } from "@/lib/staff-role";
+import { handoverMissing, validMileage } from "@/lib/handover";
+import { loadHandoverState, loadRuleValues, toHandoverState } from "@/lib/handover-server";
+import { briefingRules } from "@/lib/rental-rules";
+import { sendPostPickupMessage } from "@/lib/post-pickup";
 import { agreementAllowsHandover } from "@/lib/runner-access";
 import { calculateDailyRentalPrice } from "@/lib/pricing";
 import { validateRentalWindow, defaultDropoff, isDefaultDropoff } from "@/lib/rental-window";
@@ -604,6 +607,16 @@ export async function confirmPickup(
     }
   }
 
+  // A runner must finish the guided handover (ID check, photos, walkthrough video, rules explained) first.
+  // The agreement and the payment were checked above, so they count as done here.
+  if ((await currentRoleName(supabase)) === "field_staff") {
+    if (validMileage(startMileage) === null) return { success: false, error: "Enter the starting mileage as a whole number." };
+    const loaded = await loadHandoverState(supabase, rentalId);
+    const ruleIds = briefingRules(await loadRuleValues(supabase)).map((r) => r.id);
+    const missing = handoverMissing(toHandoverState(loaded, { agreementSigned: true, cardCharged: true }), ruleIds);
+    if (missing.length > 0) return { success: false, error: `Not ready yet. ${missing[0]}.` };
+  }
+
   const nowDate = new Date();
   const now = nowDate.toISOString();
 
@@ -662,25 +675,8 @@ export async function confirmPickup(
 
   revalidatePath("/staff/fleet");
 
-  // Fire-and-forget the review-request webhook, now carrying the current
-  // Google review link + Facebook ad URL from tenant_setting instead of
-  // requiring anyone to edit the n8n workflow directly when a new ad
-  // campaign starts.
-  const [{ data: customer }, { data: settings }] = await Promise.all([
-    supabase.from("customer").select("first_name, phone, email").eq("id", rental.customer_id).maybeSingle(),
-    supabase.from("tenant_setting").select("key, value").in("key", ["google_review_url", "facebook_ad_url"]),
-  ]);
-
-  const settingsMap = Object.fromEntries((settings ?? []).map((s) => [s.key, s.value]));
-
-  void fireN8nWebhook(N8N_WEBHOOK_PATHS.pickupReviewRequest, {
-    rentalId: rental.id,
-    customerFirstName: customer?.first_name ?? null,
-    customerPhone: customer?.phone ?? null,
-    customerEmail: customer?.email ?? null,
-    googleReviewUrl: settingsMap.google_review_url ?? null,
-    facebookAdUrl: settingsMap.facebook_ad_url ?? null,
-  });
+  // The renter gets their house rules (text + email) with the review link. Never blocks or fails the pickup.
+  await sendPostPickupMessage(rental.id);
 
   void logAuditEvent({
     tenantId: rental.tenant_id,

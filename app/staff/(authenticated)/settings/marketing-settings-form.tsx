@@ -53,8 +53,7 @@ export default function MarketingSettingsForm({
         />
       </label>
       <p className="muted-text" style={{ fontSize: 12, marginBottom: 16 }}>
-        Update this whenever a new ad campaign starts — every future pickup review request
-        will point to whatever’s saved here.
+        Saved for your reference. It is no longer sent in the pickup message.
       </p>
 
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}

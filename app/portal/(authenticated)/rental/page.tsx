@@ -47,6 +47,10 @@ export default async function PortalRentalPage() {
     <div style={{ padding: "24px 20px" }}>
       <h1 className="page-title" style={{ marginBottom: 16 }}>My rental</h1>
 
+      <a href="/portal/rules" className="card" style={{ marginBottom: 16, display: "block", textDecoration: "none", color: "inherit", fontWeight: 600 }}>
+        Rental rules: fees, drivers, where you can drive →
+      </a>
+
       <div className="card" style={{ marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <Car size={22} color="var(--teal)" />

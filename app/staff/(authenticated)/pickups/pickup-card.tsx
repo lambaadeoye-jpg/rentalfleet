@@ -8,6 +8,7 @@ import RentalMoneyPanel from "./rental-money-panel";
 import InspectionPhotoUpload from "./inspection-photo-upload";
 import type { PickupItem, RunnerOption } from "./list-actions";
 import AssignRunner from "./assign-runner";
+import PickupFlow from "./pickup-flow";
 
 export default function PickupCard({ item, locations, isRunner = false, runners = [] }: { item: PickupItem; locations: PickupLocationOption[]; isRunner?: boolean; runners?: RunnerOption[] }) {
   const router = useRouter();
@@ -207,6 +208,7 @@ export default function PickupCard({ item, locations, isRunner = false, runners 
           </button>
           </>)}
 
+          {isRunner ? <PickupFlow item={item} /> : (<>
           <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Pre-pickup checklist</p>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
             <ChecklistRow ok={item.hasLicenseDocument} label="Driver’s license on file" />
@@ -247,6 +249,7 @@ export default function PickupCard({ item, locations, isRunner = false, runners 
           <button onClick={handleConfirmPickup} disabled={loading || !readyChecks} className="button-primary">
             {loading ? "Confirming..." : "Confirm pickup"}
           </button>
+          </>)}
         </div>
       )}
     </div>
