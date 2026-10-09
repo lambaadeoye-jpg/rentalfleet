@@ -19,6 +19,7 @@ export async function createCheckoutSession(body: URLSearchParams, idempotencyKe
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": idempotencyKey },
       body,
+      signal: AbortSignal.timeout(15000),
     });
     const json: any = await res.json().catch(() => null);
     if (!res.ok || !json?.id || !json?.url) {
@@ -60,7 +61,7 @@ export async function fetchCardInfo(paymentIntentId: string): Promise<CardInfo |
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key || !/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId)) return null;
   try {
-    const res = await fetch(`${API}/payment_intents/${paymentIntentId}?expand[]=latest_charge`, { headers: { Authorization: `Bearer ${key}` } });
+    const res = await fetch(`${API}/payment_intents/${paymentIntentId}?expand[]=latest_charge`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(15000) });
     if (!res.ok) return null;
     return extractCardInfo(await res.json());
   } catch {
@@ -73,7 +74,7 @@ export async function fetchSetupIntentCard(setupIntentId: string): Promise<Setup
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key || !/^seti_[A-Za-z0-9_]+$/.test(setupIntentId)) return null;
   try {
-    const res = await fetch(`${API}/setup_intents/${setupIntentId}?expand[]=payment_method`, { headers: { Authorization: `Bearer ${key}` } });
+    const res = await fetch(`${API}/setup_intents/${setupIntentId}?expand[]=payment_method`, { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(15000) });
     if (!res.ok) return null;
     return extractSetupCard(await res.json());
   } catch {
@@ -94,6 +95,7 @@ export async function createRefund(
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": idempotencyKey },
       body,
+      signal: AbortSignal.timeout(15000),
     });
     const json: any = await res.json().catch(() => null);
     if (!res.ok || !json?.id) {
@@ -130,6 +132,7 @@ export async function chargeSavedCard(
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/x-www-form-urlencoded", "Idempotency-Key": idempotencyKey },
       body,
+      signal: AbortSignal.timeout(15000),
     });
     const json: any = await res.json().catch(() => null);
     return interpretChargeResponse(res.ok, res.status, json);

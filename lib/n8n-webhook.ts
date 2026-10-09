@@ -1,3 +1,4 @@
+import { after } from "next/server";
 // Fire-and-forget webhook calls to n8n, triggered by real app events (new
 // lead, application decision). Deliberately never throws and never blocks
 // the caller -- a notification failing must NEVER break the actual
@@ -47,7 +48,23 @@ export function n8nConfigured(): boolean {
   return Boolean(process.env.N8N_WEBHOOK_BASE_URL && process.env.N8N_WEBHOOK_SECRET);
 }
 
-export async function fireN8nWebhook(
+export function fireN8nWebhook(
+  path: (typeof N8N_WEBHOOK_PATHS)[keyof typeof N8N_WEBHOOK_PATHS],
+  payload: Record<string, unknown>
+): Promise<boolean> {
+  const delivery = deliverWebhook(path, payload);
+  // Callers often do `void fireN8nWebhook(...)`. On serverless hosting the function can be frozen
+  // as soon as the response is sent, which silently drops the call. `after` keeps it alive until
+  // the call finishes. Outside a request (tests, scripts) it throws and we just return the promise.
+  try {
+    after(() => delivery);
+  } catch {
+    /* not in a request scope */
+  }
+  return delivery;
+}
+
+async function deliverWebhook(
   path: (typeof N8N_WEBHOOK_PATHS)[keyof typeof N8N_WEBHOOK_PATHS],
   payload: Record<string, unknown>
 ): Promise<boolean> {

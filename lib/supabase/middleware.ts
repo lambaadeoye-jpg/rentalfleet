@@ -106,9 +106,18 @@ export async function updateSession(request: NextRequest) {
   // Field runners may only open their own few pages. The role is read from the database on every
   // office-page request (one small indexed lookup), never from a cookie the browser could change.
   if (isStaffArea && user && !runnerCanOpen(request.nextUrl.pathname)) {
-    const { data: membership, error: roleError } = await supabase.from("membership").select("role:role_id(name)").eq("user_id", user.id).maybeSingle();
-    // If the role can't be read, fail closed: send them to the runner home rather than guess.
-    if (roleError || (membership?.role as any)?.name === "field_staff") {
+    const { data: memberships, error: roleError } = await supabase.from("membership").select("role:role_id(name)").eq("user_id", user.id);
+    const roles = (memberships ?? []).map((m: any) => m.role?.name as string | undefined);
+    // A signed-in renter or applicant has no staff membership at all: they have no business in the office area.
+    // (The invite page is the one place a not-yet-member must reach: it is what creates the membership.)
+    const onInvitePage = request.nextUrl.pathname === "/staff/onboard" || request.nextUrl.pathname.startsWith("/staff/onboard/");
+    if (!roleError && roles.length === 0 && !onInvitePage) {
+      const redirectResponse = NextResponse.redirect(new URL("/staff/login", request.url));
+      for (const cookie of response.cookies.getAll()) redirectResponse.cookies.set(cookie);
+      return redirectResponse;
+    }
+    // Runner-only accounts stay on the runner pages. (Someone with more than one membership is judged by the best one.)
+    if (roleError || (roles.length > 0 && roles.every((r) => r === "field_staff"))) {
       const redirectResponse = NextResponse.redirect(new URL(RUNNER_HOME, request.url));
       for (const cookie of response.cookies.getAll()) redirectResponse.cookies.set(cookie);
       return redirectResponse;

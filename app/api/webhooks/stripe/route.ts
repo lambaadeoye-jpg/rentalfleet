@@ -69,7 +69,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, ignored: true });
   }
 
-  const card = await fetchCardInfo(ev.paymentIntentId);
+  let card = await fetchCardInfo(ev.paymentIntentId);
+  if (!card) card = await fetchCardInfo(ev.paymentIntentId); // one quick retry
+  if (!card) {
+    // Without the card details the renter would be recorded as paid but never get weekly auto-billing.
+    // Nothing has been recorded yet, so a 500 makes Stripe send this event again shortly.
+    console.error("[stripe webhook] could not read card details for", ev.paymentIntentId, "- asking Stripe to retry");
+    return NextResponse.json({ error: "card_lookup_failed" }, { status: 500 });
+  }
 
   // Does the name on the card match the renter? Informational, for staff at pickup.
   let nameOk = false;
