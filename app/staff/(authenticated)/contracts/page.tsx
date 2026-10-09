@@ -75,7 +75,7 @@ export default async function ContractsPage() {
                     {r.downloadUrl ? (
                       <a href={r.downloadUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal-dark)", fontWeight: 600, fontSize: 13 }}>View signed copy</a>
                     ) : r.state !== "signed" && (r.rentalStatus === "approved" || r.rentalStatus === "scheduled") ? (
-                      <SendAgreement rentalId={r.rentalId} hasLink={r.state === "waiting"} />
+                      <SendAgreement rentalId={r.rentalId} hasLink={r.state === "waiting"} phoneLast4={r.phoneLast4} />
                     ) : r.state !== "signed" && r.rentalStatus === "active" ? (
                       <span className="muted-text" style={{ fontSize: 12 }}>Links can only be made before pickup</span>
                     ) : null}

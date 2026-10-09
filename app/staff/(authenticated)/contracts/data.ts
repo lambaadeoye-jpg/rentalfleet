@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { agreementState, needsAttention, type AgreementState } from "@/lib/contracts";
+import { lastFour } from "@/lib/agreement-notice";
 
 export type ContractRow = {
   rentalId: string;
@@ -15,6 +16,8 @@ export type ContractRow = {
   version: number | null;
   linkExpiresAt: string | null;
   downloadUrl: string | null;
+  /** Last four digits of a usable phone number, or null when the renter can't be texted. */
+  phoneLast4: string | null;
 };
 
 const BUCKET = "applicant-documents"; // where signed agreements are stored (see agreement-actions.ts)
@@ -24,7 +27,7 @@ export async function loadContracts(): Promise<ContractRow[]> {
 
   const { data: rentals } = await supabase
     .from("rental")
-    .select("id, status, start_at, created_at, customer:customer_id(id, first_name, last_name), rental_segment(vehicle:vehicle_id(year, make, model, plate))")
+    .select("id, status, start_at, created_at, customer:customer_id(id, first_name, last_name, phone), rental_segment(vehicle:vehicle_id(year, make, model, plate))")
     .in("status", ["approved", "scheduled", "active", "returned", "closed"])
     .order("created_at", { ascending: false })
     .limit(150);
@@ -73,6 +76,7 @@ export async function loadContracts(): Promise<ContractRow[]> {
       signerName: signed?.signer_name ?? null,
       version: signedRequest?.document_version?.version ?? null,
       linkExpiresAt: state === "waiting" ? newest?.expires_at ?? null : null,
+      phoneLast4: lastFour(r.customer?.phone),
       downloadUrl: signed?.storage_key ? urlByPath.get(signed.storage_key) ?? null : null,
     };
   });
