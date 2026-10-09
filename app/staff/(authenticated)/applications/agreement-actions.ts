@@ -135,5 +135,6 @@ export async function createSigningLink(rentalId: string): Promise<{ success: bo
     return { success: false, error: "Couldn’t create the link. Please try again." };
   }
   revalidatePath("/staff/applications");
+  revalidatePath("/staff/contracts");
   return { success: true, url: signLinkUrl(token) };
 }

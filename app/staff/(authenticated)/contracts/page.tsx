@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { loadContracts } from "./data";
+import SendAgreement from "./send-agreement";
 import { STATE_LABELS, type AgreementState } from "@/lib/contracts";
 
 export const dynamic = "force-dynamic";
@@ -73,6 +74,10 @@ export default async function ContractsPage() {
                   <td>
                     {r.downloadUrl ? (
                       <a href={r.downloadUrl} target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal-dark)", fontWeight: 600, fontSize: 13 }}>View signed copy</a>
+                    ) : r.state !== "signed" && (r.rentalStatus === "approved" || r.rentalStatus === "scheduled") ? (
+                      <SendAgreement rentalId={r.rentalId} hasLink={r.state === "waiting"} />
+                    ) : r.state !== "signed" && r.rentalStatus === "active" ? (
+                      <span className="muted-text" style={{ fontSize: 12 }}>Links can only be made before pickup</span>
                     ) : null}
                   </td>
                 </tr>
