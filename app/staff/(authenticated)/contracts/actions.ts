@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createSigningLink } from "../applications/agreement-actions";
-import { agreementSmsBody, decideAgreementSms, phoneNorm } from "@/lib/agreement-notice";
+import { agreementSmsBody, decideAgreementEmail, decideAgreementSms, maskEmail, normalizeEmail, phoneNorm } from "@/lib/agreement-notice";
+import { fireN8nWebhook, n8nConfigured, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -68,4 +69,57 @@ export async function textSigningLink(rentalId: string): Promise<TextLinkResult>
   revalidatePath("/staff/contracts");
   revalidatePath("/staff/inbox");
   return { success: true, sentTo: `•••• ${norm?.slice(-4) ?? ""}` };
+}
+
+/**
+ * Creates the signing link and emails it through n8n. Same order of safety as the text:
+ * every rule is checked BEFORE the link is made, and the link is never stored in readable form.
+ */
+export async function emailSigningLink(rentalId: string): Promise<TextLinkResult> {
+  if (!UUID_RE.test(rentalId)) return { success: false, error: "Something went wrong. Please try again." };
+  const supabase = await createClient();
+
+  const { data: rental } = await supabase
+    .from("rental")
+    .select("id, tenant_id, customer_id, customer:customer_id(first_name, email)")
+    .eq("id", rentalId)
+    .maybeSingle();
+  if (!rental) return { success: false, error: "Rental not found." };
+  const customer = rental.customer as any;
+
+  const email = normalizeEmail(customer?.email);
+  let suppressed = false;
+  if (email) {
+    const { data: hit } = await supabase.from("contact_suppression").select("id").eq("tenant_id", rental.tenant_id).eq("email", email).maybeSingle();
+    suppressed = Boolean(hit);
+  }
+  const decision = decideAgreementEmail({ email: customer?.email ?? null, suppressed, emailConfigured: n8nConfigured() });
+  if (decision.action === "blocked") return { success: false, error: decision.message };
+
+  const made = await createSigningLink(rentalId);
+  if (!made.success || !made.url) return { success: false, error: made.error ?? "Couldn’t create the link." };
+
+  const delivered = await fireN8nWebhook(N8N_WEBHOOK_PATHS.agreementEmail, {
+    to: decision.to,
+    firstName: customer?.first_name ?? null,
+    signingUrl: made.url,
+    expiresInHours: 72,
+    supportPhone: (process.env.SUPPORT_PHONE || "").trim() || null,
+  });
+  if (!delivered) {
+    return { success: false, url: made.url, error: "The link was created but the email didn’t go out. Copy the link below and send it yourself." };
+  }
+
+  await supabase.from("communication_event").insert({
+    tenant_id: rental.tenant_id,
+    customer_id: rental.customer_id,
+    channel: "email",
+    direction: "outbound",
+    event_type: "message",
+    payload: { to: decision.to, body: "Rental agreement signing link emailed. [signing link]", automated: false, step: "agreement_link" },
+  });
+
+  revalidatePath("/staff/contracts");
+  revalidatePath("/staff/inbox");
+  return { success: true, sentTo: maskEmail(decision.to) ?? "the renter" };
 }

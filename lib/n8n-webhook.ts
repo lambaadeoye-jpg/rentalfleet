@@ -38,7 +38,14 @@ export const N8N_WEBHOOK_PATHS = {
   applicationDocumentUploaded: "fleet-rental-application-document-uploaded",
   // A tracker raised a new problem (unplugged, low battery, check engine). Receiver in n8n is optional.
   telematicsAlert: "fleet-rental-telematics-alert",
+  // Emails a renter their agreement-signing link. Fired from Contracts when staff choose "Email link".
+  agreementEmail: "fleet-rental-agreement-email",
 } as const;
+
+/** True when the app knows where n8n lives and has the shared secret, so a webhook can actually be delivered. */
+export function n8nConfigured(): boolean {
+  return Boolean(process.env.N8N_WEBHOOK_BASE_URL && process.env.N8N_WEBHOOK_SECRET);
+}
 
 export async function fireN8nWebhook(
   path: (typeof N8N_WEBHOOK_PATHS)[keyof typeof N8N_WEBHOOK_PATHS],

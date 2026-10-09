@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { agreementSmsBody, decideAgreementSms, lastFour, phoneNorm } from "./agreement-notice";
+import { agreementSmsBody, decideAgreementEmail, decideAgreementSms, lastFour, maskEmail, normalizeEmail, phoneNorm } from "./agreement-notice";
 
 // 615 = Nashville (Central). 2:00pm Central on a weekday in October is 19:00 UTC.
 const DAY = new Date("2026-10-09T19:00:00Z");
@@ -58,5 +58,25 @@ describe("agreementSmsBody", () => {
   });
   it("stays within two text segments", () => {
     expect(agreementSmsBody("Christopher", "https://rentzivo.com/sign/" + "x".repeat(43), "615-555-0100").length).toBeLessThan(320);
+  });
+});
+
+describe("agreement email", () => {
+  const ok = { email: " Jo.Smith@Gmail.com ", suppressed: false, emailConfigured: true };
+  it("normalizes and masks addresses", () => {
+    expect(normalizeEmail(" Jo@Example.COM ")).toBe("jo@example.com");
+    expect(normalizeEmail("nope")).toBeNull();
+    expect(normalizeEmail(null)).toBeNull();
+    expect(maskEmail("jo.smith@gmail.com")).toBe("jo•••@gmail.com");
+    expect(maskEmail("x")).toBeNull();
+  });
+  it("sends to a valid, opted-in address", () => {
+    expect(decideAgreementEmail(ok)).toEqual({ action: "send", to: "jo.smith@gmail.com" });
+  });
+  it("blocks for no email, opt-out, or missing setup", () => {
+    expect(decideAgreementEmail({ ...ok, email: null })).toMatchObject({ action: "blocked", code: "no_email" });
+    expect(decideAgreementEmail({ ...ok, email: "bad@" })).toMatchObject({ action: "blocked", code: "no_email" });
+    expect(decideAgreementEmail({ ...ok, suppressed: true })).toMatchObject({ action: "blocked", code: "suppressed" });
+    expect(decideAgreementEmail({ ...ok, emailConfigured: false })).toMatchObject({ action: "blocked", code: "not_configured" });
   });
 });

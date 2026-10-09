@@ -2,7 +2,7 @@
 // Same safeguards as every other automated text: opt-out list, texting hours by area code, "Reply STOP".
 
 import { isWithinSendWindow } from "./outreach-rules";
-import { toE164 } from "./contact-validation";
+import { isValidEmail, toE164 } from "./contact-validation";
 
 export type AgreementSmsDecision =
   | { action: "send"; to: string }
@@ -32,4 +32,30 @@ export function agreementSmsBody(firstName: string | null, url: string, support:
   const hi = firstName?.trim() ? `Hi ${firstName.trim()}, your` : "Your";
   const help = support ? ` Questions? ${support}.` : "";
   return `Zivo: ${hi} rental agreement is ready to review and sign: ${url} The link works for 72 hours.${help} Reply STOP to opt out.`;
+}
+
+export type AgreementEmailDecision =
+  | { action: "send"; to: string }
+  | { action: "blocked"; code: "no_email" | "suppressed" | "not_configured"; message: string };
+
+/** Lower-cased, trimmed address, or null if it isn't a usable email. */
+export function normalizeEmail(email: string | null | undefined): string | null {
+  const e = (email ?? "").trim().toLowerCase();
+  return e && isValidEmail(e) ? e : null;
+}
+
+/** "jo•••@gmail.com" -- enough for staff to confirm the right inbox without showing the whole address. */
+export function maskEmail(email: string | null | undefined): string | null {
+  const e = normalizeEmail(email);
+  if (!e) return null;
+  const [name, domain] = e.split("@");
+  return `${name.slice(0, 2)}•••@${domain}`;
+}
+
+export function decideAgreementEmail(input: { email: string | null; suppressed: boolean; emailConfigured: boolean }): AgreementEmailDecision {
+  const to = normalizeEmail(input.email);
+  if (!to) return { action: "blocked", code: "no_email", message: "There is no valid email address on file for this renter." };
+  if (input.suppressed) return { action: "blocked", code: "suppressed", message: "This renter opted out of emails. Create the link and send it another way." };
+  if (!input.emailConfigured) return { action: "blocked", code: "not_configured", message: "Email isn’t set up yet. Create the link and send it yourself." };
+  return { action: "send", to };
 }

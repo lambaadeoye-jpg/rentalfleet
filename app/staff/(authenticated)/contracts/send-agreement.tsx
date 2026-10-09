@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { createSigningLink } from "../applications/agreement-actions";
-import { textSigningLink } from "./actions";
+import { emailSigningLink, textSigningLink } from "./actions";
 
 // Same link the rental page makes: valid 72 hours, replaces any earlier unsigned link.
-export default function SendAgreement({ rentalId, hasLink, phoneLast4 }: { rentalId: string; hasLink: boolean; phoneLast4: string | null }) {
+export default function SendAgreement({ rentalId, hasLink, phoneLast4, emailMasked }: { rentalId: string; hasLink: boolean; phoneLast4: string | null; emailMasked: string | null }) {
   const [url, setUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -24,6 +24,22 @@ export default function SendAgreement({ rentalId, hasLink, phoneLast4 }: { renta
     if (res.success) setSentTo(res.sentTo ?? "the renter");
     else {
       setError(res.error ?? "Couldn’t send the text.");
+      if (res.url) setUrl(res.url);
+    }
+  }
+
+  async function email() {
+    const warn = hasLink ? " This cancels the link already sent." : "";
+    if (!window.confirm(`Email the signing link to ${emailMasked}?${warn}`)) return;
+    setBusy(true);
+    setError(null);
+    setSentTo(null);
+    setUrl(null);
+    const res = await emailSigningLink(rentalId);
+    setBusy(false);
+    if (res.success) setSentTo(res.sentTo ?? "the renter");
+    else {
+      setError(res.error ?? "Couldn’t send the email.");
       if (res.url) setUrl(res.url);
     }
   }
@@ -58,7 +74,14 @@ export default function SendAgreement({ rentalId, hasLink, phoneLast4 }: { renta
           </button>
         </div>
       )}
-      {sentTo && <p className="muted-text" style={{ fontSize: 12, marginBottom: 4 }}>Texted to {sentTo}. Good for 72 hours.</p>}
+      {emailMasked && (
+        <div style={{ marginBottom: 4 }}>
+          <button type="button" className="link-button" disabled={busy} onClick={email}>
+            {busy ? "Working…" : `Email link to renter (${emailMasked})`}
+          </button>
+        </div>
+      )}
+      {sentTo && <p className="muted-text" style={{ fontSize: 12, marginBottom: 4 }}>Sent to {sentTo}. Good for 72 hours.</p>}
       <button type="button" className="link-button" disabled={busy} onClick={create}>
         {busy ? "Creating…" : url ? "Create another link" : hasLink ? "Replace link" : "Create signing link"}
       </button>
