@@ -4,7 +4,7 @@
 export const RUNNER_HOME = "/staff/pickups";
 
 // Exact page or anything beneath it. Keep this list short: a page is only added when a runner needs it to do the job.
-const RUNNER_PATHS = ["/staff/pickups", "/staff/fleet/map", "/staff/report", "/staff/profile"] as const;
+const RUNNER_PATHS = ["/staff/pickups", "/staff/fleet/map", "/staff/fleet/maintenance", "/staff/report", "/staff/profile"] as const;
 
 export function runnerCanOpen(pathname: string): boolean {
   const clean = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
@@ -16,6 +16,7 @@ export type RunnerNavItem = { href: string; label: string };
 export const RUNNER_NAV: RunnerNavItem[] = [
   { href: "/staff/pickups", label: "My day" },
   { href: "/staff/fleet/map", label: "Fleet map" },
+  { href: "/staff/fleet/maintenance", label: "Maintenance" },
   { href: "/staff/report", label: "Report" },
   { href: "/staff/profile", label: "Profile" },
 ];

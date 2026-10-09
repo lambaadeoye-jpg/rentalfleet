@@ -3,14 +3,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createWorkOrder, completeWorkOrder, type WorkOrder, type VehicleOption } from "./actions";
+import WorkOrderExtras, { LimitSetting } from "./work-order-extras";
 import { sentenceCase } from "@/lib/format-label";
 
 export default function MaintenanceList({
   initialWorkOrders,
   vehicles,
+  runners,
+  limit,
 }: {
   initialWorkOrders: WorkOrder[];
   vehicles: VehicleOption[];
+  runners: { id: string; name: string }[];
+  limit: number;
 }) {
   const router = useRouter();
   const [vehicleId, setVehicleId] = useState("");
@@ -58,6 +63,7 @@ export default function MaintenanceList({
 
   return (
     <div style={{ maxWidth: 640 }}>
+      <LimitSetting limit={limit} />
       <div className="card" style={{ marginBottom: 20 }}>
         <h2 className="card-title">Log a work order</h2>
         <label className="field">
@@ -96,6 +102,7 @@ export default function MaintenanceList({
               </div>
               {w.notes && <div className="muted-text" style={{ fontSize: 13, marginTop: 4 }}>{w.notes}</div>}
               {w.cost != null && <div style={{ fontSize: 13, marginTop: 4 }}>Cost: ${Number(w.cost).toFixed(2)}</div>}
+              <WorkOrderExtras w={w} runners={runners} />
             </div>
             {w.status === "open" &&
               (completingId === w.id ? (

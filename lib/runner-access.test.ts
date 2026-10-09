@@ -3,10 +3,10 @@ import { agreementAllowsHandover, cardChargedStatus, RUNNER_NAV, runnerCanOpen }
 
 describe("runnerCanOpen", () => {
   it("allows the runner pages and anything beneath them", () => {
-    for (const p of ["/staff/pickups", "/staff/pickups/", "/staff/fleet/map", "/staff/report", "/staff/profile", "/staff/report/new"]) expect(runnerCanOpen(p)).toBe(true);
+    for (const p of ["/staff/pickups", "/staff/pickups/", "/staff/fleet/map", "/staff/fleet/maintenance", "/staff/report", "/staff/profile", "/staff/report/new"]) expect(runnerCanOpen(p)).toBe(true);
   });
   it("blocks every office page", () => {
-    for (const p of ["/staff/leads", "/staff/customers", "/staff/charges", "/staff/export", "/staff/team", "/staff/pricing", "/staff/tolls", "/staff/contracts", "/staff/fleet", "/staff/fleet/gps", "/staff/fleet/maintenance", "/staff/dashboard", "/staff/inbox", "/staff"]) expect(runnerCanOpen(p)).toBe(false);
+    for (const p of ["/staff/leads", "/staff/customers", "/staff/charges", "/staff/export", "/staff/team", "/staff/pricing", "/staff/tolls", "/staff/contracts", "/staff/fleet", "/staff/fleet/gps", "/staff/fleet/incidents", "/staff/dashboard", "/staff/inbox", "/staff"]) expect(runnerCanOpen(p)).toBe(false);
   });
   it("does not match look-alike prefixes", () => {
     expect(runnerCanOpen("/staff/pickups-archive")).toBe(false);
