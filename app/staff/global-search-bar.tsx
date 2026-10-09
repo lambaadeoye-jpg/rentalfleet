@@ -13,6 +13,25 @@ export default function GlobalSearchBar() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  // Decided after mount so server and client render the same markup.
+  const [shortcut, setShortcut] = useState("Ctrl K");
+
+  useEffect(() => {
+    if (/Mac|iPhone|iPad/.test(navigator.platform)) setShortcut("⌘K");
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      } else if (e.key === "Escape" && document.activeElement === inputRef.current) {
+        setOpen(false);
+        inputRef.current?.blur();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -48,6 +67,8 @@ export default function GlobalSearchBar() {
       <div style={{ position: "relative" }}>
         <Search size={14} style={{ position: "absolute", left: 8, top: 9, color: "rgba(255,255,255,0.4)" }} />
         <input
+          ref={inputRef}
+          aria-label="Search customers, leads and applications"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setOpen(true)}
@@ -63,6 +84,7 @@ export default function GlobalSearchBar() {
             padding: "7px 10px 7px 28px",
           }}
         />
+        {query === "" && <span className="search-kbd">{shortcut}</span>}
       </div>
 
       {open && results.length > 0 && (
