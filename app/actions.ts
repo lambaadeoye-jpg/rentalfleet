@@ -96,7 +96,7 @@ export async function submitLead(formData: {
     if (consented) {
       try {
         const h = await headers();
-        consentIp = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim().slice(0, 64) || null;
+        consentIp = (h.get("x-nf-client-connection-ip") ?? h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim().slice(0, 64) || null;
         consentUa = (h.get("user-agent") ?? "").slice(0, 300) || null;
       } catch {
         // Header access failing must not lose the lead.
@@ -283,7 +283,7 @@ export async function submitLeadStep1(formData: {
     if (consented) {
       try {
         const h = await headers();
-        consentIp = (h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim().slice(0, 64) || null;
+        consentIp = (h.get("x-nf-client-connection-ip") ?? h.get("x-forwarded-for")?.split(",")[0] ?? h.get("x-real-ip") ?? "").trim().slice(0, 64) || null;
         consentUa = (h.get("user-agent") ?? "").slice(0, 300) || null;
       } catch {
         // Header access failing must not lose the lead.

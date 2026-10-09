@@ -8,7 +8,7 @@ import { CONTACT_CONSENT_TEXT } from "@/lib/contact-consent";
 import LegalLinks from "../legal-links";
 import { readFirstTouch, readLastCta } from "@/lib/attribution";
 import { trackLead } from "@/lib/track";
-import { PHONE_DISPLAY } from "@/lib/site-config";
+import { PHONE_DISPLAY, PHONE_IS_LIVE } from "@/lib/site-config";
 
 type Step = "license" | "driving" | "urgency" | "contact";
 const STEPS: Step[] = ["license", "driving", "urgency", "contact"];
@@ -120,8 +120,8 @@ export default function GetStartedFlow() {
           </p>
           <h1 style={{ fontSize: 30, marginBottom: 12 }}>Thanks — you&rsquo;re all set.</h1>
           <p className="muted-text" style={{ fontSize: 16, marginBottom: 32 }}>
-            We&rsquo;ve got your info. <strong>A member of our team will call you shortly</strong> to go
-            over the next steps and get you on the road.
+            We&rsquo;ve got your info. <strong>We&rsquo;ll reach out soon</strong> to go
+            over the next steps. Calls are usually during business hours.
           </p>
 
           <div className="card" style={{ textAlign: "left" }}>
@@ -131,18 +131,18 @@ export default function GetStartedFlow() {
             <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
               <Phone size={20} color="var(--teal)" style={{ flexShrink: 0, marginTop: 2 }} />
               <div>
-                <p style={{ fontWeight: 700, marginBottom: 2 }}>We&rsquo;ll call you</p>
+                <p style={{ fontWeight: 700, marginBottom: 2 }}>We&rsquo;ll be in touch</p>
                 <p className="muted-text" style={{ fontSize: 14 }}>
-                  We&rsquo;ll reach out by phone to confirm your details and answer any questions.
+                  We&rsquo;ll contact you by phone or text to confirm your details and answer any questions.
                 </p>
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
               <Mail size={20} color="var(--teal)" style={{ flexShrink: 0, marginTop: 2 }} />
               <div>
-                <p style={{ fontWeight: 700, marginBottom: 2 }}>Check your email</p>
+                <p style={{ fontWeight: 700, marginBottom: 2 }}>Watch your email</p>
                 <p className="muted-text" style={{ fontSize: 14 }}>
-                  You&rsquo;ll get a confirmation email with everything you need to keep moving.
+                  We may email you a link to continue. Check spam if you don&rsquo;t see it.
                 </p>
               </div>
             </div>
@@ -151,16 +151,18 @@ export default function GetStartedFlow() {
               <div>
                 <p style={{ fontWeight: 700, marginBottom: 2 }}>Watch for a text</p>
                 <p className="muted-text" style={{ fontSize: 14 }}>
-                  We&rsquo;ll also text you so you don&rsquo;t miss a thing.
+                  We may text you from our number. Reply STOP any time to opt out.
                 </p>
               </div>
             </div>
           </div>
 
-          <p className="muted-text" style={{ fontSize: 13, marginTop: 20 }}>
-            Keep your phone handy and add {PHONE_DISPLAY} to your contacts so our call, email, and
-            text don&rsquo;t get missed.
-          </p>
+          {PHONE_IS_LIVE && (
+            <p className="muted-text" style={{ fontSize: 13, marginTop: 20 }}>
+              Keep your phone handy and add {PHONE_DISPLAY} to your contacts so our call and text
+              don&rsquo;t get missed.
+            </p>
+          )}
         </div>
       </div>
     );

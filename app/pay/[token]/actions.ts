@@ -48,11 +48,21 @@ export async function startCheckout(token: string, termsAccepted: boolean): Prom
   const res = await createCheckoutSession(body, `${r.request_id}:${Math.floor(nowSeconds / 300)}`);
   if (!res.ok) return { success: false, error: GENERIC };
 
-  await admin.rpc("attach_checkout_session", {
-    p_request_id: r.request_id,
-    p_session_id: res.session.id,
-    p_url: res.session.url,
-    p_expires_at: new Date(res.session.expiresAt * 1000).toISOString(),
-  });
+  // The webhook finds the payment by this session id, so it must be saved before the renter goes to pay.
+  let attachError: unknown = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { error: attachErr } = await admin.rpc("attach_checkout_session", {
+      p_request_id: r.request_id,
+      p_session_id: res.session.id,
+      p_url: res.session.url,
+      p_expires_at: new Date(res.session.expiresAt * 1000).toISOString(),
+    });
+    attachError = attachErr;
+    if (!attachErr) break;
+  }
+  if (attachError) {
+    console.error("[pay] could not save checkout session:", (attachError as { message?: string }).message);
+    return { success: false, error: GENERIC };
+  }
   return { success: true, url: res.session.url };
 }

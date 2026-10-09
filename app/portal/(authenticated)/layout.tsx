@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { Home, Car, Wallet, FileText, LifeBuoy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import PortalSignOut from "./sign-out";
 
 const NAV_ITEMS = [
   { href: "/portal", label: "Home", icon: Home },
@@ -35,7 +36,10 @@ export default async function PortalLayout({ children }: { children: React.React
           zIndex: 40,
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 15 }}>My account</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 720, margin: "0 auto" }}>
+          <span style={{ fontWeight: 700, fontSize: 15 }}>My account</span>
+          <PortalSignOut />
+        </div>
       </header>
 
       <main className="app-shell" style={{ maxWidth: 720, margin: "0 auto" }}>{children}</main>

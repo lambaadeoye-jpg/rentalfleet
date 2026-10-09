@@ -24,10 +24,9 @@ export async function beginAnonymousSession(): Promise<{ success: boolean; error
   const { error } = await supabase.auth.signInAnonymously();
 
   if (error) {
-    // Most likely cause: "Allow anonymous sign-ins" isn’t enabled yet for
-    // this Supabase project (Authentication -> Sign In / Providers). Same
-    // category of one-time dashboard setup as the SMTP/redirect URL config.
-    return { success: false, error: error.message };
+    // Most likely cause: "Allow anonymous sign-ins" isn’t enabled for this Supabase project.
+    console.error("[apply] anonymous sign-in failed:", error.message);
+    return { success: false, error: "We couldn’t start your application. Please refresh and try again." };
   }
   return { success: true };
 }
@@ -36,8 +35,8 @@ export async function beginAnonymousSession(): Promise<{ success: boolean; error
 // applicant can resume from a different device later via magic link.
 // Optional, called from within the Workspace -- never blocks starting.
 export async function linkEmailForResume(email: string): Promise<{ success: boolean; error?: string }> {
-  const trimmed = email.trim();
-  if (!trimmed) return { success: false, error: "Enter an email address." };
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { success: false, error: "Enter a valid email address." };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.updateUser(
@@ -47,7 +46,17 @@ export async function linkEmailForResume(email: string): Promise<{ success: bool
     }
   );
 
-  if (error) return { success: false, error: error.message };
+  if (error) {
+    console.error("[apply] link email failed:", error.message);
+    if (/already|registered|exists/i.test(error.message)) return { success: false, error: "That email is already in use. Use “Resume” with that email instead." };
+    return { success: false, error: "Couldn’t save that email. Please check it and try again." };
+  }
+
+  // Keep the application's contact email in step so reminders reach the same inbox.
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    await supabase.from("customer").update({ email: trimmed }).eq("auth_user_id", user.id).is("email", null);
+  }
   return { success: true };
 }
 
@@ -60,8 +69,8 @@ export async function linkEmailForResume(email: string): Promise<{ success: bool
 // beginAnonymousSession() above for why.
 // ---------------------------------------------------------------------------
 export async function sendMagicLink(email: string): Promise<{ success: boolean; error?: string }> {
-  const trimmed = email.trim();
-  if (!trimmed) return { success: false, error: "Enter your email address." };
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return { success: false, error: "Enter a valid email address." };
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
@@ -75,11 +84,9 @@ export async function sendMagicLink(email: string): Promise<{ success: boolean; 
   });
 
   if (error) {
-    // Surface the real Supabase error rather than a generic message -- this
-    // is an Auth API error describing our own configuration (e.g. rate
-    // limits, SMTP not set up), not private user data, so it’s safe and
-    // actually necessary to show while diagnosing the real cause.
-    return { success: false, error: error.message };
+    console.error("[apply] magic link failed:", error.message);
+    if (/rate|too many|seconds/i.test(error.message)) return { success: false, error: "Too many tries. Wait a minute and try again." };
+    return { success: false, error: "Couldn’t send the link. Please check the email and try again." };
   }
   return { success: true };
 }
@@ -486,12 +493,19 @@ export async function saveWorkStep(
     .eq("id", applicationId);
   if (applicationError) return { success: false, error: "Couldn’t save. Please try again." };
 
-  // Replace the set: delete existing, insert the current selection. Simple
-  // and correct for a form re-save; this table has no history requirement.
-  await supabase.from("platform_eligibility").delete().eq("customer_id", customerId);
+  // Apply only the difference so platforms that staff already verified keep their status.
+  const { data: current } = await supabase.from("platform_eligibility").select("gig_platform_id").eq("customer_id", customerId);
+  const have = new Set((current ?? []).map((r) => r.gig_platform_id as string));
+  const want = new Set(gigPlatformIds);
+  const toAdd = [...want].filter((id) => !have.has(id));
+  const toRemove = [...have].filter((id) => !want.has(id));
 
-  if (gigPlatformIds.length > 0) {
-    const rows = gigPlatformIds.map((gig_platform_id) => ({
+  if (toRemove.length > 0) {
+    const { error } = await supabase.from("platform_eligibility").delete().eq("customer_id", customerId).in("gig_platform_id", toRemove);
+    if (error) return { success: false, error: "Couldn’t save. Please try again." };
+  }
+  if (toAdd.length > 0) {
+    const rows = toAdd.map((gig_platform_id) => ({
       tenant_id: customer.tenant_id,
       customer_id: customerId,
       gig_platform_id,

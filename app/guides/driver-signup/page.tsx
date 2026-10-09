@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MINIMUM_AGE } from "@/lib/site-config";
 import LegalPage from "../../legal-page";
 
 export const metadata: Metadata = {
@@ -31,7 +32,7 @@ export default function DriverSignupGuide() {
       <ul>
         <li>A valid driver&rsquo;s license that you have held for the time the platform requires (usually a year or more).</li>
         <li>A smartphone, your Social Security number for the background check, and an email address you check often.</li>
-        <li>You must be at least 25 to rent from Zivo. Some platforms require more.</li>
+        <li>You must be at least {MINIMUM_AGE} to rent from Zivo. Some platforms require more.</li>
         <li>Platforms usually need to see the car you will drive. You can apply first and add the car once you have it, or ask us what you need to show.</li>
       </ul>
 

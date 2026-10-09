@@ -96,6 +96,7 @@ export async function POST(req: Request) {
   });
   if (error) { console.error("[stripe webhook] complete failed:", error.message); return NextResponse.json({ error: "db" }, { status: 500 }); }
   if (outcome === "not_found") { console.error("[stripe webhook] no matching pay request for", ev.sessionId); return NextResponse.json({ error: "not_found" }, { status: 500 }); }
+  if (outcome === "paid_after_cancel") console.error("[stripe webhook] PAYMENT ON A CANCELLED/REVOKED LINK for pay request", ev.payRequestId, "- held for staff review, refund or honour it");
   if (outcome === "amount_mismatch") console.error("[stripe webhook] AMOUNT MISMATCH for pay request", ev.payRequestId, "- staff review needed");
 
   if (outcome === "paid" && card) {

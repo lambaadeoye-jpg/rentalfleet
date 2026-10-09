@@ -43,7 +43,7 @@ export default async function PortalDashboard() {
       {rental ? (
         <div className="card" style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <span style={{ fontWeight: 700 }}>Your Rental</span>
+            <span style={{ fontWeight: 700 }}>Your rental</span>
             <span
               style={{
                 background: "rgba(22,163,74,0.1)",

@@ -67,6 +67,7 @@ export default async function Home() {
   ]);
 
   const brandName = tenant?.name ?? "Fleet Rental";
+  const weekTotal = pricing ? Math.round((pricing.total + Math.max(0, 7 - pricing.days) * pricing.perDay) * 100) / 100 : 0;
 
   // FAQ content lives in one list so the visible answers and the FAQPage structured data can never drift apart.
   const faqs: { q: string; a: string; schema?: boolean }[] = [
@@ -99,11 +100,10 @@ export default async function Home() {
       a: "Yes. Your application can be saved and continued online. Email and SMS reminders can provide a secure link back to your application.",
     },
     { q: "How do I get support during my rental?", a: "Customer support is initiated through the customer portal." },
-    {
+    ...(PHONE_IS_LIVE ? [{
       q: "Can I apply or ask questions by phone instead of online?",
       a: `Yes — call ${PHONE_DISPLAY} and we can walk you through availability, pricing, and the application process directly.`,
-      schema: PHONE_IS_LIVE, // don’t publish the placeholder number into search results
-    },
+    }] : []),
     {
       q: "Can I use this rental for DoorDash, Uber Eats, or Instacart?",
       a: "Yes. Our vehicles are intended for drivers working across major rideshare, delivery, courier, and independent-driving platforms, subject to applicable platform, vehicle, driver, insurance, and local requirements.",
@@ -370,7 +370,7 @@ export default async function Home() {
                 <>
                   <div className="price">${pricing.total}</div>
                   <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                    for your first {pricing.days} days, then ${pricing.perDay}/day after. 1-week minimum rental applies.
+                    for your first {pricing.days} days, then ${pricing.perDay}/day after. 1-week minimum rental applies{pricing.days < 7 ? <>, so a 7-day rental starts at <strong>${weekTotal}</strong></> : null}.
                   </p>
                 </>
               ) : (
@@ -447,7 +447,7 @@ export default async function Home() {
           <div className="grid-3">
             <div className="card benefit-card">
               <UserCheck size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>{MINIMUM_AGE}+ Years Old</h3>
+              <h3>{MINIMUM_AGE}+ years old</h3>
               <p>Minimum age requirement for all rentals.</p>
             </div>
             <div className="card benefit-card">
@@ -582,7 +582,7 @@ export default async function Home() {
       <SiteFooter brandName={brandName} />
 
       {/* Sticky mobile bar: the main action always, plus Call once a real number is live. */}
-      <MobileCtaBar phoneLive={true} phoneDisplay={PHONE_DISPLAY} phoneTel={PHONE_TEL} />
+      <MobileCtaBar phoneLive={PHONE_IS_LIVE} phoneDisplay={PHONE_DISPLAY} phoneTel={PHONE_TEL} />
     </>
   );
 }

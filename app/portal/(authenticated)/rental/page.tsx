@@ -5,6 +5,7 @@ import PortalDriversManager from "./portal-drivers-manager";
 import PickupSlotPicker from "./pickup-slot-picker";
 import { getPickerState } from "./pickup-actions";
 import PayNow from "./pay-now";
+import SignNow from "./sign-now";
 import { getPortalPayState } from "./payment-actions";
 import CancelRental from "./cancel-rental";
 import { getMyCancelState } from "./cancel-actions";
@@ -77,10 +78,18 @@ export default async function PortalRentalPage() {
         </span>
       </div>
 
-      {payState.show && (
+      {payState.needsSignature && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h2 className="card-title card-title--tight">Sign your rental agreement</h2>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>Read and sign it online. You&rsquo;ll need it signed before you can pay and pick up.</p>
+          <SignNow />
+        </div>
+      )}
+
+      {payState.show && !payState.needsSignature && (
         <div className="card" style={{ marginBottom: 16 }}>
           <h2 className="card-title card-title--tight">Pay to lock in your rental</h2>
-          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus security deposit, paid by card on a secure Stripe page. Sign your agreement first if you haven&rsquo;t.</p>
+          <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus security deposit, paid by card on a secure Stripe page.</p>
           <PayNow />
         </div>
       )}

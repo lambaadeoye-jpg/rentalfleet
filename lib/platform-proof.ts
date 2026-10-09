@@ -3,6 +3,6 @@
 
 export function platformProofProblem(input: { platformCount: number; hasApproval: boolean }): string | null {
   if (input.platformCount < 1) return "Pick at least one platform you drive or deliver for.";
-  if (!input.hasApproval) return "Upload a screenshot of your approved driver profile on one of those platforms. Not approved yet? Our sign-up guide shows how.";
+  if (!input.hasApproval) return "Upload a screenshot of your approved driver profile on one of those platforms. Not approved yet? Our sign-up guide shows how. Your earlier answers are saved, so you can come back once you’re approved.";
   return null;
 }
