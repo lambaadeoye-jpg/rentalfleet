@@ -12,6 +12,8 @@ import DepositCard from "./deposit-card";
 import { getPaymentStatus } from "../payment-actions";
 import { getAgreementStatus } from "../agreement-actions";
 import { sentenceCase } from "@/lib/format-label";
+import BanCard from "./ban-card";
+import { getBansForCustomer } from "../ban-actions";
 import { formatPhone } from "@/lib/format-phone";
 
 export const dynamic = "force-dynamic";
@@ -93,6 +95,7 @@ export default async function ApplicationDetailPage({
 
   const availableVehicles = canStartRental ? await getAvailableVehicles() : [];
 
+  const bans = await getBansForCustomer(application.customer_id);
   const approvalDoc = (documents ?? []).find((d: any) => d.document_type === "platform_approval");
   const platforms = (platformLinks ?? []).map((p) => (p.gig_platform as any)?.name).filter(Boolean);
 
@@ -162,6 +165,8 @@ export default async function ApplicationDetailPage({
       {existingRental && paymentStatus && <PaymentCard rentalId={existingRental.id} status={paymentStatus} />}
       {existingRental && ["approved", "scheduled"].includes(existingRental.status) && <CancelCard rentalId={existingRental.id} />}
       {existingRental && ["returned", "closed"].includes(existingRental.status) && <DepositCard rentalId={existingRental.id} />}
+
+      <BanCard customerId={application.customer_id} bans={bans} />
 
       <div className="card">
         <h2 className="card-title">Decision</h2>

@@ -5,6 +5,8 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { generateReferralCode } from "@/lib/referral-code";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { platformProofProblem } from "@/lib/platform-proof";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { BANNED_APPLICANT_MESSAGE } from "@/lib/ban";
 
 // ---------------------------------------------------------------------------
 // AUTH: anonymous-first entry. Starting the application no longer requires
@@ -304,6 +306,20 @@ async function touchApplication(customerId: string): Promise<void> {
   }
 }
 
+/** True when this customer's phone or email is on the do-not-rent list. Checked with the server's own access, so the list can't be probed. */
+async function isOnDoNotRentList(customerId: string): Promise<boolean> {
+  try {
+    const admin = createAdminClient();
+    if (!admin) return false;
+    const { data: c } = await admin.from("customer").select("tenant_id, phone, email").eq("id", customerId).maybeSingle();
+    if (!c) return false;
+    const { data } = await admin.rpc("rental_ban_matches", { p_tenant: c.tenant_id, p_phone: c.phone, p_email: c.email });
+    return data === true;
+  } catch {
+    return false; // the list not being set up yet must never block applications
+  }
+}
+
 export async function savePersonalStep(
   customerId: string,
   fields: { firstName: string; lastName: string; phone: string }
@@ -319,6 +335,7 @@ export async function savePersonalStep(
     .eq("id", customerId);
 
   if (error) return { success: false, error: "Couldn’t save. Please try again." };
+  if (await isOnDoNotRentList(customerId)) return { success: false, error: BANNED_APPLICANT_MESSAGE };
   await touchApplication(customerId);
   return { success: true };
 }
@@ -618,6 +635,7 @@ export async function submitApplication(
   // Last line of defense: the form already checks, but nobody can submit around it.
   const { data: appRow } = await supabase.from("application").select("customer_id").eq("id", applicationId).maybeSingle();
   if (!appRow?.customer_id) return { success: false, error: "Couldn’t submit. Please try again." };
+  if (await isOnDoNotRentList(appRow.customer_id)) return { success: false, error: BANNED_APPLICANT_MESSAGE };
   const { count: platformCount } = await supabase
     .from("platform_eligibility")
     .select("id", { count: "exact", head: true })

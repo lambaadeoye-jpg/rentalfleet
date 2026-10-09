@@ -3,7 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
-import { CHARGE_TYPE, DEFAULT_FEES, TOLL_KINDS, localToIso, matchRental, parseMoney, totalToCharge, type RentalWindow, type TollKind } from "@/lib/tolls";
+import { CHARGE_TYPE, DEFAULT_FEES, TOLL_KINDS, chargeTotal, isFlagged, isPastDeadline, localToIso, matchRental, parseMoney, payByFrom, ticketCounts, type RentalWindow, type TollKind } from "@/lib/tolls";
+import { loadRuleValues } from "@/lib/handover-server";
 
 type Result = { success: boolean; error?: string; note?: string };
 
@@ -18,18 +19,26 @@ export type TollRow = {
   occurredAt: string | null;
   reference: string | null;
   description: string | null;
-  status: "open" | "charged" | "waived";
+  status: "open" | "charged" | "waived" | "paid";
   chargeStatus: string | null;
   defaultFee: number;
+  payBy: string | null;
+  pastDeadline: boolean;
+  /** Tickets this renter has on this rental (waived ones don't count). */
+  renterTickets: number;
+  flagged: boolean;
 };
 
-export async function getTolls(): Promise<{ rows: TollRow[]; vehicles: { id: string; label: string }[]; needsMigration: boolean }> {
+export type TicketWatch = { rentalId: string; renter: string; count: number };
+
+export async function getTolls(): Promise<{ rows: TollRow[]; vehicles: { id: string; label: string }[]; needsMigration: boolean; watch: TicketWatch[]; threshold: number; payHours: number }> {
   const supabase = await createClient();
+  const rules = await loadRuleValues(supabase);
   const [{ data, error }, { data: vehicleRows }] = await Promise.all([
     supabase
       .from("toll_transaction")
       .select(
-        "id, kind, amount, occurred_at, external_reference, description, status, rental_id, vehicle:vehicle_id(year, make, model, plate), rental:rental_id(customer:customer_id(first_name, last_name)), charge:charge_id(approval_status)"
+        "id, kind, amount, occurred_at, external_reference, description, status, pay_by, rental_id, vehicle:vehicle_id(year, make, model, plate), rental:rental_id(customer:customer_id(first_name, last_name)), charge:charge_id(approval_status)"
       )
       .order("occurred_at", { ascending: false, nullsFirst: false })
       .limit(200),
@@ -40,10 +49,14 @@ export async function getTolls(): Promise<{ rows: TollRow[]; vehicles: { id: str
     id: v.id,
     label: `${[v.year, v.make, v.model].filter(Boolean).join(" ") || "Vehicle"}${v.plate ? ` · ${v.plate}` : ""}`,
   }));
-  if (error) return { rows: [], vehicles, needsMigration: true };
+  if (error) return { rows: [], vehicles, needsMigration: true, watch: [], threshold: rules.ticketReviewThreshold, payHours: rules.ticketPayHours };
 
+  const counts = ticketCounts((data ?? []).map((t: any) => ({ rentalId: t.rental_id, kind: t.kind, status: t.status })));
+  const now = new Date();
+  const names = new Map<string, string>();
   const rows: TollRow[] = (data ?? []).map((t: any) => {
     const c = t.rental?.customer;
+    if (t.rental_id && c) names.set(t.rental_id, `${c.first_name} ${c.last_name}`.trim());
     const v = t.vehicle;
     return {
       id: t.id,
@@ -59,9 +72,17 @@ export async function getTolls(): Promise<{ rows: TollRow[]; vehicles: { id: str
       status: t.status,
       chargeStatus: t.charge?.approval_status ?? null,
       defaultFee: DEFAULT_FEES[t.kind as TollKind] ?? 0,
+      payBy: t.pay_by ?? null,
+      pastDeadline: isPastDeadline(t.status, t.pay_by ?? null, now),
+      renterTickets: t.rental_id ? counts.get(t.rental_id) ?? 0 : 0,
+      flagged: t.rental_id ? isFlagged(counts.get(t.rental_id) ?? 0, rules.ticketReviewThreshold) : false,
     };
   });
-  return { rows, vehicles, needsMigration: false };
+  const watch: TicketWatch[] = [...counts.entries()]
+    .filter(([, n]) => isFlagged(n, rules.ticketReviewThreshold))
+    .map(([rentalId, count]) => ({ rentalId, renter: names.get(rentalId) ?? "Renter", count }))
+    .sort((a, b) => b.count - a.count);
+  return { rows, vehicles, needsMigration: false, watch, threshold: rules.ticketReviewThreshold, payHours: rules.ticketPayHours };
 }
 
 export async function addToll(input: {
@@ -143,7 +164,7 @@ export async function chargeRenter(tollId: string, feeText: string): Promise<Res
   const { data: claimed } = await supabase.from("toll_transaction").update({ status: "charged" }).eq("id", tollId).eq("status", "open").select("id");
   if (!claimed || claimed.length === 0) return { success: false, error: "This one has already been handled." };
 
-  const total = totalToCharge(Number(toll.amount), fee);
+  const total = chargeTotal(toll.kind as TollKind, Number(toll.amount), fee);
   const { data: charge, error } = await supabase
     .from("charge")
     .insert({
@@ -163,7 +184,8 @@ export async function chargeRenter(tollId: string, feeText: string): Promise<Res
     return { success: false, error: "Couldn’t raise that charge. Please try again." };
   }
 
-  await supabase.from("toll_transaction").update({ charge_id: charge.id }).eq("id", tollId);
+  const rules = await loadRuleValues(supabase);
+  await supabase.from("toll_transaction").update({ charge_id: charge.id, pay_by: payByFrom(new Date(), rules.ticketPayHours) }).eq("id", tollId);
   void logAuditEvent({
     tenantId: toll.tenant_id,
     action: "toll_charged",
@@ -175,6 +197,15 @@ export async function chargeRenter(tollId: string, feeText: string): Promise<Res
   revalidatePath("/staff/tolls");
   revalidatePath("/staff/charges");
   return { success: true, note: `Charge of $${total.toFixed(2)} sent to Charges for approval.` };
+}
+
+export async function markTollPaid(tollId: string): Promise<Result> {
+  const supabase = await createClient();
+  const { data: updated, error } = await supabase.from("toll_transaction").update({ status: "paid" }).eq("id", tollId).eq("status", "charged").select("id, tenant_id");
+  if (error || !updated || updated.length === 0) return { success: false, error: "Couldn’t update that. It may already be handled." };
+  void logAuditEvent({ tenantId: updated[0].tenant_id, action: "toll_marked_paid", entityType: "toll_transaction", entityId: tollId, source: "staff_portal" });
+  revalidatePath("/staff/tolls");
+  return { success: true };
 }
 
 export async function waiveToll(tollId: string): Promise<Result> {

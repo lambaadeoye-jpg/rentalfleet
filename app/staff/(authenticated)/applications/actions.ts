@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { DECISION_OUTCOMES } from "./constants";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { logAuditEvent } from "@/lib/audit-log";
+import { getBansForCustomer } from "./ban-actions";
 
 export async function decideApplication(
   applicationId: string,
@@ -12,6 +13,14 @@ export async function decideApplication(
   reason: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+
+  // Someone on the do-not-rent list can't be approved until they are taken off it.
+  if (decision !== "declined") {
+    const { data: app } = await supabase.from("application").select("customer_id").eq("id", applicationId).maybeSingle();
+    if (app?.customer_id && (await getBansForCustomer(app.customer_id)).length > 0) {
+      return { success: false, error: "This person is on the do-not-rent list. Remove them from it first, or decline." };
+    }
+  }
 
   // This UPDATE is permission-gated at the database level (migration 0021's
   // guard_application_decision trigger, requiring the approve_driver

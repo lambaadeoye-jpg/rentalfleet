@@ -72,3 +72,16 @@ export function settlementNote(arrangement: string | null, cost: number | null, 
   if (arrangement === "company_pays_shop") return `Pay the shop ${amt}`;
   return null;
 }
+
+// ---- service reminders: every car is serviced about every N days ----------------------------------------------
+
+export type ServiceState = "overdue" | "due_soon" | "ok";
+
+export function serviceDue(input: { lastServiceAt: string | null; baselineAt: string; now: Date; intervalDays: number; soonDays?: number }): { dueAt: string; daysLeft: number; state: ServiceState } {
+  const start = Date.parse(input.lastServiceAt ?? input.baselineAt);
+  const base = Number.isFinite(start) ? start : input.now.getTime();
+  const dueMs = base + input.intervalDays * 86_400_000;
+  const daysLeft = Math.ceil((dueMs - input.now.getTime()) / 86_400_000);
+  const soon = input.soonDays ?? 5;
+  return { dueAt: new Date(dueMs).toISOString(), daysLeft, state: daysLeft < 0 ? "overdue" : daysLeft <= soon ? "due_soon" : "ok" };
+}

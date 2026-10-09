@@ -24,6 +24,11 @@ export async function POST(request: Request) {
   if (!serviceRoleKey || !supabaseUrl) return NextResponse.json({ error: "Server misconfigured" }, { status: 500 });
   const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
+  // Line up tomorrow's rent reminders first. If this step fails (for example the database update isn't run yet),
+  // the other notices still go out.
+  const { error: reminderError } = await supabase.rpc("queue_rent_due_reminders");
+  if (reminderError) console.warn("[renter-notices] rent reminders not queued:", reminderError.message);
+
   const { data: claimed, error } = await supabase.rpc("claim_renter_notices", { p_limit: 25 });
   if (error) {
     console.error("[renter-notices] claim failed:", error.message);

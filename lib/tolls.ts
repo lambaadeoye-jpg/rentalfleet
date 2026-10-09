@@ -6,15 +6,44 @@ export type TollKind = (typeof TOLL_KINDS)[number];
 
 export const KIND_LABELS: Record<TollKind, string> = { toll: "Toll", citation: "Ticket or citation" };
 
-// Agreement clause 3: $6 per toll invoiced, $25 per ticket or citation, on top of the toll or fine itself.
-// These are the starter agreement's defaults; staff can change the fee on any single charge.
-export const DEFAULT_FEES: Record<TollKind, number> = { toll: 6, citation: 25 };
+// Agreement clause 3: a toll costs the renter a flat $6 (the whole charge, whatever the toll was);
+// a ticket costs the fine itself plus a $25 administrative fee. Staff can change the ticket fee on any single charge.
+export const TOLL_FLAT_USD = 6;
+export const DEFAULT_FEES: Record<TollKind, number> = { toll: 0, citation: 25 };
 
 // Maps onto the existing charge types so the Charges page and invoices need no changes.
 export const CHARGE_TYPE: Record<TollKind, "toll" | "ticket"> = { toll: "toll", citation: "ticket" };
 
 export function totalToCharge(amount: number, fee: number): number {
   return Math.round((amount + fee) * 100) / 100;
+}
+
+/** What the renter is charged: a toll is the flat amount; a ticket is the fine plus the administrative fee. */
+export function chargeTotal(kind: TollKind, amount: number, fee: number): number {
+  return kind === "toll" ? TOLL_FLAT_USD : totalToCharge(amount, fee);
+}
+
+/** The moment by which the renter must have paid. */
+export function payByFrom(now: Date, hours: number): string {
+  return new Date(now.getTime() + hours * 3_600_000).toISOString();
+}
+
+export function isPastDeadline(status: string, payBy: string | null, now: Date): boolean {
+  return status === "charged" && payBy !== null && Date.parse(payBy) < now.getTime();
+}
+
+/** Renters with more tickets than the limit get a closer look. Waived tickets don't count. */
+export function ticketCounts(rows: { rentalId: string | null; kind: string; status: string }[]): Map<string, number> {
+  const out = new Map<string, number>();
+  for (const r of rows) {
+    if (r.kind !== "citation" || r.status === "waived" || !r.rentalId) continue;
+    out.set(r.rentalId, (out.get(r.rentalId) ?? 0) + 1);
+  }
+  return out;
+}
+
+export function isFlagged(count: number, threshold: number): boolean {
+  return count > threshold;
 }
 
 /** Whole dollars and cents only: positive, at most two decimals, and sane. */

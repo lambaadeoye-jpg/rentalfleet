@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_FEES, localToIso, matchRental, parseMoney, totalToCharge, type RentalWindow } from "./tolls";
+import { DEFAULT_FEES, chargeTotal, isFlagged, isPastDeadline, localToIso, matchRental, parseMoney, payByFrom, ticketCounts, totalToCharge, type RentalWindow } from "./tolls";
 
 describe("localToIso (Central time)", () => {
   it("reads summer time as UTC-5 and winter as UTC-6", () => {
@@ -31,7 +31,7 @@ describe("parseMoney", () => {
 
 describe("totalToCharge", () => {
   it("adds the administrative fee from the agreement", () => {
-    expect(totalToCharge(4.5, DEFAULT_FEES.toll)).toBe(10.5);
+    expect(totalToCharge(4.5, 1.5)).toBe(6);
     expect(totalToCharge(60, DEFAULT_FEES.citation)).toBe(85);
     expect(totalToCharge(0.1, 0.2)).toBe(0.3); // no floating-point drift
   });
@@ -60,5 +60,43 @@ describe("matchRental", () => {
     const overlap = [w("a", "2026-09-01T00:00:00Z", null), w("b", "2026-09-10T00:00:00Z", null)];
     expect(matchRental(overlap, "2026-09-15T00:00:00Z")?.rentalId).toBe("b");
     expect(matchRental(overlap, "nope")).toBeNull();
+  });
+});
+
+describe("chargeTotal", () => {
+  it("charges a flat $6 for any toll", () => {
+    expect(chargeTotal("toll", 4.5, 0)).toBe(6);
+    expect(chargeTotal("toll", 19.99, 25)).toBe(6);
+  });
+  it("charges the fine plus the admin fee for a ticket", () => {
+    expect(chargeTotal("citation", 60, DEFAULT_FEES.citation)).toBe(85);
+  });
+});
+
+describe("ticket deadline and flag", () => {
+  const now = new Date("2026-10-10T12:00:00Z");
+  it("adds hours", () => expect(payByFrom(now, 24)).toBe("2026-10-11T12:00:00.000Z"));
+  it("is past the deadline only when charged and late", () => {
+    expect(isPastDeadline("charged", "2026-10-10T11:00:00Z", now)).toBe(true);
+    expect(isPastDeadline("charged", "2026-10-10T13:00:00Z", now)).toBe(false);
+    expect(isPastDeadline("paid", "2026-10-10T11:00:00Z", now)).toBe(false);
+    expect(isPastDeadline("charged", null, now)).toBe(false);
+  });
+  it("counts tickets per rental, ignoring tolls, waived and unlinked", () => {
+    const m = ticketCounts([
+      { rentalId: "a", kind: "citation", status: "open" },
+      { rentalId: "a", kind: "citation", status: "charged" },
+      { rentalId: "a", kind: "toll", status: "open" },
+      { rentalId: "a", kind: "citation", status: "waived" },
+      { rentalId: null, kind: "citation", status: "open" },
+      { rentalId: "b", kind: "citation", status: "paid" },
+    ]);
+    expect(m.get("a")).toBe(2);
+    expect(m.get("b")).toBe(1);
+    expect(m.size).toBe(2);
+  });
+  it("flags only above the limit", () => {
+    expect(isFlagged(5, 5)).toBe(false);
+    expect(isFlagged(6, 5)).toBe(true);
   });
 });

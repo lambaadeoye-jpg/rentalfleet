@@ -4,6 +4,7 @@ import { getWorkOrders, getVehicleOptions, getMaintenanceOffice } from "./action
 import { getRunnerMaintenance } from "./runner-actions";
 import MaintenanceList from "./maintenance-list";
 import RunnerMaintenance from "./runner-maintenance";
+import ServiceDue from "./service-due";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,10 @@ export default async function MaintenancePage() {
         {needsMigration ? (
           <div className="card"><p className="muted-text">Maintenance isn’t switched on yet. Ask the office.</p></div>
         ) : (
-          <RunnerMaintenance jobs={jobs} cars={cars} limit={limit} />
+          <>
+            <ServiceDue />
+            <RunnerMaintenance jobs={jobs} cars={cars} limit={limit} />
+          </>
         )}
       </div>
     );
@@ -33,6 +37,7 @@ export default async function MaintenancePage() {
         Logging a work order moves the vehicle to maintenance status; completing one frees it
         back to available.
       </p>
+      <ServiceDue />
       <MaintenanceList initialWorkOrders={workOrders} vehicles={vehicles} runners={office.runners} limit={office.limit} />
     </div>
   );

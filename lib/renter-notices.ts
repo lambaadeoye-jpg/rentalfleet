@@ -7,7 +7,7 @@ import { toE164 } from "./contact-validation";
 
 export type NoticeKind =
   | "cancelled" | "refund_sent" | "payment_received" | "weekly_rent_charged" | "weekly_charge_failed"
-  | "checkin_day1" | "checkin_day3" | "referral_ask" | "card_updated";
+  | "checkin_day1" | "checkin_day3" | "referral_ask" | "card_updated" | "rent_due_tomorrow";
 
 export type NoticeRow = {
   kind: NoticeKind;
@@ -83,6 +83,11 @@ export function noticeBody(
       // No timing promise: we say we will retry and text the result, not when.
       return `Zivo: ${card} is saved. You were not charged. If a payment is past due, we'll try it on this card and text you the result.${help} ${STOP}`;
     }
+    case "rent_due_tomorrow": {
+      const last4 = typeof d.last4 === "string" && /^\d{4}$/.test(d.last4) ? d.last4 : null;
+      const card = last4 ? `your card ending ${last4}` : "your saved card";
+      return `Zivo: ${hi}tomorrow we'll charge ${card} ${dollars(d.amount_cents)} for this week's rent. Need to change cards? Update it in your portal: ${base(ctx)}/portal/money ${STOP}`;
+    }
     // Support starts in the portal (V2.1): texts point there rather than inviting replies.
     case "checkin_day1":
       return `Zivo: ${hi}how is the car working out so far? If anything is off, tell us in your portal: ${base(ctx)}/portal ${STOP}`;
@@ -107,7 +112,7 @@ export function decideNotice(
   const to = row.phone ? toE164(row.phone) : null;
   if (!to) return { action: "skip", reason: "no_phone" };
   // Check-ins and the referral ask only make sense while the rental is running.
-  if ((row.kind === "checkin_day1" || row.kind === "checkin_day3" || row.kind === "referral_ask")
+  if ((row.kind === "checkin_day1" || row.kind === "checkin_day3" || row.kind === "referral_ask" || row.kind === "rent_due_tomorrow")
       && !ACTIVE_RENTAL.has(row.rental_status ?? "")) {
     return { action: "skip", reason: "rental_not_active" };
   }

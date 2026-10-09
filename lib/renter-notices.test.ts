@@ -145,3 +145,26 @@ describe("card-saved confirmation", () => {
     expect(decideNotice(row({ kind: "card_updated", data: { last4: "4242" } }), NIGHT, true, null).action).toBe("defer");
   });
 });
+
+describe("day-before rent text", () => {
+  const data = { amount_cents: 22200, last4: "4242" };
+  it("names the card and the amount, and points to the portal", () => {
+    const t = noticeBody("rent_due_tomorrow", data, null, { firstName: "Ann" })!;
+    expect(t).toContain("Hi Ann, tomorrow we'll charge your card ending 4242 $222.00");
+    expect(t).toContain("/portal");
+    expect(t).toContain("Reply STOP");
+    expect(t.length).toBeLessThanOrEqual(306);
+  });
+  it("ignores a malformed card number", () => {
+    const t = noticeBody("rent_due_tomorrow", { amount_cents: 22200, last4: "<b>" }, null)!;
+    expect(t).toContain("your saved card");
+    expect(t).not.toContain("<b>");
+  });
+  it("only goes to renters with a running rental", () => {
+    expect(decideNotice(row({ kind: "rent_due_tomorrow", data, rental_status: "closed" }), NOON, true, null).action).toBe("skip");
+    expect(decideNotice(row({ kind: "rent_due_tomorrow", data, rental_status: "active" }), NOON, true, null).action).toBe("send");
+  });
+  it("waits for quiet hours", () => {
+    expect(decideNotice(row({ kind: "rent_due_tomorrow", data, rental_status: "active" }), NIGHT, true, null).action).toBe("defer");
+  });
+});

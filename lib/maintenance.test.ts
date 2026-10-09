@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { needsApproval, parseCost, parseLimit, settlementNote, validateFinish, validateStart } from "./maintenance";
+import { serviceDue, needsApproval, parseCost, parseLimit, settlementNote, validateFinish, validateStart } from "./maintenance";
 
 describe("limit and approval", () => {
   it("defaults to $150 and reads a saved number", () => {
@@ -71,5 +71,26 @@ describe("settlementNote", () => {
     expect(settlementNote("runner_reimburse", 0, false)).toBeNull();
     expect(settlementNote("runner_reimburse", null, false)).toBeNull();
     expect(settlementNote("company_card", 80, false)).toBeNull();
+  });
+});
+
+describe("serviceDue", () => {
+  const now = new Date("2026-10-10T12:00:00Z");
+  it("counts from the last service", () => {
+    const r = serviceDue({ lastServiceAt: "2026-09-25T12:00:00Z", baselineAt: "2026-01-01T00:00:00Z", now, intervalDays: 30 });
+    expect(r.daysLeft).toBe(15);
+    expect(r.state).toBe("ok");
+  });
+  it("falls back to when the car was added", () => {
+    const r = serviceDue({ lastServiceAt: null, baselineAt: "2026-09-01T12:00:00Z", now, intervalDays: 30 });
+    expect(r.state).toBe("overdue");
+    expect(r.daysLeft).toBe(-9);
+  });
+  it("warns in the last five days, and exactly on the day is due soon not overdue", () => {
+    expect(serviceDue({ lastServiceAt: "2026-09-15T12:00:00Z", baselineAt: "2026-01-01T00:00:00Z", now, intervalDays: 30 }).state).toBe("due_soon");
+    expect(serviceDue({ lastServiceAt: "2026-09-10T12:00:00Z", baselineAt: "2026-01-01T00:00:00Z", now, intervalDays: 30 })).toMatchObject({ daysLeft: 0, state: "due_soon" });
+  });
+  it("survives a bad date", () => {
+    expect(serviceDue({ lastServiceAt: "nope", baselineAt: "also nope", now, intervalDays: 30 }).state).toBe("ok");
   });
 });

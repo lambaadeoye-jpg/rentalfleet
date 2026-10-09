@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { addToll, chargeRenter, deleteToll, waiveToll, type TollRow } from "./actions";
+import { addToll, chargeRenter, deleteToll, markTollPaid, waiveToll, type TicketWatch, type TollRow } from "./actions";
 import { KIND_LABELS, TOLL_KINDS } from "@/lib/tolls";
 
 type VehicleOption = { id: string; label: string };
 
-const STATUS_TAG: Record<string, string> = { open: "tag tag--warn", charged: "tag tag--good", waived: "tag" };
-const STATUS_LABEL: Record<string, string> = { open: "To handle", charged: "Charged", waived: "Waived" };
+const STATUS_TAG: Record<string, string> = { open: "tag tag--warn", charged: "tag tag--good", waived: "tag", paid: "tag tag--good" };
+const STATUS_LABEL: Record<string, string> = { open: "To handle", charged: "Charged", waived: "Waived", paid: "Paid" };
 
 function when(iso: string | null): string {
   if (!iso) return "—";
@@ -104,19 +104,34 @@ function RowActions({ row }: { row: TollRow }) {
   }
 
   if (row.status === "charged") {
-    return <span className="muted-text" style={{ fontSize: 13 }}>{row.chargeStatus === "approved" ? "Charge approved" : "Waiting for approval on Charges"}</span>;
+    return (
+      <div>
+        <div className="muted-text" style={{ fontSize: 13 }}>{row.chargeStatus === "approved" ? "Charge approved" : "Waiting for approval on Charges"}</div>
+        {row.payBy && (
+          <div style={{ fontSize: 12, color: row.pastDeadline ? "#b91c1c" : "var(--text-secondary)", fontWeight: row.pastDeadline ? 700 : 400 }}>
+            {row.pastDeadline ? "Past deadline: " : "Renter pays by "}{when(row.payBy)}
+          </div>
+        )}
+        <button type="button" className="link-button" disabled={busy} onClick={() => run(() => markTollPaid(row.id))}>Mark paid</button>
+        {error && <p className="error-text" style={{ fontSize: 12, marginTop: 4 }}>{error}</p>}
+      </div>
+    );
   }
-  if (row.status === "waived") return null;
+  if (row.status === "waived" || row.status === "paid") return null;
 
   return (
     <div>
       <div className="row-actions">
         {row.rentalId && (
           <>
-            <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
-              Fee $
-              <input value={fee} onChange={(e) => setFee(e.target.value)} inputMode="decimal" aria-label="Administrative fee" style={{ width: 56, marginLeft: 4, padding: "4px 6px", fontSize: 13 }} />
-            </label>
+            {row.kind === "citation" ? (
+              <label style={{ fontSize: 12, color: "var(--text-secondary)" }}>
+                Fee $
+                <input value={fee} onChange={(e) => setFee(e.target.value)} inputMode="decimal" aria-label="Administrative fee" style={{ width: 56, marginLeft: 4, padding: "4px 6px", fontSize: 13 }} />
+              </label>
+            ) : (
+              <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>Flat $6</span>
+            )}
             <button type="button" className="link-button" disabled={busy} onClick={() => run(() => chargeRenter(row.id, fee))}>Charge renter</button>
           </>
         )}
@@ -136,9 +151,21 @@ function RowActions({ row }: { row: TollRow }) {
   );
 }
 
-export default function TollsView({ rows, vehicles }: { rows: TollRow[]; vehicles: VehicleOption[] }) {
+export default function TollsView({ rows, vehicles, watch, threshold, payHours }: { rows: TollRow[]; vehicles: VehicleOption[]; watch: TicketWatch[]; threshold: number; payHours: number }) {
+  const late = rows.filter((r) => r.pastDeadline).length;
   return (
     <>
+      {(watch.length > 0 || late > 0) && (
+        <div className="card" style={{ marginBottom: 20, borderColor: "#fcd34d", background: "#fffbeb" }}>
+          <h2 className="card-title card-title--tight">Needs a look</h2>
+          {late > 0 && <p style={{ fontSize: 14, marginBottom: 6 }}><b>{late}</b> toll or ticket charge{late === 1 ? " is" : "s are"} past the {payHours}-hour payment deadline.</p>}
+          {watch.map((w) => (
+            <p key={w.rentalId} style={{ fontSize: 14, marginBottom: 4 }}>
+              <b>{w.renter}</b> has {w.count} tickets on this rental (more than {threshold}). Decide whether to require payment now or end the rental.
+            </p>
+          ))}
+        </div>
+      )}
       <AddForm vehicles={vehicles} />
       <div className="card" style={{ padding: 0, overflowX: "auto" }}>
         {rows.length === 0 ? (
@@ -159,7 +186,7 @@ export default function TollsView({ rows, vehicles }: { rows: TollRow[]; vehicle
                     )}
                   </td>
                   <td className="cell-muted">{r.vehicle}{r.plate ? <div style={{ fontSize: 12 }}>{r.plate}</div> : null}</td>
-                  <td className="cell-muted">{r.renter ?? <span className="tag tag--bad">No renter found</span>}</td>
+                  <td className="cell-muted">{r.renter ?? <span className="tag tag--bad">No renter found</span>}{r.flagged && <div><span className="tag tag--bad">{r.renterTickets} tickets</span></div>}</td>
                   <td className="cell-muted">${r.amount.toFixed(2)}</td>
                   <td><span className={STATUS_TAG[r.status]}>{STATUS_LABEL[r.status]}</span></td>
                   <td><RowActions row={r} /></td>
