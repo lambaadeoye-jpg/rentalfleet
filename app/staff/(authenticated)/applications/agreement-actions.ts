@@ -17,7 +17,7 @@ const MISSING_LABELS: Record<string, string> = {
   free_cancellations: "approved cancellation rules", early_fee: "approved cancellation rules", late_fee: "approved cancellation rules",
   travel_area: "the fixed values on the agreement page", cleaning_cap: "the fixed values on the agreement page",
   admin_fee: "the fixed values on the agreement page", late_rent_fee: "the fixed values on the agreement page",
-  grace_days: "the fixed values on the agreement page", county: "the fixed values on the agreement page",
+  late_rent_cutoff: "the fixed values on the agreement page", late_return_fee: "the fixed values on the agreement page", county: "the fixed values on the agreement page",
 };
 
 function signLinkUrl(token: string): string {

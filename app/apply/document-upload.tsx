@@ -9,12 +9,17 @@ export default function DocumentUpload({
   customerId,
   documentType,
   label,
+  initiallyDone = false,
+  onUploaded,
 }: {
   customerId: string;
   documentType: string;
   label: string;
+  /** True when a file of this type is already on file (resuming an application). */
+  initiallyDone?: boolean;
+  onUploaded?: () => void;
 }) {
-  const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "uploading" | "done" | "error">(initiallyDone ? "done" : "idle");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -38,6 +43,7 @@ export default function DocumentUpload({
       return;
     }
     setStatus("done");
+    onUploaded?.();
   }
 
   return (

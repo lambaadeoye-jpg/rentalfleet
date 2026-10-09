@@ -108,7 +108,7 @@ export default function Workspace({
     } else if (step === "license") {
       result = await saveLicenseStep(data.customerId, { licenseState, licenseNumberRef, licenseExpiry });
     } else if (step === "work") {
-      result = await saveWorkStep(data.customerId, data.applicationId, gigPlatformIds, drivingStatus);
+      result = await saveWorkStep(data.customerId, data.applicationId, gigPlatformIds, drivingStatus === "already_driving" ? "already_driving" : "ready_to_start");
     } else if (step === "insurance") {
       result = await saveInsuranceStep(data.customerId, data.applicationId, {
         hasOwnInsurance,
@@ -317,7 +317,7 @@ export default function Workspace({
 
             <div className="field" style={{ marginTop: 20, marginBottom: 16 }}>
               <span style={{ fontSize: 13, fontWeight: 600, display: "block", marginBottom: 6 }}>
-                Are you already driving for a gig platform, or new to it?
+                Are you already driving for a gig platform, or newly approved?
               </span>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -327,41 +327,35 @@ export default function Workspace({
                     checked={drivingStatus === "already_driving"}
                     onChange={() => setDrivingStatus("already_driving")}
                   />
-                  I&rsquo;m already driving / approved on a platform
+                  I&rsquo;m already driving
                 </label>
                 <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
                   <input
                     type="radio"
                     name="drivingStatus"
-                    checked={drivingStatus === "ready_to_start"}
+                    checked={drivingStatus !== "already_driving"}
                     onChange={() => setDrivingStatus("ready_to_start")}
                   />
-                  I&rsquo;m new / not yet approved
-                </label>
-                <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                  <input
-                    type="radio"
-                    name="drivingStatus"
-                    checked={drivingStatus === "no"}
-                    onChange={() => setDrivingStatus("no")}
-                  />
-                  Neither applies to me
+                  I&rsquo;m approved and ready to start
                 </label>
               </div>
             </div>
 
+            <DocumentUpload
+              customerId={data.customerId}
+              documentType="platform_approval"
+              label="Upload proof of your approved driver profile (required)"
+              initiallyDone={data.hasPlatformApproval}
+            />
+            <p className="muted-text" style={{ fontSize: 13, marginTop: -8, marginBottom: 16 }}>
+              A screenshot of your approved profile on at least one platform you picked above. Not approved yet?{" "}
+              <a href="/guides/driver-signup" target="_blank" rel="noreferrer">See how to sign up</a>, then come back and upload it.
+            </p>
             {drivingStatus === "already_driving" && (
               <DocumentUpload
                 customerId={data.customerId}
                 documentType="proof_of_income"
-                label="Upload a screenshot of your earnings from the platform"
-              />
-            )}
-            {drivingStatus === "ready_to_start" && (
-              <DocumentUpload
-                customerId={data.customerId}
-                documentType="platform_approval"
-                label="Upload a screenshot showing your platform approval (e.g. your driver profile)"
+                label="Optional: a screenshot of your recent earnings"
               />
             )}
           </>

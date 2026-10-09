@@ -20,6 +20,8 @@ const DOCUMENT_LABELS: Record<string, string> = {
   drivers_license: "Driver’s License",
   proof_of_residence: "Proof of residence",
   insurance_card: "Insurance card",
+  platform_approval: "Platform approval",
+  proof_of_income: "Earnings screenshot",
 };
 
 export default async function ApplicationDetailPage({
@@ -91,6 +93,7 @@ export default async function ApplicationDetailPage({
 
   const availableVehicles = canStartRental ? await getAvailableVehicles() : [];
 
+  const approvalDoc = (documents ?? []).find((d: any) => d.document_type === "platform_approval");
   const platforms = (platformLinks ?? []).map((p) => (p.gig_platform as any)?.name).filter(Boolean);
 
   // Signed URLs generated server-side, respecting the same staff storage
@@ -129,6 +132,9 @@ export default async function ApplicationDetailPage({
         <div className="card">
           <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Driving for</p>
           <p style={{ fontWeight: 600 }}>{platforms.length > 0 ? platforms.join(", ") : "Not yet selected"}</p>
+          <p style={{ fontSize: 13, marginTop: 4, color: approvalDoc ? "inherit" : "var(--signal-red, #b91c1c)" }}>
+            {approvalDoc ? `Approval proof: ${sentenceCase(approvalDoc.review_status ?? "uploaded")}` : "No approval proof uploaded"}
+          </p>
         </div>
         <div className="card">
           <p className="muted-text" style={{ fontSize: 13, marginBottom: 6 }}>Insurance</p>

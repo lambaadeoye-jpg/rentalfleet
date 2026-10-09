@@ -175,12 +175,7 @@ async function applicationStatus(db: Db, tenantId: string, who: VerifiedCaller) 
     license_photo: has("drivers_license"),
     proof_of_residence: has("proof_of_residence"),
     work_info: Boolean(app.driving_status) && (platforms ?? []).length > 0,
-    work_document:
-      app.driving_status === "already_driving"
-        ? has("proof_of_income")
-        : app.driving_status === "ready_to_start"
-          ? has("platform_approval")
-          : false,
+    work_document: has("platform_approval"),
     insurance_question: app.has_own_insurance !== null,
   };
 

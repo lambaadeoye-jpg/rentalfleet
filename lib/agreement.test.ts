@@ -38,7 +38,7 @@ describe("render", () => {
     expect(r.rendered.intro).toContain("Deposit: $250");
     expect(r.rendered.intro).toContain("weekly, 1 week");
     const body = (n: number) => r.rendered.clauses.find((c) => c.number === n)!.body;
-    expect(body(3)).toContain("$6 for each toll");
+    expect(body(3)).toContain("$6 flat for each toll");
     expect(body(3)).toContain("$25 for each ticket");
     expect(body(4)).toContain("$75");
     expect(body(13)).toContain("deposit of $250");
@@ -108,4 +108,20 @@ describe("signing checks", () => {
     expect(initialsMatchName("ZZ", "Ann Baker")).toBe(false);
   });
   it("money", () => { expect(money(65)).toBe("$65"); expect(money(65.5)).toBe("$65.50"); });
+
+  it("uses the decided fees and wording", () => {
+    const values = buildRentalValues(facts, STARTER_VARIABLES);
+    const r = renderAgreement(template, values);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const body = (n: number) => r.rendered.clauses.find((c) => c.number === n)!.body;
+    expect(body(18)).toContain("by 5 PM on its due date");
+    expect(body(18)).toContain("late fee of $50");
+    expect(body(8)).toContain("$250");
+    expect(body(9)).toContain("$250");
+    expect(body(3)).not.toMatch(/automatic toll/i);
+    expect(body(11)).toContain("Greater Nashville");
+    expect(body(15)).toContain("only to an at-fault accident or a breach");
+    expect(body(12)).toContain("We do not cover tires");
+  });
 });

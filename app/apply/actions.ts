@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
 import { generateReferralCode } from "@/lib/referral-code";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
+import { platformProofProblem } from "@/lib/platform-proof";
 
 // ---------------------------------------------------------------------------
 // AUTH: anonymous-first entry. Starting the application no longer requires
@@ -104,6 +105,7 @@ export type ApplicationData = {
   licenseNumberRef: string;
   licenseExpiry: string;
   gigPlatformIds: string[];
+  hasPlatformApproval: boolean;
   drivingStatus: string | null;
   hasOwnInsurance: boolean | null;
   insuranceProvider: string;
@@ -235,6 +237,13 @@ export async function getOrCreateApplication(): Promise<
     .select("gig_platform_id")
     .eq("customer_id", customerId);
 
+  const { count: approvalCount } = await supabase
+    .from("customer_document")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", customerId)
+    .eq("document_type", "platform_approval")
+    .eq("status", "active");
+
   const { data: insurance } = await supabase
     .from("insurance_policy")
     .select("provider, policy_reference")
@@ -261,6 +270,7 @@ export async function getOrCreateApplication(): Promise<
       licenseNumberRef: driver?.license_number_ref ?? "",
       licenseExpiry: driver?.license_expiry ?? "",
       gigPlatformIds: (platforms ?? []).map((p) => p.gig_platform_id),
+      hasPlatformApproval: (approvalCount ?? 0) > 0,
       drivingStatus,
       hasOwnInsurance,
       insuranceProvider: insurance?.provider ?? "",
@@ -416,6 +426,17 @@ export async function uploadApplicantDocument(
 // ---------------------------------------------------------------------------
 // STEP 3: Work (gig platforms -- reuses gig_platform, same as the lead form)
 // ---------------------------------------------------------------------------
+async function hasPlatformApproval(customerId: string): Promise<boolean> {
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("customer_document")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", customerId)
+    .eq("document_type", "platform_approval")
+    .eq("status", "active");
+  return (count ?? 0) > 0;
+}
+
 export async function saveWorkStep(
   customerId: string,
   applicationId: string,
@@ -429,6 +450,12 @@ export async function saveWorkStep(
     .eq("id", customerId)
     .single();
   if (!customer) return { success: false, error: "Something went wrong. Please try again." };
+
+  const proofProblem = platformProofProblem({
+    platformCount: gigPlatformIds.length,
+    hasApproval: await hasPlatformApproval(customerId),
+  });
+  if (proofProblem) return { success: false, error: proofProblem };
 
   const { error: applicationError } = await supabase
     .from("application")
@@ -587,6 +614,20 @@ export async function submitApplication(
   applicationId: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
+
+  // Last line of defense: the form already checks, but nobody can submit around it.
+  const { data: appRow } = await supabase.from("application").select("customer_id").eq("id", applicationId).maybeSingle();
+  if (!appRow?.customer_id) return { success: false, error: "Couldn’t submit. Please try again." };
+  const { count: platformCount } = await supabase
+    .from("platform_eligibility")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", appRow.customer_id);
+  const proofProblem = platformProofProblem({
+    platformCount: platformCount ?? 0,
+    hasApproval: await hasPlatformApproval(appRow.customer_id),
+  });
+  if (proofProblem) return { success: false, error: proofProblem };
+
   const { error } = await supabase
     .from("application")
     .update({ status: "submitted", submitted_at: new Date().toISOString() })
