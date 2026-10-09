@@ -139,14 +139,19 @@ export async function setRuleExplained(rentalId: string, ruleId: string, on: boo
 }
 
 async function ensureInspection(c: Ctx, rentalId: string): Promise<string | null> {
-  const { data: existing } = await c.supabase.from("inspection").select("id").eq("rental_id", rentalId).eq("inspection_type", "pickup").maybeSingle();
+  const { data: existing } = await c.supabase.from("inspection").select("id").eq("rental_id", rentalId).eq("inspection_type", "pickup").order("id", { ascending: true }).limit(1).maybeSingle();
   if (existing) return existing.id as string;
   const { data: created, error } = await c.supabase
     .from("inspection")
     .insert({ tenant_id: c.tenantId, rental_id: rentalId, vehicle_id: c.vehicleId, inspection_type: "pickup", completed_by_user_id: c.userId, completed_at: new Date().toISOString() })
     .select("id")
     .single();
-  return error || !created ? null : (created.id as string);
+  if (error || !created) {
+    // Two taps at once can race; whoever lost should use the winner's row.
+    const { data: again } = await c.supabase.from("inspection").select("id").eq("rental_id", rentalId).eq("inspection_type", "pickup").limit(1).maybeSingle();
+    return again ? (again.id as string) : null;
+  }
+  return created.id as string;
 }
 
 export async function uploadWalkthroughPhoto(rentalId: string, area: string, formData: FormData): Promise<{ success: boolean; error?: string }> {
@@ -197,6 +202,10 @@ export async function recordVideo(rentalId: string, kind: "walkthrough" | "testi
   if (!Number.isFinite(secs) || secs < 1 || secs > MAX_VIDEO_SECONDS) return { success: false, error: `Videos can be at most ${MAX_VIDEO_SECONDS} seconds.` };
   const c = await context(rentalId);
   if (failed(c)) return c;
+  if (kind === "testimonial") {
+    const loaded = await loadHandoverState(c.supabase, rentalId);
+    if (loaded.row.testimonialStatus === "declined") return { success: false, error: "The renter said no to the video." };
+  }
   const inspectionId = await ensureInspection(c, rentalId);
   if (!inspectionId) return { success: false, error: "Couldn’t find the inspection record." };
   // Only a file this flow created for this rental can be attached.
@@ -223,6 +232,7 @@ export async function saveTestimonialRelease(rentalId: string, typedName: string
   const c = await context(rentalId);
   if (failed(c)) return c;
   const loaded = await loadHandoverState(c.supabase, rentalId);
+  if (loaded.row.testimonialStatus === "declined") return { success: false, error: "The renter said no to the video." };
   if (!loaded.hasTestimonialVideo) return { success: false, error: "Record the video first." };
   const err = await patchHandover(c, rentalId, {
     testimonial_status: "recorded", testimonial_release_name: name, testimonial_release_text: TESTIMONIAL_RELEASE_TEXT, testimonial_release_at: new Date().toISOString(),
@@ -233,7 +243,19 @@ export async function saveTestimonialRelease(rentalId: string, typedName: string
 export async function declineTestimonial(rentalId: string): Promise<{ success: boolean; error?: string }> {
   const c = await context(rentalId);
   if (failed(c)) return c;
-  const err = await patchHandover(c, rentalId, { testimonial_status: "declined" });
+  // If a testimonial video was already recorded, saying no means it is deleted, not just hidden.
+  const { data: inspection } = await c.supabase.from("inspection").select("id").eq("rental_id", rentalId).eq("inspection_type", "pickup").order("id", { ascending: true }).limit(1).maybeSingle();
+  if (inspection) {
+    const { data: media } = await c.supabase.from("inspection_media").select("id, storage_key").eq("inspection_id", inspection.id).eq("area", "testimonial");
+    if (media && media.length > 0) {
+      const admin = createAdminClient();
+      if (admin) await admin.storage.from(BUCKET).remove(media.map((m: any) => m.storage_key));
+      await c.supabase.from("inspection_media").delete().in("id", media.map((m: any) => m.id));
+    }
+  }
+  const err = await patchHandover(c, rentalId, {
+    testimonial_status: "declined", testimonial_release_name: null, testimonial_release_text: null, testimonial_release_at: null,
+  });
   revalidatePath("/staff/pickups");
   return err ? { success: false, error: err } : { success: true };
 }

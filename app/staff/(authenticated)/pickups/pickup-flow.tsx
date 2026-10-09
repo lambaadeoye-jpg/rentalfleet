@@ -21,7 +21,9 @@ function videoSeconds(file: File): Promise<number | null> {
     const url = URL.createObjectURL(file);
     const v = document.createElement("video");
     v.preload = "metadata";
-    const done = (n: number | null) => { URL.revokeObjectURL(url); resolve(n); };
+    const done = (n: number | null) => { clearTimeout(timer); URL.revokeObjectURL(url); resolve(n); };
+    // Some phones never fire either event for formats the browser can't read; don't hang forever.
+    const timer = setTimeout(() => done(null), 8000);
     v.onloadedmetadata = () => done(Number.isFinite(v.duration) ? v.duration : null);
     v.onerror = () => done(null);
     v.src = url;
@@ -49,6 +51,7 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
   const [wantsTestimonial, setWantsTestimonial] = useState<boolean | null>(null);
   const [releaseName, setReleaseName] = useState("");
   const [finished, setFinished] = useState(false);
+  const [rulesNote, setRulesNote] = useState<string | null>(null);
   const photoInput = useRef<HTMLInputElement>(null);
   const pendingArea = useRef<string | null>(null);
 
@@ -60,13 +63,30 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  // Keep the runner's place and mileage if the page reloads (signal drop, phone lock).
+  const saveKey = `pickup-flow:${item.rentalId}`;
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(saveKey);
+      if (raw) {
+        const saved = JSON.parse(raw) as { step?: number; mileage?: string };
+        if (typeof saved.step === "number" && saved.step >= 0 && saved.step < STEPS.length) setStep(saved.step);
+        if (typeof saved.mileage === "string") setMileage(saved.mileage);
+      }
+    } catch { /* storage unavailable: start from the top */ }
+  }, [saveKey]);
+  useEffect(() => {
+    try { sessionStorage.setItem(saveKey, JSON.stringify({ step, mileage })); } catch { /* ignore */ }
+  }, [saveKey, step, mileage]);
+
   const card = cardChargedStatus(item.money);
 
   if (finished) {
     return (
       <div style={{ padding: "16px 0" }}>
         <p style={{ fontWeight: 700, fontSize: 17, marginBottom: 6 }}>Pickup confirmed.</p>
-        <p className="muted-text">The renter was sent their house rules by text and email.</p>
+        <p className="muted-text">{rulesNote ?? "The renter was sent their house rules by text or email."}</p>
+        <button type="button" className="button-primary" style={{ minHeight: 48, marginTop: 14 }} onClick={() => router.refresh()}>Done</button>
       </div>
     );
   }
@@ -85,19 +105,29 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
   async function run(label: string, fn: () => Promise<{ success: boolean; error?: string }>) {
     setBusy(label);
     setError(null);
-    const res = await fn();
-    if (!res.success) setError(res.error ?? "Something went wrong. Please try again.");
-    await refresh();
-    setBusy(null);
+    try {
+      const res = await fn();
+      if (!res.success) setError(res.error ?? "Something went wrong. Please try again.");
+      await refresh();
+    } catch {
+      setError("That didn’t go through. Check your signal and try again.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function showLicense() {
     setBusy("license");
     setError(null);
-    const res = await getLicensePhotoUrl(item.rentalId);
-    setBusy(null);
-    if (!res.success || !res.url) { setError(res.error ?? "Couldn’t open the photo."); return; }
-    setLicenseUrl(res.url);
+    try {
+      const res = await getLicensePhotoUrl(item.rentalId);
+      if (!res.success || !res.url) { setError(res.error ?? "Couldn’t open the photo."); return; }
+      setLicenseUrl(res.url);
+    } catch {
+      setError("Couldn’t open the photo. Check your signal and try again.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
@@ -116,19 +146,24 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
   async function uploadVideo(kind: "walkthrough" | "testimonial", file: File) {
     setBusy(`video-${kind}`);
     setError(null);
-    const secs = await videoSeconds(file);
-    const ok = checkVideo({ seconds: secs, bytes: file.size });
-    if (!ok.ok) { setError(ok.message); setBusy(null); return; }
-    const ext = (file.name.split(".").pop() || (file.type.split("/")[1] ?? "mp4")).toLowerCase();
-    const prep = await prepareVideoUpload(item.rentalId, kind, ext);
-    if (!prep.success || !prep.path || !prep.token) { setError(prep.error ?? "Couldn’t start the upload."); setBusy(null); return; }
-    const supabase = createBrowserClient();
-    const { error: upErr } = await supabase.storage.from("inspection-photos").uploadToSignedUrl(prep.path, prep.token, file);
-    if (upErr) { setError("The video didn’t upload. Check your signal and try again."); setBusy(null); return; }
-    const rec = await recordVideo(item.rentalId, kind, prep.path, secs as number);
-    if (!rec.success) setError(rec.error ?? "Couldn’t save the video.");
-    await refresh();
-    setBusy(null);
+    try {
+      const secs = await videoSeconds(file);
+      const ok = checkVideo({ seconds: secs, bytes: file.size });
+      if (!ok.ok) { setError(ok.message); return; }
+      const ext = (file.name.includes(".") ? file.name.split(".").pop() : null) || (file.type.split("/")[1] ?? "mp4");
+      const prep = await prepareVideoUpload(item.rentalId, kind, ext.toLowerCase());
+      if (!prep.success || !prep.path || !prep.token) { setError(prep.error ?? "Couldn’t start the upload."); return; }
+      const supabase = createBrowserClient();
+      const { error: upErr } = await supabase.storage.from("inspection-photos").uploadToSignedUrl(prep.path, prep.token, file);
+      if (upErr) { setError("The video didn’t upload. Check your signal and try again."); return; }
+      const rec = await recordVideo(item.rentalId, kind, prep.path, secs as number);
+      if (!rec.success) setError(rec.error ?? "Couldn’t save the video.");
+      await refresh();
+    } catch {
+      setError("The video didn’t upload. Check your signal and try again.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function handleConfirm() {
@@ -136,17 +171,24 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
     if (!window.confirm(`Hand over the ${item.vehicleLabel} to ${item.customerFirstName} ${item.customerLastName}? This can’t be undone from here.`)) return;
     setBusy("confirm");
     setError(null);
-    const res = await confirmPickup(item.rentalId, Number(mileage), true);
-    setBusy(null);
-    if (!res.success) { setError(res.error ?? "Couldn’t confirm pickup."); return; }
-    setFinished(true);
-    router.refresh();
+    try {
+      const res = await confirmPickup(item.rentalId, Number(mileage), true);
+      if (!res.success) { setError(res.error ?? "Couldn’t confirm pickup."); return; }
+      try { sessionStorage.removeItem(saveKey); } catch { /* ignore */ }
+      setRulesNote(res.rulesSent ? null : (res.rulesNote ?? null));
+      setFinished(true);
+    } catch {
+      setError("Couldn’t confirm. Check your signal and tap confirm again. If the car already shows as handed over, you’re done.");
+    } finally {
+      setBusy(null);
+    }
   }
 
   const big: React.CSSProperties = { minHeight: 48, fontSize: 15 };
 
   return (
     <div>
+      {error && <p className="error-text" role="alert" style={{ marginBottom: 12, fontWeight: 600 }}>{error}</p>}
       {/* progress */}
       <div style={{ display: "flex", gap: 6, marginBottom: 16 }} aria-label="Pickup steps">
         {STEPS.map((label, i) => (
@@ -156,7 +198,7 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
             onClick={() => { setStep(i); setError(null); }}
             aria-current={i === step ? "step" : undefined}
             style={{
-              flex: 1, border: "none", borderRadius: 8, padding: "8px 2px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+              flex: 1, border: "none", borderRadius: 8, padding: "10px 2px", minHeight: 44, fontSize: 12, fontWeight: 700, cursor: "pointer",
               background: i === step ? "var(--midnight, #0f172a)" : stepDone[i] ? "#dcfce7" : "var(--cloud, #f1f5f9)",
               color: i === step ? "white" : stepDone[i] ? "#166534" : "var(--text-secondary)",
             }}
@@ -197,9 +239,10 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
           <Row ok={card.depositPaid}>Deposit charged to the card</Row>
           {!(item.agreementSigned && card.allPaid) && (
             <p className="error-text" style={{ fontSize: 14, marginTop: 8 }}>
-              Don’t hand over the keys yet. Ask the office to fix the item above, then come back to this screen.
+              Don’t hand over the keys yet. Ask the office to fix the item above, then tap the button below.
             </p>
           )}
+          <button type="button" className="button-secondary" style={{ ...big, marginTop: 8 }} onClick={() => router.refresh()}>Check again</button>
         </div>
       )}
 
@@ -249,7 +292,7 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
               <div key={r.id} style={{ border: `1px solid ${done ? "#86efac" : "var(--border)"}`, background: done ? "#f0fdf4" : "white", borderRadius: 10, padding: 12, marginBottom: 8 }}>
                 <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 2 }}>{r.title}</p>
                 <p style={{ fontSize: 14, lineHeight: 1.5, marginBottom: 8 }}>{r.text}</p>
-                <button type="button" className={done ? "button-secondary" : "button-primary"} style={{ minHeight: 40, fontSize: 14, color: done ? "var(--text)" : undefined, borderColor: done ? "var(--border)" : undefined }} disabled={busy !== null} onClick={() => run(`rule-${r.id}`, () => setRuleExplained(item.rentalId, r.id, !done))}>
+                <button type="button" className={done ? "button-secondary" : "button-primary"} style={{ minHeight: 48, fontSize: 14, color: done ? "var(--text)" : undefined, borderColor: done ? "var(--border)" : undefined }} disabled={busy !== null} onClick={() => run(`rule-${r.id}`, () => setRuleExplained(item.rentalId, r.id, !done))}>
                   {done ? "Explained ✓ (tap to undo)" : "I explained this"}
                 </button>
               </div>
@@ -312,11 +355,9 @@ export default function PickupFlow({ item }: { item: PickupItem }) {
         </div>
       )}
 
-      {error && <p className="error-text" style={{ marginTop: 12 }}>{error}</p>}
-
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 16 }}>
-        <button type="button" className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)", visibility: step === 0 ? "hidden" : "visible" }} onClick={() => { setStep(step - 1); setError(null); }}><ChevronLeft size={16} /> Back</button>
-        {step < STEPS.length - 1 && <button type="button" className="button-primary" onClick={() => { setStep(step + 1); setError(null); }}>Next <ChevronRight size={16} /></button>}
+        <button type="button" className="button-secondary" style={{ ...big, visibility: step === 0 ? "hidden" : "visible" }} onClick={() => { setStep(step - 1); setError(null); }}><ChevronLeft size={16} /> Back</button>
+        {step < STEPS.length - 1 && <button type="button" className="button-primary" style={big} onClick={() => { setStep(step + 1); setError(null); }}>Next <ChevronRight size={16} /></button>}
       </div>
     </div>
   );

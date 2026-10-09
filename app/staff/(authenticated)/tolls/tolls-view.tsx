@@ -158,7 +158,7 @@ export default function TollsView({ rows, vehicles, watch, threshold, payHours }
       {(watch.length > 0 || late > 0) && (
         <div className="card" style={{ marginBottom: 20, borderColor: "#fcd34d", background: "#fffbeb" }}>
           <h2 className="card-title card-title--tight">Needs a look</h2>
-          {late > 0 && <p style={{ fontSize: 14, marginBottom: 6 }}><b>{late}</b> toll or ticket charge{late === 1 ? " is" : "s are"} past the {payHours}-hour payment deadline.</p>}
+          {late > 0 && <p style={{ fontSize: 14, marginBottom: 6 }}><b>{late}</b> ticket charge{late === 1 ? " is" : "s are"} past the {payHours}-hour payment deadline.</p>}
           {watch.map((w) => (
             <p key={w.rentalId} style={{ fontSize: 14, marginBottom: 4 }}>
               <b>{w.renter}</b> has {w.count} tickets on this rental (more than {threshold}). Decide whether to require payment now or end the rental.

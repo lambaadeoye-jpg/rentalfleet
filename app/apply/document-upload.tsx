@@ -30,20 +30,33 @@ export default function DocumentUpload({
     // otherwise reject multi-megabyte uploads.
     setStatus("uploading");
     setError(null);
-    const file = await prepareUploadFile(original);
+    try {
+      const file = await prepareUploadFile(original);
+      if (file.size > 5.5 * 1024 * 1024) {
+        setStatus("error");
+        setError("That file is too big. Take the photo again at a lower quality, or choose a smaller file (under 5 MB).");
+        return;
+      }
 
-    const formData = new FormData();
-    formData.set("file", file);
+      const formData = new FormData();
+      formData.set("file", file);
 
-    const result = await uploadApplicantDocument(customerId, documentType, formData);
+      const result = await uploadApplicantDocument(customerId, documentType, formData);
 
-    if (!result.success) {
+      if (!result.success) {
+        setStatus("error");
+        setError(result.error ?? "Upload failed.");
+        return;
+      }
+      setStatus("done");
+      onUploaded?.();
+    } catch {
       setStatus("error");
-      setError(result.error ?? "Upload failed.");
-      return;
+      setError("The upload didn’t go through. Check your connection and try again.");
+    } finally {
+      // Let the same file be chosen again after a failure.
+      if (inputRef.current) inputRef.current.value = "";
     }
-    setStatus("done");
-    onUploaded?.();
   }
 
   return (
@@ -59,7 +72,15 @@ export default function DocumentUpload({
           cursor: "pointer",
           borderStyle: status === "done" ? "solid" : "dashed",
         }}
+        role="button"
+        tabIndex={0}
         onClick={() => inputRef.current?.click()}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            inputRef.current?.click();
+          }
+        }}
       >
         {status === "done" ? (
           <CheckCircle2 size={20} color="var(--signal-green, #16a34a)" />

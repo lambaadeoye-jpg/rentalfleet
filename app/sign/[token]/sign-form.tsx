@@ -21,10 +21,15 @@ export default function SignForm({ token, rendered }: { token: string; rendered:
     if (!consent) { setError("Please confirm you agree to sign electronically."); return; }
     if (name.trim().split(/\s+/).length < 2) { setError("Type your full legal name."); return; }
     setBusy(true);
-    const res = await signAgreement(token, name, initials, consent);
-    setBusy(false);
-    if (!res.success) { setError(res.error ?? "We couldn’t record your signature."); return; }
-    router.refresh();
+    try {
+      const res = await signAgreement(token, name, initials, consent);
+      if (!res.success) { setError(res.error ?? "We couldn’t record your signature."); return; }
+      router.refresh();
+    } catch {
+      setError("That didn’t go through. Check your connection and tap Sign agreement again. Your initials are still here.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -58,7 +63,7 @@ export default function SignForm({ token, rendered }: { token: string; rendered:
           <span style={{ fontSize: 13, fontWeight: 600 }}>Type your full legal name</span>
           <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" />
         </label>
-        {error && <p className="error-text" style={{ marginBottom: 10 }}>{error}</p>}
+        {error && <p className="error-text" role="alert" style={{ marginBottom: 10 }}>{error}</p>}
         <button className="button-primary" style={{ width: "100%", minHeight: 48 }} disabled={busy} onClick={submit}>
           {busy ? "Signing…" : "Sign agreement"}
         </button>

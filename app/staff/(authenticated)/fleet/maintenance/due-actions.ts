@@ -11,7 +11,7 @@ export async function getServiceDue(): Promise<{ rows: ServiceDueRow[]; interval
   const supabase = await createClient();
   const rules = await loadRuleValues(supabase);
   const [{ data: cars }, { data: jobs }] = await Promise.all([
-    supabase.from("vehicle").select("id, year, make, model, plate, status, created_at").not("status", "in", "(sold,decommissioned,maintenance)"),
+    supabase.from("vehicle").select("id, year, make, model, plate, status, created_at").in("status", ["ready", "available", "reserved", "rented"]),
     supabase.from("maintenance_work_order").select("vehicle_id, downtime_end").eq("status", "completed").not("downtime_end", "is", null),
   ]);
   const last = new Map<string, string>();

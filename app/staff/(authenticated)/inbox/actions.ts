@@ -3,6 +3,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
+import { currentRoleName } from "@/lib/staff-role";
+import { phoneNorm } from "@/lib/agreement-notice";
 
 export type ConversationSummary = {
   key: string; // "customer:<id>" or "lead:<id>" or "unlinked:<phone>"
@@ -123,8 +125,28 @@ export async function sendReply(fields: {
   }
 
   const supabase = await createClient();
+  if ((await currentRoleName(supabase)) === "field_staff") return { success: false, error: "Replies are sent from the office." };
   const { data: tenantRow } = await supabase.from("tenant").select("id").limit(1).maybeSingle();
   if (!tenantRow) return { success: false, error: "Something went wrong. Please try again." };
+
+  // Send to the number on file for the person, not whatever the browser sent.
+  let phone = fields.phone.trim();
+  if (fields.customerId) {
+    const { data: c } = await supabase.from("customer").select("phone").eq("id", fields.customerId).maybeSingle();
+    if (c?.phone) phone = c.phone;
+  } else if (fields.leadId) {
+    const { data: l } = await supabase.from("lead").select("phone").eq("id", fields.leadId).maybeSingle();
+    if (l?.phone) phone = l.phone;
+  }
+
+  // Never message someone who has opted out (texts), however the reply was started.
+  if (fields.channel === "sms") {
+    const norm = phoneNorm(phone);
+    if (norm) {
+      const { data: hit } = await supabase.from("contact_suppression").select("id").eq("tenant_id", tenantRow.id).eq("phone_norm", norm).maybeSingle();
+      if (hit) return { success: false, error: "This person has opted out of texts, so the message wasn’t sent." };
+    }
+  }
 
   // Log first, same pattern as every other write-then-notify action in
   // this build (recordPayment, approveCharge, etc.) -- the row is the
@@ -138,7 +160,7 @@ export async function sendReply(fields: {
     channel: fields.channel,
     direction: "outbound",
     event_type: "message",
-    payload: { body: fields.message.trim() },
+    payload: { body: fields.message.trim(), to: phone, staff_reply: true },
   });
 
   if (insertError) {
@@ -149,7 +171,7 @@ export async function sendReply(fields: {
   }
 
   void fireN8nWebhook(N8N_WEBHOOK_PATHS.inboxSendReply, {
-    phone: fields.phone,
+    phone,
     channel: fields.channel,
     message: fields.message.trim(),
   });

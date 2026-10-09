@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
-import { CHARGE_TYPE, DEFAULT_FEES, TOLL_KINDS, chargeTotal, isFlagged, isPastDeadline, localToIso, matchRental, parseMoney, payByFrom, ticketCounts, type RentalWindow, type TollKind } from "@/lib/tolls";
+import { CHARGE_TYPE, DEFAULT_FEES, TOLL_KINDS, chargeTotal, isFlagged, isPastDeadline, localToIso, matchRental, parseMoney, ticketCounts, type RentalWindow, type TollKind } from "@/lib/tolls";
 import { loadRuleValues } from "@/lib/handover-server";
 
 type Result = { success: boolean; error?: string; note?: string };
@@ -113,7 +113,7 @@ export async function addToll(input: {
     .from("rental")
     .select("id, customer_id, start_at, actual_return_at, status, rental_segment!inner(vehicle_id, starts_at, ends_at)")
     .eq("rental_segment.vehicle_id", input.vehicleId)
-    .in("status", ["active", "returned", "closed"]);
+    .in("status", ["active", "extended", "return_pending", "returned", "closed", "suspended", "delinquent", "recovery", "terminated"]);
   const windows: RentalWindow[] = (rentals ?? []).flatMap((r: any) =>
     (r.rental_segment ?? []).map((seg: any) => ({
       rentalId: r.id,
@@ -184,8 +184,9 @@ export async function chargeRenter(tollId: string, feeText: string): Promise<Res
     return { success: false, error: "Couldn’t raise that charge. Please try again." };
   }
 
-  const rules = await loadRuleValues(supabase);
-  await supabase.from("toll_transaction").update({ charge_id: charge.id, pay_by: payByFrom(new Date(), rules.ticketPayHours) }).eq("id", tollId);
+  // The 24-hour payment clock starts when the charge is approved and the renter is told (see approveCharge), not now.
+  const { error: linkError } = await supabase.from("toll_transaction").update({ charge_id: charge.id }).eq("id", tollId);
+  if (linkError) console.error("[tolls] charge not linked to the toll row:", linkError.message);
   void logAuditEvent({
     tenantId: toll.tenant_id,
     action: "toll_charged",

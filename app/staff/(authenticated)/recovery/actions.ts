@@ -271,16 +271,28 @@ export async function approveRecoveryExpense(expenseId: string): Promise<{ succe
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error: approveError } = await supabase
+  // Only a pending expense can be approved, and only once (stops a double click creating two charges).
+  const { data: claimed, error: approveError } = await supabase
     .from("recovery_expense")
     .update({ approval_status: "approved", approved_by: user?.id ?? null, approved_at: new Date().toISOString() })
-    .eq("id", expenseId);
+    .eq("id", expenseId)
+    .eq("approval_status", "pending")
+    .select("id");
 
   if (approveError) {
     if (approveError.message?.toLowerCase().includes("permission")) {
       return { success: false, error: "You don’t have permission to approve recovery expenses." };
     }
     return { success: false, error: "Couldn’t approve that expense." };
+  }
+  if (!claimed || claimed.length === 0) {
+    return { success: false, error: "That expense was already handled. Refresh the page." };
+  }
+
+  // A cost the company bears is recorded as approved but never charged to the renter or their deposit.
+  if (expense.responsibility !== "renter") {
+    revalidatePath(`/staff/recovery/${expense.recovery_case_id}`);
+    return { success: true };
   }
 
   const { data: recoveryCase } = await supabase

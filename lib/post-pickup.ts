@@ -26,7 +26,7 @@ export async function sendPostPickupMessage(rentalId: string): Promise<PostPicku
     if (existing?.message_sent_at) return { ...result, reasons: ["already_sent"] };
 
     const customer = rental.customer as any;
-    const rules = await loadRuleValues(admin);
+    const rules = await loadRuleValues(admin, rental.tenant_id);
     const msg = postPickupMessage(rules, customer?.first_name ?? null);
 
     // Text

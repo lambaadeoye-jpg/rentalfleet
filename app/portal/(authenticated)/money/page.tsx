@@ -11,7 +11,8 @@ export default async function PortalMoneyPage() {
 
   const [{ data: deposits }, { data: charges }, { data: payments }, documents] = await Promise.all([
     supabase.from("deposit").select("amount_collected, status, refunded_at").order("id", { ascending: false }),
-    supabase.from("charge").select("charge_type, amount, approval_status, created_at").order("created_at", { ascending: false }),
+    // Only approved charges: drafts and rejected ones are internal and may still change.
+    supabase.from("charge").select("charge_type, amount, approval_status, created_at").eq("approval_status", "approved").order("created_at", { ascending: false }),
     supabase.from("payment").select("amount, status, paid_at, method_type").order("paid_at", { ascending: false, nullsFirst: false }),
     getMyGeneratedDocuments(),
   ]);
@@ -56,7 +57,7 @@ export default async function PortalMoneyPage() {
           payments.map((p, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 14, marginBottom: 6 }}>
               <span className="muted-text">
-                {p.paid_at ? new Date(p.paid_at).toLocaleDateString() : "Scheduled"}
+                {p.paid_at ? new Date(p.paid_at).toLocaleDateString("en-US", { timeZone: "America/Chicago" }) : "Scheduled"}
               </span>
               <span style={{ fontWeight: 700 }}>${Number(p.amount).toFixed(2)}</span>
             </div>

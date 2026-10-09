@@ -43,10 +43,12 @@ export default function Workspace({
   initialAdditionalDrivers: AdditionalDriverInput[];
 }) {
   const [step, setStep] = useState<StepKey>(
-    data.applicationStatus === "submitted" || data.applicationStatus === "screening" ? "review" : "personal"
+    data.applicationStatus !== "draft" ? "review" : "personal"
   );
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(data.applicationStatus !== "draft");
+  const [busy, setBusy] = useState(false);
+  const [stepError, setStepError] = useState<string | null>(null);
 
   // Optional, non-blocking: lets an applicant who started anonymously add
   // an email later so they CAN resume on another device if they want to --
@@ -101,41 +103,69 @@ export default function Workspace({
   const stepIndex = STEPS.findIndex((s) => s.key === step);
 
   async function handleContinue() {
-    let result: { success: boolean; error?: string } = { success: true };
+    if (busy) return;
+    setStepError(null);
 
-    if (step === "personal") {
-      result = await savePersonalStep(data.customerId, { firstName, lastName, phone });
-    } else if (step === "license") {
-      result = await saveLicenseStep(data.customerId, { licenseState, licenseNumberRef, licenseExpiry });
-    } else if (step === "work") {
-      result = await saveWorkStep(data.customerId, data.applicationId, gigPlatformIds, drivingStatus === "already_driving" ? "already_driving" : "ready_to_start");
-    } else if (step === "insurance") {
-      result = await saveInsuranceStep(data.customerId, data.applicationId, {
-        hasOwnInsurance,
-        provider: insuranceProvider,
-        policyReference: insurancePolicyReference,
-      });
-    } else if (step === "drivers") {
-      result = await saveAdditionalDrivers(data.customerId, hasAdditionalDrivers ? additionalDrivers : []);
-    }
-
-    if (!result.success) {
-      alert(result.error ?? "Couldn’t save that step. Please try again.");
+    if (step === "personal" && (!firstName.trim() || !lastName.trim() || !phone.trim())) {
+      setStepError("Enter your first name, last name and mobile number to continue.");
       return;
     }
 
-    setSavedAt(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
-    const next = STEPS[stepIndex + 1];
-    if (next) goTo(next.key);
+    setBusy(true);
+    try {
+      let result: { success: boolean; error?: string } = { success: true };
+
+      if (step === "personal") {
+        result = await savePersonalStep(data.customerId, { firstName, lastName, phone });
+      } else if (step === "license") {
+        result = await saveLicenseStep(data.customerId, { licenseState, licenseNumberRef, licenseExpiry });
+      } else if (step === "work") {
+        result = await saveWorkStep(data.customerId, data.applicationId, gigPlatformIds, drivingStatus === "already_driving" ? "already_driving" : "ready_to_start");
+      } else if (step === "insurance") {
+        result = await saveInsuranceStep(data.customerId, data.applicationId, {
+          hasOwnInsurance,
+          provider: insuranceProvider,
+          policyReference: insurancePolicyReference,
+        });
+      } else if (step === "drivers") {
+        result = await saveAdditionalDrivers(data.customerId, hasAdditionalDrivers ? additionalDrivers : []);
+      }
+
+      if (!result.success) {
+        setStepError(result.error ?? "Couldn’t save that step. Please try again.");
+        return;
+      }
+
+      setSavedAt(new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
+      const next = STEPS[stepIndex + 1];
+      if (next) {
+        goTo(next.key);
+        // New step: start at the top so the person isn't left looking at the bottom of the last one.
+        if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } catch {
+      setStepError("That didn’t save. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function handleSubmitApplication() {
-    const result = await submitApplication(data.applicationId);
-    if (!result.success) {
-      alert(result.error ?? "Couldn’t submit. Please try again.");
-      return;
+    if (busy) return;
+    setStepError(null);
+    setBusy(true);
+    try {
+      const result = await submitApplication(data.applicationId);
+      if (!result.success) {
+        setStepError(result.error ?? "Couldn’t submit. Please try again.");
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setStepError("That didn’t go through. Check your connection and try again.");
+    } finally {
+      setBusy(false);
     }
-    setSubmitted(true);
   }
 
   return (
@@ -528,12 +558,31 @@ export default function Workspace({
             {submitted ? (
               <div style={{ textAlign: "center", padding: "20px 0" }}>
                 <Check size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
-                <p style={{ fontWeight: 700, marginBottom: 4 }}>Application submitted</p>
-                <p className="muted-text" style={{ marginBottom: 4 }}>
-                  You&rsquo;ll get an automatic confirmation within minutes. From there, many
-                  applicants complete the full process in under 24 hours when everything&rsquo;s
-                  submitted promptly.
-                </p>
+                {data.applicationStatus === "approved" || data.applicationStatus === "conditionally_approved" ? (
+                  <>
+                    <p style={{ fontWeight: 700, marginBottom: 4 }}>You’re approved</p>
+                    <p className="muted-text" style={{ marginBottom: 4 }}>
+                      We’ll text you the next steps to sign your agreement and set up your pickup. Check your
+                      messages, or sign in to your portal.
+                    </p>
+                  </>
+                ) : data.applicationStatus === "declined" ? (
+                  <>
+                    <p style={{ fontWeight: 700, marginBottom: 4 }}>We couldn’t approve this application</p>
+                    <p className="muted-text" style={{ marginBottom: 4 }}>
+                      If you think this is a mistake, contact us and we’ll take another look.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p style={{ fontWeight: 700, marginBottom: 4 }}>Application submitted</p>
+                    <p className="muted-text" style={{ marginBottom: 4 }}>
+                      You&rsquo;ll get an automatic confirmation within minutes. From there, many
+                      applicants complete the full process in under 24 hours when everything&rsquo;s
+                      submitted promptly.
+                    </p>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -571,8 +620,9 @@ export default function Workspace({
                   Submitting doesn&rsquo;t charge you anything — we&rsquo;ll always show you the
                   exact cost before you pay.
                 </p>
-                <button onClick={handleSubmitApplication} className="button-primary" style={{ width: "100%" }}>
-                  Submit application
+                {stepError && <p className="error-text" role="alert" style={{ marginBottom: 10 }}>{stepError}</p>}
+                <button onClick={handleSubmitApplication} disabled={busy} className="button-primary" style={{ width: "100%" }}>
+                  {busy ? "Submitting…" : "Submit application"}
                 </button>
               </>
             )}
@@ -580,13 +630,16 @@ export default function Workspace({
         )}
 
         {step !== "review" && (
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 24 }}>
-            <span className="muted-text" style={{ fontSize: 13 }}>
-              {savedAt ? `Saved at ${savedAt}` : ""}
-            </span>
-            <button onClick={handleContinue} className="button-primary">
-              Continue
-            </button>
+          <div style={{ marginTop: 24 }}>
+            {stepError && <p className="error-text" role="alert" style={{ marginBottom: 10 }}>{stepError}</p>}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span className="muted-text" style={{ fontSize: 13 }}>
+                {savedAt ? `Saved at ${savedAt}` : ""}
+              </span>
+              <button onClick={handleContinue} disabled={busy} className="button-primary">
+                {busy ? "Saving…" : "Continue"}
+              </button>
+            </div>
           </div>
         )}
       </div>

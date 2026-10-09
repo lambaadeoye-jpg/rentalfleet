@@ -82,12 +82,25 @@ h3,
   cursor: not-allowed;
 }
 
+/* Default is dark-on-light because nearly every use sits on a white card.
+   Use .on-dark for the rare button on a dark background. */
 .button-secondary {
   background: transparent;
-  color: var(--white);
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  color: var(--text);
+  border: 1.5px solid var(--border);
 }
 .button-secondary:hover {
+  border-color: var(--teal);
+}
+.button-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.on-dark .button-secondary {
+  color: var(--white);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.on-dark .button-secondary:hover {
   border-color: white;
 }
 
@@ -97,7 +110,7 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
-  font-size: 14px;
+  font-size: 16px; /* 16px stops iOS Safari zooming the page on focus */
   width: 100%;
   font-family: inherit;
   background: white;

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { Camera } from "lucide-react";
 import { uploadInspectionPhoto } from "./inspection-actions";
+import { prepareUploadFile } from "@/lib/image-compress";
 
 export default function InspectionPhotoUpload({
   rentalId,
@@ -25,17 +26,23 @@ export default function InspectionPhotoUpload({
     setError(null);
     setUploading(true);
 
-    const formData = new FormData();
-    formData.append("file", file);
-    const result = await uploadInspectionPhoto(rentalId, vehicleId, inspectionType, formData);
-    setUploading(false);
-
-    if (!result.success) {
-      setError(result.error ?? "Couldn’t upload that photo.");
-      return;
+    try {
+      // Phone photos are several MB; shrink first so the upload isn't rejected for size.
+      const small = await prepareUploadFile(file);
+      const formData = new FormData();
+      formData.append("file", small);
+      const result = await uploadInspectionPhoto(rentalId, vehicleId, inspectionType, formData);
+      if (!result.success) {
+        setError(result.error ?? "Couldn’t upload that photo.");
+        return;
+      }
+      setCount((c) => c + 1);
+    } catch {
+      setError("The photo didn’t upload. Check your signal and try again.");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-    setCount((c) => c + 1);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   return (

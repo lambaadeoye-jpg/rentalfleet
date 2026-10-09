@@ -108,7 +108,8 @@ export async function approveReferral(referralId: string): Promise<{ success: bo
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  // Only a qualified referral can be credited, and only once (a double click must not pay twice).
+  const { data: claimed, error } = await supabase
     .from("referral")
     .update({
       status: "credited",
@@ -116,7 +117,13 @@ export async function approveReferral(referralId: string): Promise<{ success: bo
       approved_at: new Date().toISOString(),
       approved_by: user?.id ?? null,
     })
-    .eq("id", referralId);
+    .eq("id", referralId)
+    .eq("status", "qualified")
+    .select("id");
+
+  if (!error && (!claimed || claimed.length === 0)) {
+    return { success: false, error: "That referral was already handled or isn’t qualified yet. Refresh the page." };
+  }
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
@@ -127,7 +134,7 @@ export async function approveReferral(referralId: string): Promise<{ success: bo
 
   // Issues the actual credit -- append-only ledger entry, same pattern
   // as every other financial record in this system.
-  await supabase.from("ledger_entry").insert({
+  const { error: ledgerError } = await supabase.from("ledger_entry").insert({
     tenant_id: referral.tenant_id,
     customer_id: referral.referrer_customer_id,
     entry_type: "referral_credit_earned",
@@ -135,6 +142,11 @@ export async function approveReferral(referralId: string): Promise<{ success: bo
     reference_type: "referral",
     reference_id: referral.id,
   });
+  if (ledgerError) {
+    // No credit was issued, so put the referral back rather than leave it marked credited.
+    await supabase.from("referral").update({ status: "qualified", credit_amount: null, approved_at: null, approved_by: null }).eq("id", referralId);
+    return { success: false, error: "Couldn’t issue the credit, so the referral was left as qualified. Try again." };
+  }
 
   void logAuditEvent({
     tenantId: referral.tenant_id,

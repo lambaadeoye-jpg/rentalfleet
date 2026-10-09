@@ -394,6 +394,8 @@ export async function saveLicenseStep(
 
 // Generic document upload, reused by both License and Insurance steps.
 // documentType: 'drivers_license' | 'proof_of_residence' | 'insurance_card'
+const APPLICANT_DOCUMENT_TYPES = new Set(["drivers_license", "proof_of_residence", "insurance_card", "platform_approval", "proof_of_income"]);
+
 export async function uploadApplicantDocument(
   customerId: string,
   documentType: string,
@@ -408,6 +410,9 @@ export async function uploadApplicantDocument(
   const file = formData.get("file") as File | null;
   if (!file || file.size === 0) return { success: false, error: "Choose a file first." };
   if (file.size > 10 * 1024 * 1024) return { success: false, error: "File is too large (max 10MB)." };
+  if (!APPLICANT_DOCUMENT_TYPES.has(documentType)) return { success: false, error: "That document type isn’t accepted." };
+  const looksOk = /^image\//.test(file.type) || file.type === "application/pdf" || /\.(jpe?g|png|webp|heic|heif|pdf)$/i.test(file.name);
+  if (!looksOk) return { success: false, error: "Upload a photo or a PDF." };
 
   const { data: customer } = await supabase
     .from("customer")
@@ -450,7 +455,8 @@ async function hasPlatformApproval(customerId: string): Promise<boolean> {
     .select("id", { count: "exact", head: true })
     .eq("customer_id", customerId)
     .eq("document_type", "platform_approval")
-    .eq("status", "active");
+    .eq("status", "active")
+    .neq("review_status", "rejected"); // staff rejected proof does not count
   return (count ?? 0) > 0;
 }
 
@@ -633,8 +639,22 @@ export async function submitApplication(
   const supabase = await createClient();
 
   // Last line of defense: the form already checks, but nobody can submit around it.
-  const { data: appRow } = await supabase.from("application").select("customer_id").eq("id", applicationId).maybeSingle();
+  const { data: appRow } = await supabase.from("application").select("customer_id, status").eq("id", applicationId).maybeSingle();
   if (!appRow?.customer_id) return { success: false, error: "Couldn’t submit. Please try again." };
+  // A second tap (or a stale tab) must not submit twice or restart a decided application.
+  if (appRow.status !== "draft") return { success: true };
+
+  const { data: who } = await supabase.from("customer").select("first_name, last_name, phone").eq("id", appRow.customer_id).maybeSingle();
+  if (!who?.first_name?.trim() || !who?.last_name?.trim() || !who?.phone?.trim()) {
+    return { success: false, error: "Add your name and mobile number on the first step before you submit." };
+  }
+  const { count: licenseCount } = await supabase
+    .from("customer_document")
+    .select("id", { count: "exact", head: true })
+    .eq("customer_id", appRow.customer_id)
+    .eq("document_type", "drivers_license")
+    .eq("status", "active");
+  if (!licenseCount) return { success: false, error: "Upload a photo of your driver’s license before you submit." };
   if (await isOnDoNotRentList(appRow.customer_id)) return { success: false, error: BANNED_APPLICANT_MESSAGE };
   const { count: platformCount } = await supabase
     .from("platform_eligibility")
@@ -646,12 +666,15 @@ export async function submitApplication(
   });
   if (proofProblem) return { success: false, error: proofProblem };
 
-  const { error } = await supabase
+  const { data: submittedRows, error } = await supabase
     .from("application")
     .update({ status: "submitted", submitted_at: new Date().toISOString() })
-    .eq("id", applicationId);
+    .eq("id", applicationId)
+    .eq("status", "draft")
+    .select("id");
 
   if (error) return { success: false, error: "Couldn’t submit. Please try again." };
+  if (!submittedRows || submittedRows.length === 0) return { success: true }; // someone else got there first
 
   // Best-effort: tell automation the application is in. Details are read after the save, so a lookup problem
   // never affects the submission itself.

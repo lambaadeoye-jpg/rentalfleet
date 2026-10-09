@@ -33,7 +33,7 @@ export default function RulesSettingsForm({ initial }: { initial: RulesSettings 
       </ul>
 
       <label className="field">
-        <span style={{ fontSize: 13, fontWeight: 600 }}>Pay tickets and tolls within (hours)</span>
+        <span style={{ fontSize: 13, fontWeight: 600 }}>Pay tickets within (hours)</span>
         <input inputMode="numeric" value={v.ticketPayHours} onChange={set("ticketPayHours")} />
       </label>
       <label className="field">

@@ -132,7 +132,7 @@ export function postPickupMessage(v: RuleValues, firstName: string | null): Post
   ].filter((l, i, arr) => !(l === "" && arr[i - 1] === "")).join("\n").replace(/\n{3,}/g, "\n\n").trim();
 
   const sms =
-    `Zivo: Hi ${name}, thanks for renting! Quick rules: tickets and tolls paid within ${v.ticketPayHours}h; rent paid by ${v.lateRentCutoff} on the due date or $${v.lateRentFee} late fee; stay in ${v.travelArea}; listed drivers only; no smoking. ` +
+    `Zivo: Hi ${name}, thanks for renting! Quick rules: tickets paid within ${v.ticketPayHours}h (tolls are a flat $${v.tollFee}); rent paid by ${v.lateRentCutoff} on the due date or $${v.lateRentFee} late fee; stay in ${v.travelArea}; listed drivers only; no smoking. ` +
     `Full rules: ${v.portalUrl}` +
     (v.reviewUrl ? ` Review us: ${v.reviewUrl}` : "") +
     " Reply STOP to opt out.";

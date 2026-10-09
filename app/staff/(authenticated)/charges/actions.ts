@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
 import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
+import { loadRuleValues } from "@/lib/handover-server";
+import { payByFrom } from "@/lib/tolls";
 
 export type ChargeRecord = {
   id: string;
@@ -141,10 +143,14 @@ export async function approveCharge(chargeId: string): Promise<{ success: boolea
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { error } = await supabase
+  // Only a pending charge can be approved, and only once: this is what stops a double click
+  // (or a stale tab) taking the deposit down twice.
+  const { data: claimed, error } = await supabase
     .from("charge")
     .update({ approval_status: "approved", approved_at: new Date().toISOString(), approved_by: user?.id ?? null })
-    .eq("id", chargeId);
+    .eq("id", chargeId)
+    .eq("approval_status", "pending")
+    .select("id");
 
   if (error) {
     if (error.message?.toLowerCase().includes("permission")) {
@@ -152,13 +158,28 @@ export async function approveCharge(chargeId: string): Promise<{ success: boolea
     }
     return { success: false, error: "Couldn’t approve that charge." };
   }
+  if (!claimed || claimed.length === 0) {
+    return { success: false, error: "That charge was already handled. Refresh the page." };
+  }
 
   if (charge.deposit_id) {
     const { data: deposit } = await supabase.from("deposit").select("refundable_amount").eq("id", charge.deposit_id).single();
-    if (deposit) {
-      const newRefundable = Math.max(0, (deposit.refundable_amount ?? 0) - Number(charge.amount));
-      await supabase.from("deposit").update({ refundable_amount: newRefundable }).eq("id", charge.deposit_id);
+    const newRefundable = Math.max(0, Number(deposit?.refundable_amount ?? 0) - Number(charge.amount));
+    const { error: depositError } = deposit
+      ? await supabase.from("deposit").update({ refundable_amount: newRefundable }).eq("id", charge.deposit_id)
+      : { error: new Error("deposit not found") };
+    if (depositError) {
+      // Put the charge back so nothing is half-applied, then tell the user.
+      await supabase.from("charge").update({ approval_status: "pending", approved_at: null, approved_by: null }).eq("id", chargeId);
+      return { success: false, error: "Couldn’t take it from the deposit, so the charge was left pending. Try again." };
     }
+  }
+
+  // A ticket's payment deadline starts now that the charge is approved.
+  const { data: ticketRows } = await supabase.from("toll_transaction").select("id").eq("charge_id", chargeId).eq("kind", "citation");
+  if (ticketRows && ticketRows.length > 0) {
+    const rules = await loadRuleValues(supabase, charge.tenant_id);
+    await supabase.from("toll_transaction").update({ pay_by: payByFrom(new Date(), rules.ticketPayHours) }).eq("charge_id", chargeId).eq("kind", "citation");
   }
 
   void logAuditEvent({

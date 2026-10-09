@@ -4,16 +4,17 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 
 // CSP is intentionally scoped to exactly what this app needs (self + your
 // Supabase project's API/auth/storage endpoints) rather than left wide open.
-// Tighten further once you add fonts, analytics, or other third-party
+// Meta Pixel and Google tag hosts are allowed so conversion tracking works once the IDs are set. Tighten further once you add other third-party
 // scripts -- adding a source here should be a deliberate decision each time,
 // not something reflexively pasted in as "just in case."
 const contentSecurityPolicy = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline';
+  script-src 'self' 'unsafe-inline' https://connect.facebook.net https://www.googletagmanager.com;
   style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob: https://tile.openstreetmap.org ${supabaseUrl};
+  img-src 'self' data: blob: https://tile.openstreetmap.org https://www.facebook.com https://www.google-analytics.com https://www.googletagmanager.com ${supabaseUrl};
+  media-src 'self' blob: ${supabaseUrl};
   font-src 'self';
-  connect-src 'self' ${supabaseUrl};
+  connect-src 'self' ${supabaseUrl} https://www.facebook.com https://connect.facebook.net https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com;
   frame-ancestors 'none';
   base-uri 'self';
   form-action 'self';
@@ -36,6 +37,11 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  experimental: {
+    // Phone photos and PDFs go through server actions; the 1MB default made
+    // larger uploads fail with no message. Netlify functions cap request bodies at about 6MB, so that is the practical ceiling; the upload screens now show a clear message above it.
+    serverActions: { bodySizeLimit: "6mb" },
+  },
   async headers() {
     return [
       {

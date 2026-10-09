@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { updateVehicleStatus } from "./actions";
 import { VEHICLE_STATUSES, STATUS_LABELS, STATUS_COLOR } from "./constants";
 
@@ -18,6 +18,8 @@ type Vehicle = {
 
 export default function FleetTable({ vehicles }: { vehicles: Vehicle[] }) {
   const [rows, setRows] = useState(vehicles);
+  // A newly added vehicle (or a change from another screen) arrives as new props; show it without a hard reload.
+  useEffect(() => { setRows(vehicles); }, [vehicles]);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [errorById, setErrorById] = useState<Record<string, string>>({});
 

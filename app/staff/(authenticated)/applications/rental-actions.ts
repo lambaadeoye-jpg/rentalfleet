@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
-import { currentRoleName } from "@/lib/staff-role";
+import { currentRoleName, currentUser } from "@/lib/staff-role";
 import { handoverMissing, validMileage } from "@/lib/handover";
 import { loadHandoverState, loadRuleValues, toHandoverState } from "@/lib/handover-server";
 import { briefingRules } from "@/lib/rental-rules";
@@ -544,7 +544,7 @@ export async function confirmPickup(
   rentalId: string,
   startMileage: number,
   agreementAcknowledged: boolean
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; rulesSent?: boolean; rulesNote?: string }> {
   if (!agreementAcknowledged) {
     return { success: false, error: "Confirm the agreement was walked through before completing pickup." };
   }
@@ -553,11 +553,34 @@ export async function confirmPickup(
 
   const { data: rental } = await supabase
     .from("rental")
-    .select("id, tenant_id, customer_id, status, booking_id, expected_return_at, drop_off_manually_set, rental_segment(id, vehicle_id)")
+    .select("id, tenant_id, customer_id, status, booking_id, expected_return_at, drop_off_manually_set, assigned_runner_id, pickup_checklist_completed_at, rental_segment(id, vehicle_id)")
     .eq("id", rentalId)
     .single();
 
   if (!rental) return { success: false, error: "Rental not found." };
+
+  // A runner can only hand over a rental assigned to them.
+  const me = await currentUser(supabase);
+  if (me?.role === "field_staff" && rental.assigned_runner_id !== me.id) {
+    return { success: false, error: "This pickup isn’t assigned to you." };
+  }
+
+  // Resume: the rental went active but a later step failed last time (for example the
+  // vehicle update after a dropped signal). Finish the remaining steps instead of leaving it stuck.
+  if (rental.status === "active" && rental.pickup_checklist_completed_at && Date.now() - new Date(rental.pickup_checklist_completed_at).getTime() < 60 * 60 * 1000) {
+    const resumeSegment = (rental.rental_segment as any)?.[0];
+    if (resumeSegment) {
+      const { error: resumeVehicleError } = await supabase.from("vehicle").update({ status: "rented" }).eq("id", resumeSegment.vehicle_id);
+      if (resumeVehicleError && !/transition|already/i.test(resumeVehicleError.message ?? "")) {
+        return { success: false, error: "The rental is active but the car’s status couldn’t be updated. Try again, or tell the office." };
+      }
+      await supabase.from("customer").update({ status: "active" }).eq("id", rental.customer_id);
+      const resumed = await sendPostPickupMessage(rental.id);
+      revalidatePath("/staff/fleet");
+      return { success: true, rulesSent: resumed.sms === "sent" || resumed.email === "sent" || resumed.reasons.includes("already_sent") };
+    }
+  }
+
   if (rental.status !== "scheduled") return { success: false, error: "This rental isn’t in scheduled status." };
 
   // A runner may not hand over keys until the renter has signed the agreement. The office is trusted to judge older rentals.
@@ -654,10 +677,12 @@ export async function confirmPickup(
     return { success: false, error: msg };
   }
 
-  await supabase.from("rental_segment").update({ start_mileage: startMileage }).eq("id", segment.id);
+  const { error: mileageError } = await supabase.from("rental_segment").update({ start_mileage: startMileage }).eq("id", segment.id);
+  if (mileageError) console.error("[confirmPickup] start mileage not saved:", mileageError.message);
 
   if (rental.booking_id) {
-    await supabase.from("booking").update({ return_at: expectedReturnAt }).eq("id", rental.booking_id);
+    const { error: bookingError } = await supabase.from("booking").update({ return_at: expectedReturnAt }).eq("id", rental.booking_id);
+    if (bookingError) console.error("[confirmPickup] booking return date not saved:", bookingError.message);
   }
 
   const { error: vehicleError } = await supabase
@@ -668,7 +693,8 @@ export async function confirmPickup(
     const msg = vehicleError.message?.toLowerCase().includes("permission")
       ? "You don’t have permission to mark the vehicle rented."
       : "Couldn’t update the vehicle.";
-    return { success: false, error: msg };
+    // The rental is already active. Tapping confirm again finishes the remaining steps.
+    return { success: false, error: `${msg} The rental is started, so tap confirm again to finish.` };
   }
 
   await supabase.from("customer").update({ status: "active" }).eq("id", rental.customer_id);
@@ -676,18 +702,23 @@ export async function confirmPickup(
   revalidatePath("/staff/fleet");
 
   // The renter gets their house rules (text + email) with the review link. Never blocks or fails the pickup.
-  await sendPostPickupMessage(rental.id);
+  const sent = await sendPostPickupMessage(rental.id);
+  const rulesSent = sent.sms === "sent" || sent.email === "sent";
 
   void logAuditEvent({
     tenantId: rental.tenant_id,
     action: "rental_pickup_confirmed",
     entityType: "rental",
     entityId: rentalId,
-    afterData: { startMileage, vehicleId: segment.vehicle_id },
+    afterData: { startMileage, vehicleId: segment.vehicle_id, rulesSent },
     source: "staff_portal",
   });
 
-  return { success: true };
+  return {
+    success: true,
+    rulesSent,
+    rulesNote: rulesSent ? undefined : "We couldn’t text or email the rules (outside texting hours, no contact on file, or sending is off). The renter can read them in their portal under Rules.",
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -704,15 +735,25 @@ export async function confirmDropoff(
 
   const { data: rental } = await supabase
     .from("rental")
-    .select("id, tenant_id, status, rental_segment(id, vehicle_id)")
+    .select("id, tenant_id, status, assigned_runner_id, rental_segment(id, vehicle_id, start_mileage)")
     .eq("id", rentalId)
     .single();
 
   if (!rental) return { success: false, error: "Rental not found." };
+  const meDrop = await currentUser(supabase);
+  if (meDrop?.role === "field_staff" && rental.assigned_runner_id !== meDrop.id) {
+    return { success: false, error: "This drop-off isn’t assigned to you." };
+  }
   if (rental.status !== "active") return { success: false, error: "This rental isn’t currently active." };
+  if (!Number.isInteger(endMileage) || endMileage < 0 || endMileage > 2_000_000) {
+    return { success: false, error: "Enter the ending mileage as a whole number." };
+  }
 
   const segment = (rental.rental_segment as any)?.[0];
   if (!segment) return { success: false, error: "No vehicle assigned to this rental." };
+  if (segment.start_mileage != null && endMileage < Number(segment.start_mileage)) {
+    return { success: false, error: `Ending mileage can’t be lower than the starting mileage (${segment.start_mileage}).` };
+  }
 
   const now = new Date().toISOString();
 

@@ -2,6 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { createPublicClient } from "@/lib/supabase/public";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { headers } from "next/headers";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { sanitizeAttribution, deriveSource, type Attribution } from "@/lib/attribution";
@@ -9,6 +10,16 @@ import { CONTACT_CONSENT_TEXT, CONTACT_CONSENT_VERSION } from "@/lib/contact-con
 import { isValidEmail, isValidUsPhone } from "@/lib/contact-validation";
 import { validateStep1, validateStep2, cleanStep2 } from "@/lib/lead-steps";
 import { generateUploadToken, hashUploadToken } from "@/lib/upload-token";
+
+// The watch-list check is server-only (it is no longer callable by the public
+// key, so nobody can probe who is on the list). Falls back to the passed client
+// only when the service key is not configured.
+function checkRedFlag(
+  fallback: ReturnType<typeof createPublicClient>,
+  args: { p_tenant_id: string; p_phone: string; p_email: string; p_first_name: string; p_last_name: string }
+) {
+  return (createAdminClient() ?? fallback).rpc("check_red_flag", args);
+}
 
 export type SubmitLeadResult =
   | { success: true }
@@ -112,7 +123,7 @@ export async function submitLead(formData: {
     // is a heads-up for staff, not a gate.
     let redFlagMatched = false;
     let redFlagMatchType: string | null = null;
-    const { data: redFlagResult } = await supabase.rpc("check_red_flag", {
+    const { data: redFlagResult } = await checkRedFlag(supabase, {
       p_tenant_id: tenant.id,
       p_phone: phone,
       p_email: email,
@@ -289,7 +300,7 @@ export async function submitLeadStep1(formData: {
     // Watch-list check on what we have (name is first name only until step 2, which re-checks).
     let redFlagMatched = false;
     let redFlagMatchType: string | null = null;
-    const { data: redFlagResult } = await supabase.rpc("check_red_flag", {
+    const { data: redFlagResult } = await checkRedFlag(supabase, {
       p_tenant_id: tenant.id, p_phone: phone, p_email: email, p_first_name: firstName, p_last_name: "",
     });
     if (redFlagResult && redFlagResult.length > 0) {

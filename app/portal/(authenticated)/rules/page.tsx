@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 export default async function PortalRulesPage() {
   const supabase = await createClient();
   // A renter only sees this once they have a rental on file.
-  const { data: rental } = await supabase.from("rental").select("id").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const { data: rental } = await supabase.from("rental").select("id, tenant_id").order("created_at", { ascending: false }).limit(1).maybeSingle();
   const admin = createAdminClient();
 
   if (!rental || !admin) {
@@ -19,7 +19,7 @@ export default async function PortalRulesPage() {
       </div>
     );
   }
-  const rules = briefingRules(await loadRuleValues(admin));
+  const rules = briefingRules(await loadRuleValues(admin, rental.tenant_id));
 
   return (
     <div style={{ padding: "24px 20px" }}>

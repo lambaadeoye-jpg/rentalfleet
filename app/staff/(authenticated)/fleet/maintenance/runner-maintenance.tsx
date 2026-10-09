@@ -1,5 +1,6 @@
 "use client";
 
+import { prepareUploadFile } from "@/lib/image-compress";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addMaintenanceReceipt, finishMaintenanceJob, startMaintenanceJob, type RunnerJob } from "./runner-actions";
@@ -21,14 +22,21 @@ export default function RunnerMaintenance({ jobs, cars, limit }: { jobs: RunnerJ
     const f = new FormData(form);
     setBusy(true);
     setMsg(null);
-    const res = await startMaintenanceJob({
-      vehicleId: String(f.get("vehicleId") ?? ""),
-      workType: String(f.get("workType") ?? ""),
-      performedBy: String(f.get("performedBy") ?? ""),
-      shopName: String(f.get("shopName") ?? ""),
-      paymentArrangement: String(f.get("paymentArrangement") ?? ""),
-      notes: String(f.get("notes") ?? ""),
-    });
+    let res: Awaited<ReturnType<typeof startMaintenanceJob>>;
+    try {
+      res = await startMaintenanceJob({
+        vehicleId: String(f.get("vehicleId") ?? ""),
+        workType: String(f.get("workType") ?? ""),
+        performedBy: String(f.get("performedBy") ?? ""),
+        shopName: String(f.get("shopName") ?? ""),
+        paymentArrangement: String(f.get("paymentArrangement") ?? ""),
+        notes: String(f.get("notes") ?? ""),
+      });
+    } catch {
+      setBusy(false);
+      setMsg({ ok: false, text: "That didn’t go through. Check your signal and try again." });
+      return;
+    }
     setBusy(false);
     if (res.success) {
       form.reset();
@@ -90,15 +98,22 @@ function JobCard({ job, limit, expanded, onToggle, onChanged }: { job: RunnerJob
   async function receipt(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-    const fd = new FormData();
-    fd.append("file", file);
+    const input = e.target;
     setBusy(true);
     setError(null);
-    const res = await addMaintenanceReceipt(job.id, fd);
-    setBusy(false);
-    e.target.value = "";
-    if (res.success) onChanged({ ok: true, text: "Receipt added." });
-    else setError(res.error ?? "Couldn’t add that.");
+    try {
+      const small = await prepareUploadFile(file);
+      const fd = new FormData();
+      fd.append("file", small);
+      const res = await addMaintenanceReceipt(job.id, fd);
+      if (res.success) onChanged({ ok: true, text: "Receipt added." });
+      else setError(res.error ?? "Couldn’t add that.");
+    } catch {
+      setError("The receipt didn’t upload. Check your signal and try again.");
+    } finally {
+      setBusy(false);
+      input.value = "";
+    }
   }
 
   async function finish(e: React.FormEvent<HTMLFormElement>) {
@@ -107,10 +122,15 @@ function JobCard({ job, limit, expanded, onToggle, onChanged }: { job: RunnerJob
     if (!window.confirm("Finish this job? You can’t change it afterward.")) return;
     setBusy(true);
     setError(null);
-    const res = await finishMaintenanceJob(job.id, String(f.get("cost") ?? ""), String(f.get("closing") ?? ""));
-    setBusy(false);
-    if (res.success) onChanged({ ok: true, text: res.note ?? "Done." });
-    else setError(res.error ?? "Couldn’t finish that.");
+    try {
+      const res = await finishMaintenanceJob(job.id, String(f.get("cost") ?? ""), String(f.get("closing") ?? ""));
+      if (res.success) onChanged({ ok: true, text: res.note ?? "Done." });
+      else setError(res.error ?? "Couldn’t finish that.");
+    } catch {
+      setError("That didn’t go through. Check your signal and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
