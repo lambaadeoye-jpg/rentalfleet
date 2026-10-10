@@ -21,6 +21,18 @@ export function rootDomain(): string {
   return (process.env.NEXT_PUBLIC_ROOT_DOMAIN || "rentzivo.com").toLowerCase();
 }
 
+/**
+ * Cookie settings that let one sign-in work on every portal host. With the subdomains on, the session cookie is set
+ * for ".<root>" so a link opened on any host, and the hop to the right host afterwards, stays signed in. Roles are
+ * still enforced on every request, so a renter's session opens nothing on a staff host. Off (and on localhost) the
+ * cookies stay host-only, exactly as before.
+ */
+export function sharedCookieOptions(): { domain?: string } {
+  const root = rootDomain();
+  if (!subdomainsEnabled() || root.startsWith("localhost") || /^\d/.test(root)) return {};
+  return { domain: `.${root}` };
+}
+
 function scheme(): string {
   return rootDomain().startsWith("localhost") ? "http" : "https";
 }

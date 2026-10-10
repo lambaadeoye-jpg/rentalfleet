@@ -1,5 +1,5 @@
 import { runnerCanOpen, RUNNER_HOME } from "@/lib/runner-access";
-import { hostAction, isAdminOnlyPath, originFor, portalForHost, portalForRoles } from "@/lib/hosts";
+import { hostAction, isAdminOnlyPath, originFor, portalForHost, portalForRoles, sharedCookieOptions } from "@/lib/hosts";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -40,6 +40,7 @@ export async function updateSession(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: sharedCookieOptions(),
       cookies: {
         get(name: string) {
           return request.cookies.get(name)?.value;

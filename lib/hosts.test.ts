@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { hostAction, isAdminOnlyPath, originFor, portalForHost, portalForRole, portalForRoles } from "./hosts";
+import { hostAction, isAdminOnlyPath, originFor, portalForHost, portalForRole, portalForRoles, sharedCookieOptions } from "./hosts";
 
 const ENV = { ...process.env };
 beforeEach(() => {
@@ -82,5 +82,26 @@ describe("hostAction", () => {
     expect(isAdminOnlyPath("/staff/settings/x")).toBe(true);
     expect(isAdminOnlyPath("/staff/teamwork")).toBe(false);
     expect(isAdminOnlyPath("/staff/pickups")).toBe(false);
+  });
+});
+
+describe("sharedCookieOptions", () => {
+  const keep = { ...process.env };
+  afterEach(() => {
+    process.env = { ...keep };
+  });
+  it("is empty while the subdomains are off", () => {
+    delete process.env.NEXT_PUBLIC_SUBDOMAINS;
+    expect(sharedCookieOptions()).toEqual({});
+  });
+  it("shares the cookie across the root domain when on", () => {
+    process.env.NEXT_PUBLIC_SUBDOMAINS = "on";
+    process.env.NEXT_PUBLIC_ROOT_DOMAIN = "rentzivo.com";
+    expect(sharedCookieOptions()).toEqual({ domain: ".rentzivo.com" });
+  });
+  it("stays host-only on localhost", () => {
+    process.env.NEXT_PUBLIC_SUBDOMAINS = "on";
+    process.env.NEXT_PUBLIC_ROOT_DOMAIN = "localhost:3000";
+    expect(sharedCookieOptions()).toEqual({});
   });
 });
