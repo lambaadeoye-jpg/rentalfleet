@@ -4,6 +4,7 @@
 
 import { isWithinSendWindow } from "./outreach-rules";
 import { toE164 } from "./contact-validation";
+import { portalBase } from "./portal-links";
 
 export type NoticeKind =
   | "cancelled" | "refund_sent" | "payment_received" | "weekly_rent_charged" | "weekly_charge_failed"
@@ -86,19 +87,19 @@ export function noticeBody(
     case "rent_due_tomorrow": {
       const last4 = typeof d.last4 === "string" && /^\d{4}$/.test(d.last4) ? d.last4 : null;
       const card = last4 ? `your card ending ${last4}` : "your saved card";
-      return `Zivo: ${hi}tomorrow we'll charge ${card} ${dollars(d.amount_cents)} for this week's rent. Need to change cards? Update it in your portal: ${base(ctx)}/portal/money ${STOP}`;
+      return `Zivo: ${hi}tomorrow we'll charge ${card} ${dollars(d.amount_cents)} for this week's rent. Need to change cards? Update it in your portal: ${portalBase(base(ctx))}/portal/money ${STOP}`;
     }
     case "weekly_offer": {
       const cents = Number(d.amount_cents ?? 0);
       if (!(cents > 0)) return null;
       const first = typeof d.first_charge_label === "string" && d.first_charge_label ? ` starting ${d.first_charge_label}` : "";
-      return `Zivo: ${hi}you can switch to our weekly plan: ${dollars(cents)} a week, charged to your card on file${first}. Your first week is already paid. Switch in your portal: ${base(ctx)}/portal/rental ${STOP}`;
+      return `Zivo: ${hi}you can switch to our weekly plan: ${dollars(cents)} a week, charged to your card on file${first}. Your first week is already paid. Switch in your portal: ${portalBase(base(ctx))}/portal/rental ${STOP}`;
     }
     // Support starts in the portal (V2.1): texts point there rather than inviting replies.
     case "checkin_day1":
-      return `Zivo: ${hi}how is the car working out so far? If anything is off, tell us in your portal: ${base(ctx)}/portal ${STOP}`;
+      return `Zivo: ${hi}how is the car working out so far? If anything is off, tell us in your portal: ${portalBase(base(ctx))}/portal ${STOP}`;
     case "checkin_day3":
-      return `Zivo: ${hi}quick check-in. Is everything going well with your rental? Questions or issues? Log in to your portal: ${base(ctx)}/portal ${STOP}`;
+      return `Zivo: ${hi}quick check-in. Is everything going well with your rental? Questions or issues? Log in to your portal: ${portalBase(base(ctx))}/portal ${STOP}`;
     case "referral_ask": {
       const code = (ctx?.referralCode ?? "").trim();
       if (!code) return null;

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Mail, CheckCircle2, KeyRound } from "lucide-react";
 import { sendStaffMagicLink, signInWithPassword } from "../actions";
 
-export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: boolean }) {
+export default function StaffLoginForm({ inactiveTimeout, wrongPortal = false }: { inactiveTimeout: boolean; wrongPortal?: boolean }) {
   const router = useRouter();
   const [mode, setMode] = useState<"magic-link" | "password">("magic-link");
   const [email, setEmail] = useState("");
@@ -68,6 +68,12 @@ export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: b
           <KeyRound size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
         )}
         <h1 className="page-title">Staff sign in</h1>
+
+        {wrongPortal && (
+          <p style={{ fontSize: 13, color: "var(--warning, #b45309)", marginBottom: 12 }}>
+            This is the right sign-in for your account. Sign in here to continue.
+          </p>
+        )}
 
         {inactiveTimeout && (
           <p style={{ fontSize: 13, color: "var(--warning, #b45309)", marginBottom: 12 }}>

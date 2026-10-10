@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient } from "@supabase/supabase-js";
 import { decideReminder, type DueMessage } from "@/lib/pickup-reminders";
+import { portalBase } from "@/lib/portal-links";
 import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
 
 // Called every few minutes by an n8n Schedule trigger (never by a browser).
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://rentzivo.com").replace(/\/$/, "");
-  const link = `${base}/portal/rental`;
+  const link = `${portalBase(base)}/portal/rental`;
   const smsConfigured = twilioConfigured();
   const counts = { sent: 0, skipped: 0, deferred: 0, failed: 0 };
 

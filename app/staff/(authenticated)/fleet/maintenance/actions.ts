@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { logAuditEvent } from "@/lib/audit-log";
-import { currentRoleName, currentUser } from "@/lib/staff-role";
+import { currentRoleName, currentUser, isOfficeRole } from "@/lib/staff-role";
 import { APPROVAL_LIMIT_KEY, parseCost, parseLimit } from "@/lib/maintenance";
 
 export type WorkOrder = {
@@ -201,6 +201,13 @@ async function adminOnly() {
   return me?.role === "admin" ? { supabase, me } : null;
 }
 
+/** Day-to-day dispatch: the manager can do this too. Spending decisions stay with the admin. */
+async function officeOnly() {
+  const supabase = await createClient();
+  const me = await currentUser(supabase);
+  return isOfficeRole(me?.role) ? { supabase, me } : null;
+}
+
 export async function getMaintenanceOffice(): Promise<{ limit: number; runners: { id: string; name: string }[] }> {
   const supabase = await createClient();
   const [{ data: setting }, { data: members }] = await Promise.all([
@@ -243,8 +250,8 @@ export async function approveWorkOrder(workOrderId: string): Promise<Result> {
 /** Back to the runner to fix (receipt, cost). The car stays out of service. */
 export async function sendBackWorkOrder(workOrderId: string): Promise<Result> {
   if (!UUID_RE.test(workOrderId)) return { success: false, error: "Something went wrong. Please try again." };
-  const ctx = await adminOnly();
-  if (!ctx) return { success: false, error: "Only an admin can do this." };
+  const ctx = await officeOnly();
+  if (!ctx) return { success: false, error: "Only the office can do this." };
   const { error } = await ctx.supabase.from("maintenance_work_order").update({ status: "open", submitted_at: null }).eq("id", workOrderId).eq("status", "pending_approval");
   if (error) return { success: false, error: "Couldn’t send that back. Please try again." };
   revalidatePath("/staff/fleet/maintenance");
@@ -263,8 +270,8 @@ export async function markWorkOrderSettled(workOrderId: string): Promise<Result>
 
 export async function assignWorkOrderRunner(workOrderId: string, runnerId: string | null): Promise<Result> {
   if (!UUID_RE.test(workOrderId) || (runnerId !== null && !UUID_RE.test(runnerId))) return { success: false, error: "Something went wrong. Please try again." };
-  const ctx = await adminOnly();
-  if (!ctx) return { success: false, error: "Only an admin can do this." };
+  const ctx = await officeOnly();
+  if (!ctx) return { success: false, error: "Only the office can do this." };
   if (runnerId) {
     const { data: m } = await ctx.supabase.from("membership").select("role:role_id(name)").eq("user_id", runnerId).maybeSingle();
     if ((m?.role as any)?.name !== "field_staff") return { success: false, error: "That person isn’t a field runner." };

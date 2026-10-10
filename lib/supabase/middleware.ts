@@ -1,4 +1,5 @@
 import { runnerCanOpen, RUNNER_HOME } from "@/lib/runner-access";
+import { hostAction, isAdminOnlyPath, originFor, portalForHost, portalForRoles } from "@/lib/hosts";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -25,6 +26,14 @@ const LAST_ACTIVITY_COOKIE = "last_activity_at";
  * /staff/dashboard actually protected rather than just "protected in theory."
  */
 export async function updateSession(request: NextRequest) {
+  // Which portal host is this? (Always "site" until NEXT_PUBLIC_SUBDOMAINS=on, so nothing below changes before then.)
+  const portal = portalForHost(request.headers.get("host"));
+  const action = hostAction(portal, request.nextUrl.pathname);
+  if (action.kind === "redirect") {
+    return NextResponse.redirect(`${originFor(action.portal)}${action.path}${request.nextUrl.search}`);
+  }
+  const onStaffHost = portal === "admin" || portal === "team" || portal === "field";
+
   let response = NextResponse.next({ request: { headers: request.headers } });
 
   const supabase = createServerClient(
@@ -106,24 +115,32 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // Field runners may only open their own few pages. The role is read from the database on every
-  // office-page request (one small indexed lookup), never from a cookie the browser could change.
-  if (isStaffArea && user && !runnerCanOpen(request.nextUrl.pathname)) {
+  // Who is this? The role is read from the database (one small indexed lookup), never from a cookie the browser
+  // could change. Needed for: runners' short page list, the manager's no-go pages, and the host check.
+  if (isStaffArea && user && (onStaffHost || !runnerCanOpen(request.nextUrl.pathname) || isAdminOnlyPath(request.nextUrl.pathname))) {
     const { data: memberships, error: roleError } = await supabase.from("membership").select("role:role_id(name)").eq("user_id", user.id);
     const roles = (memberships ?? []).map((m: any) => m.role?.name as string | undefined);
+    const redirectWithCookies = (to: string | URL) => {
+      const redirectResponse = NextResponse.redirect(to);
+      for (const cookie of response.cookies.getAll()) redirectResponse.cookies.set(cookie);
+      return redirectResponse;
+    };
+    const path = request.nextUrl.pathname;
     // A signed-in renter or applicant has no staff membership at all: they have no business in the office area.
     // (The invite page is the one place a not-yet-member must reach: it is what creates the membership.)
-    const onInvitePage = request.nextUrl.pathname === "/staff/onboard" || request.nextUrl.pathname.startsWith("/staff/onboard/");
-    if (!roleError && roles.length === 0 && !onInvitePage) {
-      const redirectResponse = NextResponse.redirect(new URL("/staff/login", request.url));
-      for (const cookie of response.cookies.getAll()) redirectResponse.cookies.set(cookie);
-      return redirectResponse;
-    }
+    const onInvitePage = path === "/staff/onboard" || path.startsWith("/staff/onboard/");
+    if (!roleError && roles.length === 0 && !onInvitePage) return redirectWithCookies(new URL("/staff/login", request.url));
     // Runner-only accounts stay on the runner pages. (Someone with more than one membership is judged by the best one.)
-    if (roleError || (roles.length > 0 && roles.every((r) => r === "field_staff"))) {
-      const redirectResponse = NextResponse.redirect(new URL(RUNNER_HOME, request.url));
-      for (const cookie of response.cookies.getAll()) redirectResponse.cookies.set(cookie);
-      return redirectResponse;
+    const runnerOnly = roles.length > 0 && roles.every((r) => r === "field_staff");
+    if ((roleError || runnerOnly) && !runnerCanOpen(path)) return redirectWithCookies(new URL(RUNNER_HOME, request.url));
+    if (!roleError && roles.length > 0) {
+      // Each role signs in on its own host. Cookies are per host, so the right host asks for a fresh sign-in.
+      if (onStaffHost) {
+        const home = portalForRoles(roles);
+        if (home !== portal) return NextResponse.redirect(`${originFor(home)}/staff/login?reason=wrong_portal`);
+      }
+      // Owner-only pages (team, pricing, settings, export): anyone without the admin role goes to the dashboard.
+      if (isAdminOnlyPath(path) && !roles.includes("admin")) return redirectWithCookies(new URL("/staff/dashboard", request.url));
     }
   }
 
@@ -139,5 +156,6 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
+  if (portal !== "site") response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }

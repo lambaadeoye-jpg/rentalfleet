@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requestOrigin } from "@/lib/request-origin";
 
 // Real gap this closes: /staff/login previously used email/password, but
 // the staff invite flow (accept_staff_invite, migration 0032) is entirely
@@ -22,7 +23,7 @@ export async function sendStaffMagicLink(email: string): Promise<{ success: bool
     email: trimmed,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback?next=/staff/dashboard`,
+      emailRedirectTo: `${await requestOrigin()}/auth/callback?next=/staff/dashboard`,
     },
   });
 

@@ -3,6 +3,7 @@
 // the renter signed), plus a few office settings that are not in the agreement. Pure functions, so every sentence is tested.
 
 import { STARTER_VARIABLES } from "./agreement";
+import { portalBase } from "./portal-links";
 
 export type RuleValues = {
   travelArea: string;
@@ -71,7 +72,7 @@ export function buildRuleValues(input: {
     instagram: handle.length > 1 ? handle : "@rentzivo",
     reviewUrl: /^https?:\/\//i.test(review) ? review : null,
     guideUrl: `${site}/guides/driver-signup`,
-    portalUrl: `${site}/portal`,
+    portalUrl: `${portalBase(site)}/portal`,
     supportPhone: input.supportPhone?.trim() || null,
   };
 }

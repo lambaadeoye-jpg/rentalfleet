@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { originFor, portalForRole, subdomainsEnabled } from "@/lib/hosts";
 
 export type StaffMember = {
   user_id: string;
@@ -91,11 +92,18 @@ export async function inviteStaffMember(email: string, roleId: string): Promise<
     return { success: false, error: "Couldn’t create the invite. Please try again." };
   }
 
+  // The link opens on the host for the invited role (admin., team. or field.) once the subdomains are on.
+  let inviteOrigin = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  if (subdomainsEnabled()) {
+    const { data: invitedRole } = await supabase.from("role").select("name").eq("id", roleId).maybeSingle();
+    inviteOrigin = originFor(portalForRole(invitedRole?.name));
+  }
+
   const { error: emailError } = await supabase.auth.signInWithOtp({
     email: trimmed,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback?next=/staff/onboard`,
+      emailRedirectTo: `${inviteOrigin}/auth/callback?next=/staff/onboard`,
     },
   });
 

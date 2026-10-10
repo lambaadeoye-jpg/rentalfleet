@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { currentRoleName } from "@/lib/staff-role";
+import { currentRoleName, isOfficeRole } from "@/lib/staff-role";
 import { logAuditEvent } from "@/lib/audit-log";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -11,7 +11,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 export async function assignRunner(rentalId: string, runnerId: string | null): Promise<{ success: boolean; error?: string }> {
   if (!UUID_RE.test(rentalId) || (runnerId !== null && !UUID_RE.test(runnerId))) return { success: false, error: "Something went wrong. Please try again." };
   const supabase = await createClient();
-  if ((await currentRoleName(supabase)) !== "admin") return { success: false, error: "Only an admin can assign runners." };
+  if (!isOfficeRole(await currentRoleName(supabase))) return { success: false, error: "Only the office can assign runners." };
 
   if (runnerId) {
     const { data: member } = await supabase.from("membership").select("user_id, role:role_id(name)").eq("user_id", runnerId).maybeSingle();

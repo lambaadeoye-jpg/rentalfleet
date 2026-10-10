@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/** The signed-in user's role name ("admin", "field_staff"), or null. */
+/** Office roles: the owner/admin and the manager/VA. Field runners are not office. */
+export function isOfficeRole(role: string | null | undefined): boolean {
+  return role === "admin" || role === "manager";
+}
+
+/** The signed-in user's role name ("admin", "manager", "field_staff"), or null. */
 export async function currentRoleName(supabase: SupabaseClient): Promise<string | null> {
   const {
     data: { user },

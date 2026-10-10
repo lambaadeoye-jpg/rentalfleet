@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAutomationAuthorized } from "@/lib/automation-auth";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { portalBase } from "@/lib/portal-links";
 import { callerKey, isLockedOut, LOCKOUT_WINDOW_MINUTES } from "@/lib/caller-lockout";
 
 // Internal-only endpoint behind the Zivo Front Desk Vapi assistant (called
@@ -420,7 +421,7 @@ export async function POST(request: Request) {
     const authClient = createClient(supabaseUrl, anonKey);
     const { error: otpErr } = await authClient.auth.signInWithOtp({
       email: onFile,
-      options: { shouldCreateUser: false, emailRedirectTo: `${site}/auth/callback?next=/portal` },
+      options: { shouldCreateUser: false, emailRedirectTo: `${portalBase(site)}/auth/callback?next=/portal` },
     });
     if (otpErr) {
       console.error("[front-desk] portal link failed:", otpErr.message);

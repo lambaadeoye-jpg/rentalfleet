@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { portalBase } from "@/lib/portal-links";
 import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 import { parseInboundKeyword, HELP_REPLY, renderTemplate } from "@/lib/outreach-rules";
 import { YES_REPLY, CHANGE_REPLY, formatPickupWhen } from "@/lib/pickup-reminders";
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
       const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://rentzivo.com").replace(/\/$/, "");
       const msg = keyword === "yes"
         ? renderTemplate(YES_REPLY, { when: formatPickupWhen(rr.pickup_at, rr.location_tz, new Date()), place: rr.location_name ?? "our pickup location" })
-        : renderTemplate(CHANGE_REPLY, { link: `${base}/portal/rental` });
+        : renderTemplate(CHANGE_REPLY, { link: `${portalBase(base)}/portal/rental` });
       if (keyword === "change") {
         void fireN8nWebhook(N8N_WEBHOOK_PATHS.inboxNewMessageAlert, {
           fromPhone, messageBody: messageBody ?? "", matched: true, customerId: matchedCustomer.id, leadId,

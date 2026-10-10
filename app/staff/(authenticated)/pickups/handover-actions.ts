@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { currentUser } from "@/lib/staff-role";
+import { currentUser, isOfficeRole } from "@/lib/staff-role";
 import { logAuditEvent } from "@/lib/audit-log";
 import { loadHandoverState, loadRuleValues } from "@/lib/handover-server";
 import { briefingRules, type BriefingRule } from "@/lib/rental-rules";
@@ -32,7 +32,7 @@ async function context(rentalId: string): Promise<Ctx | Fail> {
   if (!rental) return { success: false, error: "Rental not found." };
   if (rental.status !== "scheduled") return { success: false, error: "This pickup is already done." };
   if (me.role === "field_staff" && rental.assigned_runner_id !== me.id) return { success: false, error: "This pickup isn’t assigned to you." };
-  if (me.role !== "field_staff" && me.role !== "admin") return { success: false, error: "You don’t have access to this." };
+  if (me.role !== "field_staff" && !isOfficeRole(me.role)) return { success: false, error: "You don’t have access to this." };
 
   const vehicleId = (rental.rental_segment as any)?.[0]?.vehicle_id as string | undefined;
   if (!vehicleId) return { success: false, error: "No car is assigned to this rental yet." };

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { requestOrigin } from "@/lib/request-origin";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Same low-friction magic-link pattern as the Application Workspace’s
@@ -34,7 +35,7 @@ export async function sendPortalMagicLink(email: string): Promise<{ success: boo
     email: trimmed,
     options: {
       shouldCreateUser: false, // portal sign-in only -- a real customer record must already exist
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback?next=/portal`,
+      emailRedirectTo: `${await requestOrigin()}/auth/callback?next=/portal`,
     },
   });
 
