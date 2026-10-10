@@ -77,7 +77,7 @@ export default async function Home() {
       q: "How does pricing work?",
       a:
         (pricing && weekTotal > 0
-          ? `Your first week is $${weekTotal}. After that it’s $${pricing.perDay}/day. `
+          ? `It’s $${pricing.total} for the first ${pricing.days} days, then $${pricing.perDay}/day after that${pricing.days < 7 ? ` (a 7-day rental comes to $${weekTotal})` : ""}. `
           : "Pricing is shown during rental selection. ") +
         "A one-week minimum rental applies.",
     },
@@ -204,7 +204,7 @@ export default async function Home() {
               <h1>Car rentals for rideshare &amp; delivery drivers.</h1>
               <p className="hero-sub">
                 {pricing
-                  ? `$${weekTotal} for your first week (one-week minimum), then $${pricing.perDay}/day.`
+                  ? `$${pricing.total} for your first ${pricing.days} days, then $${pricing.perDay}/day.`
                   : "Reliable, fuel-efficient cars for working drivers."}
               </p>
               <p className="hero-keywords">
@@ -370,12 +370,12 @@ export default async function Home() {
           <h2 className="section-title">Simple pricing for working drivers.</h2>
           <div className="price-grid">
             <div className="card price-card" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
-              <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>FIRST WEEK</div>
+              <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>DAILY</div>
               {pricing ? (
                 <>
-                  <div className="price">${weekTotal}</div>
+                  <div className="price">${pricing.total}</div>
                   <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                    for your first week. One-week minimum rental applies. After that, ${pricing.perDay}/day, or move to a lower weekly rate once you&rsquo;re driving.
+                    for your first {pricing.days} days, then ${pricing.perDay}/day after. 1-week minimum rental applies{pricing.days < 7 ? <>, so a 7-day rental comes to <strong>${weekTotal}</strong></> : null}. Once you&rsquo;re driving, you can move to a lower weekly rate.
                   </p>
                 </>
               ) : (

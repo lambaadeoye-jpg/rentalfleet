@@ -4,7 +4,8 @@
 --   * The 7-day minimum and the deposit do not change.
 --   * A renter who starts on the daily plan has prepaid a fixed 7-day term. From day 3 they can move to the weekly
 --     plan. The week they already paid for stays paid (no credit, no refund of the difference). The weekly rate
---     starts at the end of that first week and is charged automatically to the card on file.
+--     starts at the end of that first week (or at once if the switch is made later) and is charged automatically
+--     to the card on file.
 --   * The weekly plan REQUIRES a saved card and the tenant's weekly_billing_enabled switch. Without both, the
 --     switch is refused (otherwise the renter would keep the car with nothing ever charged).
 --   * One switch per rental. It is recorded in plan_change with the renter's consent text.
@@ -42,7 +43,7 @@ create policy tenant_isolation_select on plan_change for select using (tenant_id
 
 -- 2. The switch -------------------------------------------------------------------------------------------------
 -- Returns one of: switched, not_found, not_active, already_weekly, weekly_not_approved, bad_rate, billing_off,
--- card_required, not_paid, too_early, term_ended.
+-- card_required, not_paid, too_early.
 create or replace function switch_rental_to_weekly(
   p_rental uuid, p_rate numeric, p_by text, p_actor uuid default null, p_consent text default null)
 returns text
@@ -89,11 +90,10 @@ begin
     return 'not_paid';
   end if;
 
-  -- Renters can switch from day 3 (staff can do it any time). Only inside the prepaid week: after that the
-  -- rental is past its fixed term and staff handle it.
+  -- Renters can switch from day 3 (staff can do it any time). There is no end date: the offer stays open.
+  -- The first weekly charge is at the end of the prepaid first week, or right away if that date has passed.
   if p_by = 'renter' and now() < v_r.start_at + interval '3 days' then return 'too_early'; end if;
-  v_due := v_r.start_at + interval '7 days';
-  if now() > v_due then return 'term_ended'; end if;
+  v_due := greatest(v_r.start_at + interval '7 days', now());
 
   insert into plan_change (tenant_id, rental_id, customer_id, from_plan, to_plan, weekly_rate_usd,
                            initiated_by, actor_user_id, consent_text, consented_at, card_last4)

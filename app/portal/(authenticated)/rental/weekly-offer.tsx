@@ -38,7 +38,7 @@ export default function WeeklyOffer({ rate, firstChargeAt, cardLast4, needsCard,
     <div className="card" style={{ marginBottom: 16 }}>
       <h2 className="card-title card-title--tight">Switch to the weekly plan</h2>
       <p style={{ fontSize: 14, marginBottom: 6 }}>
-        <strong>{money(rate)} per week</strong>, charged automatically. Your first week is already paid. The first weekly charge is {first}.
+        <strong>{money(rate)} per week</strong>, charged automatically. Your first week is already paid. The first weekly charge is {new Date(firstChargeAt).getTime() <= Date.now() + 3600000 ? "today" : first}.
       </p>
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>
         Your deposit and the 7-day minimum stay the same. You can return the car any time after the minimum.

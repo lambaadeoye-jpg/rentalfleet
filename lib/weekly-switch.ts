@@ -9,7 +9,7 @@ const DAY = 24 * 60 * 60 * 1000;
 
 export type SwitchOutcome =
   | "switched" | "not_found" | "not_active" | "already_weekly" | "weekly_not_approved" | "bad_rate"
-  | "billing_off" | "card_required" | "not_paid" | "too_early" | "term_ended";
+  | "billing_off" | "card_required" | "not_paid" | "too_early";
 
 export function switchMessage(outcome: string): string {
   switch (outcome) {
@@ -17,7 +17,6 @@ export function switchMessage(outcome: string): string {
     case "already_weekly": return "This rental is already on the weekly plan.";
     case "card_required": return "The weekly plan needs a card on file. Add your card first, then switch.";
     case "too_early": return "You can switch to weekly from day 3 of your rental.";
-    case "term_ended": return "Your first week has ended, so this can’t be switched online. Please contact us.";
     case "not_paid": return "Your first week’s payment hasn’t been recorded yet, so we can’t switch you yet.";
     case "billing_off":
     case "weekly_not_approved":
@@ -27,24 +26,23 @@ export function switchMessage(outcome: string): string {
   }
 }
 
-/** The renter can switch from day 3 until the end of the prepaid first week. */
-export function weeklyOfferWindow(startAt: string | Date | null | undefined, now: Date): { open: boolean; opensAt: Date | null; endsAt: Date | null } {
-  if (!startAt) return { open: false, opensAt: null, endsAt: null };
+/** The renter can switch from day 3 onward. The offer does not expire. */
+export function weeklyOfferWindow(startAt: string | Date | null | undefined, now: Date): { open: boolean; opensAt: Date | null } {
+  if (!startAt) return { open: false, opensAt: null };
   const s = new Date(startAt);
-  if (Number.isNaN(s.getTime())) return { open: false, opensAt: null, endsAt: null };
+  if (Number.isNaN(s.getTime())) return { open: false, opensAt: null };
   const opensAt = new Date(s.getTime() + 3 * DAY);
-  const endsAt = new Date(s.getTime() + 7 * DAY);
-  return { open: now >= opensAt && now <= endsAt, opensAt, endsAt };
+  return { open: now >= opensAt, opensAt };
 }
 
 const fmtDate = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" });
 const fmtMoney = (n: number) => `$${(Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, "")}`;
 
 /** The exact words the renter agrees to. Stored with the switch. */
-export function consentText(rate: number, firstChargeAt: Date, last4: string | null): string {
+export function consentText(rate: number, firstChargeAt: Date, last4: string | null, now: Date = new Date()): string {
   const card = last4 ? `my card ending in ${last4}` : "my card on file";
   return `I want to switch to the weekly plan at ${fmtMoney(rate)} per week. My first week is already paid and is not refunded or credited. `
-    + `Starting ${fmtDate(firstChargeAt)}, Zivo will charge ${card} ${fmtMoney(rate)} every week until I return the car. `
+    + `Starting ${firstChargeAt.getTime() <= now.getTime() + 60 * 60 * 1000 ? "today" : fmtDate(firstChargeAt)}, Zivo will charge ${card} ${fmtMoney(rate)} every week until I return the car. `
     + `The 7-day minimum and my deposit stay the same.`;
 }
 
@@ -73,7 +71,6 @@ export async function loadWeeklyOffer(admin: Admin, rentalId: string, opts: { by
     if (arrangement !== "own" && arrangement !== "via_provider") return { available: false };
 
     const start = new Date(r.start_at as string);
-    if (now.getTime() > start.getTime() + 7 * DAY) return { available: false };
     if (opts.by === "renter" && !weeklyOfferWindow(start, now).open) return { available: false };
 
     const [{ data: sched }, { data: policy }, { data: setting }, { data: card }, { data: paid }] = await Promise.all([
@@ -90,11 +87,12 @@ export async function loadWeeklyOffer(admin: Admin, rentalId: string, opts: { by
     const w = computeWeeklyRate(rules.weekly_rate_usd, arrangement, rules.insurance);
     if (!w.ok) return { available: false };
 
-    const firstChargeAt = new Date(start.getTime() + 7 * DAY);
+    // End of the prepaid first week, or right away when that date has already passed.
+    const firstChargeAt = new Date(Math.max(start.getTime() + 7 * DAY, now.getTime()));
     const last4 = (card?.[0]?.last4 as string | undefined) ?? null;
     return {
       available: true, rate: w.amount, firstChargeAt: firstChargeAt.toISOString(), cardLast4: last4,
-      needsCard: (card ?? []).length === 0, consent: consentText(w.amount, firstChargeAt, last4),
+      needsCard: (card ?? []).length === 0, consent: consentText(w.amount, firstChargeAt, last4, now),
     };
   } catch {
     return { available: false };
