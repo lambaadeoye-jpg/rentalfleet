@@ -68,7 +68,7 @@ export default function RentalMoneyPanel({ rentalId, money, readOnly = false, ca
   }
 
   async function handleSwitch() {
-    if (!window.confirm("Switch this renter to the weekly plan? The first week they paid stays paid. The weekly rate is charged to their card on file starting at the end of that week.")) return;
+    if (!window.confirm("Switch this renter to the weekly plan? The first week they paid stays paid, and any extra days they already paid for are credited. The weekly rate is charged to their card on file once the paid days run out.")) return;
     setSwitchError(null); setSwitched(null); setSwitching(true);
     const result = await switchRentalToWeekly(rentalId);
     setSwitching(false);

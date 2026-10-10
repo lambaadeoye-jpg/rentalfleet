@@ -98,7 +98,7 @@ export default async function PortalRentalPage() {
 
       {weeklyOffer.available && (
         <WeeklyOffer rate={weeklyOffer.rate} firstChargeAt={weeklyOffer.firstChargeAt} cardLast4={weeklyOffer.cardLast4}
-          needsCard={weeklyOffer.needsCard} consent={weeklyOffer.consent} />
+          needsCard={weeklyOffer.needsCard} consent={weeklyOffer.consent} creditDays={weeklyOffer.creditDays} />
       )}
 
       <PickupSlotPicker state={pickerState} />

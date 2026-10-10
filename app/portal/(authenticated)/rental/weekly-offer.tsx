@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { switchMyPlanToWeekly } from "./payment-actions";
 import { createMyCardLink } from "../money/card-actions";
 
-type Props = { rate: number; firstChargeAt: string; cardLast4: string | null; needsCard: boolean; consent: string };
+type Props = { rate: number; firstChargeAt: string; cardLast4: string | null; needsCard: boolean; consent: string; creditDays: number };
 
 const money = (n: number) => `$${(Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/, "")}`;
 
-export default function WeeklyOffer({ rate, firstChargeAt, cardLast4, needsCard, consent }: Props) {
+export default function WeeklyOffer({ rate, firstChargeAt, cardLast4, needsCard, consent, creditDays }: Props) {
   const router = useRouter();
   const [agreed, setAgreed] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -38,7 +38,7 @@ export default function WeeklyOffer({ rate, firstChargeAt, cardLast4, needsCard,
     <div className="card" style={{ marginBottom: 16 }}>
       <h2 className="card-title card-title--tight">Switch to the weekly plan</h2>
       <p style={{ fontSize: 14, marginBottom: 6 }}>
-        <strong>{money(rate)} per week</strong>, charged automatically. Your first week is already paid. The first weekly charge is {new Date(firstChargeAt).getTime() <= Date.now() + 3600000 ? "today" : first}.
+        <strong>{money(rate)} per week</strong>, charged automatically. Your first week is already paid. {creditDays > 0 ? `The ${creditDays} extra day${creditDays === 1 ? "" : "s"} you already paid for ${creditDays === 1 ? "is" : "are"} credited. ` : ""}The first weekly charge is {new Date(firstChargeAt).getTime() <= Date.now() + 3600000 ? "today" : first}.
       </p>
       <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>
         Your deposit and the 7-day minimum stay the same. You can return the car any time after the minimum.

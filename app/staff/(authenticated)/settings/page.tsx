@@ -9,6 +9,8 @@ import { getPaymentSettings } from "./payment-settings-actions";
 import { getPickupScheduling } from "./pickup-actions";
 import RulesSettingsForm from "./rules-settings-form";
 import { getRulesSettings } from "./rules-settings-actions";
+import WeeklyOfferForm from "./weekly-offer-form";
+import { getWeeklyOfferDay } from "./weekly-offer-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +20,7 @@ export default async function MarketingSettingsPage() {
   const payments = await getPaymentSettings();
   const switches = await getSwitches();
   const rules = await getRulesSettings();
+  const offerDay = await getWeeklyOfferDay();
 
   return (
     <div className="page">
@@ -31,6 +34,7 @@ export default async function MarketingSettingsPage() {
       <PickupSchedulingForm initial={pickup} />
       <PaymentSettingsForm initial={payments} />
       <SwitchSettingsForm initial={switches} />
+      <WeeklyOfferForm initialDay={offerDay} />
       <div className="card" style={{ maxWidth: 720, marginTop: 28 }}>
         <h2 className="card-title card-title--tight">Rental agreement</h2>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 12 }}>The text renters sign, its versions, and approval.</p>
