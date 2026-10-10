@@ -5,6 +5,7 @@ import { decideNotice, type NoticeRow } from "@/lib/renter-notices";
 import { sendViaTwilio, twilioConfigured } from "@/lib/twilio";
 import { generateUploadToken } from "@/lib/upload-token";
 import { cardUpdateUrl, CARD_LINK_HOURS } from "@/lib/card-update";
+import { loadWeeklyOffer } from "@/lib/weekly-switch";
 
 // Called every few minutes by an n8n Schedule trigger (never by a browser). Sends the texts queued by the database
 // (cancellation, refund issued, payment received, weekly rent charged / failed) exactly once each.
@@ -42,6 +43,20 @@ export async function POST(request: Request) {
 
   for (const row of (claimed ?? []) as Claimed[]) {
     try {
+      // The weekly-plan offer carries today's price and is dropped if the renter already switched or the plan
+      // can't be offered any more (billing off, no approved rate, first week unpaid).
+      if (row.kind === "weekly_offer" && row.rental_id) {
+        const offer = await loadWeeklyOffer(supabase, row.rental_id, { by: "renter" });
+        if (!offer.available) {
+          counts.skipped++;
+          await supabase.from("renter_notice").update({ status: "skipped", error: "offer_unavailable" }).eq("id", row.id);
+          continue;
+        }
+        row.data = {
+          amount_cents: Math.round(offer.rate * 100),
+          first_charge_label: new Date(offer.firstChargeAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "America/Chicago" }),
+        };
+      }
       let decision = decideNotice(row, new Date(), smsConfigured, support, { siteUrl });
       // A declined-card text carries a private update-card link. It is made only now, when the text is really going
       // out, so a deferred or skipped notice never replaces a link the renter already has. If the link can't be made

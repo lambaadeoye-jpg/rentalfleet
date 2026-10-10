@@ -103,6 +103,28 @@ describe("check-ins and referral ask", () => {
   });
 });
 
+describe("weekly plan offer", () => {
+  const data = { amount_cents: 45000, first_charge_label: "Oct 14" };
+  it("states the price, autopay, that the first week is paid, and links to the portal", () => {
+    const t = noticeBody("weekly_offer", data, null, { firstName: "Ann" })!;
+    expect(t).toContain("$450.00 a week");
+    expect(t).toContain("starting Oct 14");
+    expect(t).toContain("first week is already paid");
+    expect(t).toContain("https://rentzivo.com/portal/rental");
+    expect(t).toContain("Reply STOP");
+  });
+  it("says nothing without a price", () => {
+    expect(noticeBody("weekly_offer", {}, null)).toBeNull();
+  });
+  it("needs consent and a running rental", () => {
+    const base = { kind: "weekly_offer" as const, data, rental_status: "active" };
+    expect(decideNotice(row({ ...base, has_consent: false }), NOON, true, null)).toEqual({ action: "skip", reason: "no_marketing_consent" });
+    expect(decideNotice(row({ ...base, has_consent: true }), NOON, true, null).action).toBe("send");
+    expect(decideNotice(row({ ...base, has_consent: true, rental_status: "returned" }), NOON, true, null))
+      .toEqual({ action: "skip", reason: "rental_not_active" });
+  });
+});
+
 describe("declined-card text", () => {
   const url = "https://rentzivo.com/card/" + "a".repeat(43);
   it("carries the private update-card link when there is one", () => {

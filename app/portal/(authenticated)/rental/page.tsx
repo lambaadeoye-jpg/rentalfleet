@@ -6,7 +6,8 @@ import PickupSlotPicker from "./pickup-slot-picker";
 import { getPickerState } from "./pickup-actions";
 import PayNow from "./pay-now";
 import SignNow from "./sign-now";
-import { getPortalPayState } from "./payment-actions";
+import { getPortalPayState, getMyWeeklyOffer } from "./payment-actions";
+import WeeklyOffer from "./weekly-offer";
 import CancelRental from "./cancel-rental";
 import { getMyCancelState } from "./cancel-actions";
 import { sentenceCase } from "@/lib/format-label";
@@ -31,6 +32,7 @@ export default async function PortalRentalPage() {
   const pickerState = await getPickerState();
   const payState = await getPortalPayState();
   const cancelState = await getMyCancelState();
+  const weeklyOffer = await getMyWeeklyOffer();
 
   const vehicle = (rental?.rental_segment as any)?.[0]?.vehicle;
   const policy = (rental?.governing_policy_snapshot as any) ?? {};
@@ -92,6 +94,11 @@ export default async function PortalRentalPage() {
           <p className="muted-text" style={{ fontSize: 13, marginBottom: 10 }}>First week plus security deposit, paid by card on a secure Stripe page.</p>
           <PayNow />
         </div>
+      )}
+
+      {weeklyOffer.available && (
+        <WeeklyOffer rate={weeklyOffer.rate} firstChargeAt={weeklyOffer.firstChargeAt} cardLast4={weeklyOffer.cardLast4}
+          needsCard={weeklyOffer.needsCard} consent={weeklyOffer.consent} />
       )}
 
       <PickupSlotPicker state={pickerState} />

@@ -74,11 +74,16 @@ export default async function Home() {
     { q: "Do you offer monthly rentals?", a: "No. We do not offer a monthly rental plan." },
     { q: "What’s the minimum rental period?", a: "The minimum rental period is one week, so every rental is a weekly rental or longer." },
     {
-      q: "How does daily pricing work?",
+      q: "How does pricing work?",
       a:
-        (pricing
-          ? `The daily option is $${pricing.total} for the first ${pricing.days} days, followed by $${pricing.perDay}/day after the first ${pricing.days} days. `
-          : "Daily pricing is shown during rental selection. ") + "A one-week minimum rental applies.",
+        (pricing && weekTotal > 0
+          ? `Your first week is $${weekTotal}. After that it’s $${pricing.perDay}/day. `
+          : "Pricing is shown during rental selection. ") +
+        "A one-week minimum rental applies.",
+    },
+    {
+      q: "Can I switch to a weekly rate?",
+      a: "Yes. Once you’re driving, you can move to a lower weekly rate that’s charged automatically each week to a card on file. The week you already paid stays paid, and your deposit stays the same.",
     },
     {
       q: "Do I need my own insurance?",
@@ -199,11 +204,11 @@ export default async function Home() {
               <h1>Car rentals for rideshare &amp; delivery drivers.</h1>
               <p className="hero-sub">
                 {pricing
-                  ? `$${pricing.total} for your first ${pricing.days} days, then $${pricing.perDay}/day.`
+                  ? `$${weekTotal} for your first week (one-week minimum), then $${pricing.perDay}/day.`
                   : "Reliable, fuel-efficient cars for working drivers."}
               </p>
               <p className="hero-keywords">
-                Weekly and daily car rentals for Uber, Lyft, DoorDash, Instacart and Amazon Flex
+                Car rentals for Uber, Lyft, DoorDash, Instacart and Amazon Flex
                 drivers in Nashville, TN.
               </p>
               <div className="benefit-strip">
@@ -365,12 +370,12 @@ export default async function Home() {
           <h2 className="section-title">Simple pricing for working drivers.</h2>
           <div className="price-grid">
             <div className="card price-card" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
-              <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>DAILY</div>
+              <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>FIRST WEEK</div>
               {pricing ? (
                 <>
-                  <div className="price">${pricing.total}</div>
+                  <div className="price">${weekTotal}</div>
                   <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                    for your first {pricing.days} days, then ${pricing.perDay}/day after. 1-week minimum rental applies{pricing.days < 7 ? <>, so a 7-day rental starts at <strong>${weekTotal}</strong></> : null}.
+                    for your first week. One-week minimum rental applies. After that, ${pricing.perDay}/day, or move to a lower weekly rate once you&rsquo;re driving.
                   </p>
                 </>
               ) : (
@@ -384,7 +389,7 @@ export default async function Home() {
             </div>
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
-            Unlimited mileage included on every rental. Rentals start at one week, then continue day by day.
+            Unlimited mileage included on every rental. Rentals start at one week. After that you can keep going day by day or switch to a weekly rate with automatic billing to a card on file.
             Insurance is included if you don&rsquo;t have your own. We do not offer a monthly rental plan.
           </p>
           <SectionCta name="after_pricing" label="Check availability" />

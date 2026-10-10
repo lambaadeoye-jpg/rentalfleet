@@ -206,19 +206,8 @@ export default function LeadForm({
           </div>
         </div>
 
-        <div className="field">
-          <label>Rental option</label>
-          <div style={{ display: "flex", gap: 20, marginTop: 6 }}>
-            <label className="checkbox-item">
-              <input type="radio" name="rentalOption" value="daily" />
-              Daily
-            </label>
-            <label className="checkbox-item">
-              <input type="radio" name="rentalOption" value="weekly" defaultChecked />
-              Weekly
-            </label>
-          </div>
-        </div>
+        {/* Every rental starts with a one-week minimum; staff set the plan when scheduling. */}
+        <input type="hidden" name="rentalOption" value="weekly" />
 
         <div className="field">
           <label htmlFor={`${uid}-heardAbout`}>How did you hear about us? (optional)</label>

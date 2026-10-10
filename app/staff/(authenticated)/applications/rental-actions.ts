@@ -13,6 +13,8 @@ import { calculateDailyRentalPrice } from "@/lib/pricing";
 import { validateRentalWindow, defaultDropoff, isDefaultDropoff } from "@/lib/rental-window";
 import { computeWeeklyRate, computeDailyTotal, resolveDeposit, ACCEPTED_PAYMENT_METHODS, type InsuranceArrangement } from "@/lib/rental-rate";
 import { generateAndStoreFinancialDocument } from "@/lib/generate-financial-document";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { performWeeklySwitch, switchMessage } from "@/lib/weekly-switch";
 
 // Daily-plan total for a window, adjusted for the renter’s insurance
 // arrangement. Legacy rentals (no arrangement recorded) keep the standard
@@ -664,6 +666,23 @@ export async function confirmPickup(
     }
   }
 
+  // The weekly plan is charged automatically, so the renter must have a card on file before they drive away.
+  // (Paying through the secure card page saves it; a payment recorded by hand does not.)
+  if (rate?.agreed_weekly_rate_usd != null) {
+    // Read with the service client: runners are not allowed to read saved cards, but they must still be told when one is missing.
+    const cardAdmin = createAdminClient();
+    if (!cardAdmin) return { success: false, error: "Couldn’t check the card on file right now. Please try again." };
+    const { count: cardCount, error: cardError } = await cardAdmin
+      .from("customer_payment_method")
+      .select("id", { count: "exact", head: true })
+      .eq("tenant_id", rental.tenant_id)
+      .eq("customer_id", rental.customer_id);
+    if (cardError) return { success: false, error: "Couldn’t check the card on file right now. Please try again." };
+    if ((cardCount ?? 0) === 0) {
+      return { success: false, error: "The weekly plan needs a card on file. Send the renter the card payment link (or an update-card link from Billing) so their card is saved, then confirm pickup." };
+    }
+  }
+
   // A runner must finish the guided handover (ID check, photos, walkthrough video, rules explained) first.
   // The agreement and the payment were checked above, so they count as done here.
   if ((await currentRoleName(supabase)) === "field_staff") {
@@ -1095,4 +1114,35 @@ export async function resolvePickupFollowup(rentalId: string): Promise<{ success
 
   revalidatePath("/staff/pickups");
   return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// STAFF: move a running daily-plan rental to the weekly plan (the renter asked, or agreed by phone).
+// Same database function and rules as the renter's own button (card on file, billing on, first week paid), but
+// staff can do it before day 3. The rate comes from the current pricing and the renter's insurance arrangement.
+// Needs the pricing permission because it creates a billing schedule.
+// ---------------------------------------------------------------------------
+export async function switchRentalToWeekly(rentalId: string): Promise<{ success: boolean; error?: string; rate?: number }> {
+  const supabase = await createClient();
+  if ((await currentRoleName(supabase)) === "field_staff") return { success: false, error: OFFICE_ONLY } as any;
+  const { data: allowed } = await supabase.rpc("can_manage_pricing");
+  if (allowed !== true) return { success: false, error: "You don’t have permission to change a renter’s plan." };
+
+  // Reading under the staff login confirms the rental belongs to their business.
+  const { data: rental } = await supabase.from("rental").select("id, tenant_id").eq("id", rentalId).maybeSingle();
+  if (!rental) return { success: false, error: "Rental not found." };
+
+  const admin = createAdminClient();
+  if (!admin) return { success: false, error: "Plan changes aren’t available right now." };
+  const me = await currentUser(supabase);
+  const res = await performWeeklySwitch(admin, rentalId, "staff", me?.id ?? null);
+  if (res.outcome !== "switched") return { success: false, error: switchMessage(res.outcome) };
+
+  await logAuditEvent({
+    tenantId: rental.tenant_id, action: "rental.switched_to_weekly", entityType: "rental", entityId: rentalId,
+    beforeData: { plan: "daily" }, afterData: { plan: "weekly", weekly_rate_usd: res.rate ?? null }, source: "staff",
+  });
+  revalidatePath("/staff/pickups");
+  revalidatePath("/staff/billing");
+  return { success: true, rate: res.rate };
 }

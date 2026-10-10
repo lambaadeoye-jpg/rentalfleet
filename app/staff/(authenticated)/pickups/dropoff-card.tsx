@@ -119,7 +119,7 @@ export default function DropoffCard({ item, isRunner = false, runners = [] }: { 
           </button>
           </>)}
 
-          <RentalMoneyPanel rentalId={item.rentalId} money={item.money} readOnly={isRunner} />
+          <RentalMoneyPanel rentalId={item.rentalId} money={item.money} readOnly={isRunner} canSwitchPlan />
 
           {/* Confirm dropoff */}
           <InspectionPhotoUpload rentalId={item.rentalId} vehicleId={item.vehicleId} inspectionType="return" />

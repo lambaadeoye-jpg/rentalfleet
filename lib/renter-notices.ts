@@ -7,7 +7,7 @@ import { toE164 } from "./contact-validation";
 
 export type NoticeKind =
   | "cancelled" | "refund_sent" | "payment_received" | "weekly_rent_charged" | "weekly_charge_failed"
-  | "checkin_day1" | "checkin_day3" | "referral_ask" | "card_updated" | "rent_due_tomorrow";
+  | "checkin_day1" | "checkin_day3" | "referral_ask" | "card_updated" | "rent_due_tomorrow" | "weekly_offer";
 
 export type NoticeRow = {
   kind: NoticeKind;
@@ -88,6 +88,12 @@ export function noticeBody(
       const card = last4 ? `your card ending ${last4}` : "your saved card";
       return `Zivo: ${hi}tomorrow we'll charge ${card} ${dollars(d.amount_cents)} for this week's rent. Need to change cards? Update it in your portal: ${base(ctx)}/portal/money ${STOP}`;
     }
+    case "weekly_offer": {
+      const cents = Number(d.amount_cents ?? 0);
+      if (!(cents > 0)) return null;
+      const first = typeof d.first_charge_label === "string" && d.first_charge_label ? ` starting ${d.first_charge_label}` : "";
+      return `Zivo: ${hi}you can switch to our weekly plan: ${dollars(cents)} a week, charged to your card on file${first}. Your first week is already paid. Switch in your portal: ${base(ctx)}/portal/rental ${STOP}`;
+    }
     // Support starts in the portal (V2.1): texts point there rather than inviting replies.
     case "checkin_day1":
       return `Zivo: ${hi}how is the car working out so far? If anything is off, tell us in your portal: ${base(ctx)}/portal ${STOP}`;
@@ -112,12 +118,12 @@ export function decideNotice(
   const to = row.phone ? toE164(row.phone) : null;
   if (!to) return { action: "skip", reason: "no_phone" };
   // Check-ins and the referral ask only make sense while the rental is running.
-  if ((row.kind === "checkin_day1" || row.kind === "checkin_day3" || row.kind === "referral_ask" || row.kind === "rent_due_tomorrow")
+  if ((row.kind === "checkin_day1" || row.kind === "checkin_day3" || row.kind === "referral_ask" || row.kind === "rent_due_tomorrow" || row.kind === "weekly_offer")
       && !ACTIVE_RENTAL.has(row.rental_status ?? "")) {
     return { action: "skip", reason: "rental_not_active" };
   }
-  // The referral ask is promotional: only with a recorded consent.
-  if (row.kind === "referral_ask" && !row.has_consent) return { action: "skip", reason: "no_marketing_consent" };
+  // The referral ask and the weekly-plan offer are promotional: only with a recorded consent.
+  if ((row.kind === "referral_ask" || row.kind === "weekly_offer") && !row.has_consent) return { action: "skip", reason: "no_marketing_consent" };
   const body = noticeBody(row.kind, row.data, support, { ...ctx, firstName: row.first_name, referralCode: row.referral_code });
   if (!body) return { action: "skip", reason: "nothing_to_say" };
   if (!smsConfigured) return { action: "defer", reason: "sms_provider_not_configured" };

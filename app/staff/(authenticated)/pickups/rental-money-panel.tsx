@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { recordPayment, changeRentalInsurance } from "../applications/rental-actions";
+import { recordPayment, changeRentalInsurance, switchRentalToWeekly } from "../applications/rental-actions";
 import type { RentalMoney } from "./list-actions";
 import { cardChargedStatus } from "@/lib/runner-access";
 
@@ -11,7 +11,7 @@ const usd = (n: number | null) => (n === null ? "—" : `$${n.toFixed(2)}`);
 // Staff-only: the renter’s agreed rate, what’s been collected, and how to
 // record rent / deposit payments (card only) or change the insurance
 // arrangement. Renters never see this panel.
-export default function RentalMoneyPanel({ rentalId, money, readOnly = false }: { rentalId: string; money: RentalMoney; readOnly?: boolean }) {
+export default function RentalMoneyPanel({ rentalId, money, readOnly = false, canSwitchPlan = false }: { rentalId: string; money: RentalMoney; readOnly?: boolean; canSwitchPlan?: boolean }) {
   const router = useRouter();
   const [kind, setKind] = useState<"rent" | "deposit">("rent");
   const [amount, setAmount] = useState("");
@@ -23,6 +23,9 @@ export default function RentalMoneyPanel({ rentalId, money, readOnly = false }: 
   const [rateLoading, setRateLoading] = useState(false);
   const [rateError, setRateError] = useState<string | null>(null);
   const [rateSaved, setRateSaved] = useState<string | null>(null);
+  const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
+  const [switched, setSwitched] = useState<string | null>(null);
 
   const firstRentDue = money.plan === "weekly" ? money.weeklyRateUsd : money.quotedAmountUsd;
   const arrangementLabel =
@@ -61,6 +64,16 @@ export default function RentalMoneyPanel({ rentalId, money, readOnly = false }: 
       return;
     }
     setRateSaved(result.newWeeklyRate != null ? `Updated. New weekly rate: ${usd(result.newWeeklyRate)}.` : "Updated.");
+    router.refresh();
+  }
+
+  async function handleSwitch() {
+    if (!window.confirm("Switch this renter to the weekly plan? The first week they paid stays paid. The weekly rate is charged to their card on file starting at the end of that week.")) return;
+    setSwitchError(null); setSwitched(null); setSwitching(true);
+    const result = await switchRentalToWeekly(rentalId);
+    setSwitching(false);
+    if (!result.success) { setSwitchError(result.error ?? "Couldn’t switch the plan."); return; }
+    setSwitched(result.rate != null ? `Switched. Weekly rate: ${usd(result.rate)}.` : "Switched.");
     router.refresh();
   }
 
@@ -120,6 +133,17 @@ export default function RentalMoneyPanel({ rentalId, money, readOnly = false }: 
       <button onClick={handlePay} disabled={payLoading} className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)", marginBottom: 16 }}>
         {payLoading ? "Recording..." : "Record payment"}
       </button>
+
+      {canSwitchPlan && money.plan === "daily" && (
+        <div style={{ marginBottom: 16 }}>
+          <p className="muted-text" style={{ fontSize: 12, marginBottom: 8 }}>On the daily plan. The weekly plan needs a card on file and the first week paid.</p>
+          {switchError && <p className="error-text" style={{ fontSize: 13, marginBottom: 8 }}>{switchError}</p>}
+          {switched && <p style={{ color: "var(--signal-green, #16a34a)", fontSize: 13, marginBottom: 8 }}>{switched}</p>}
+          <button onClick={handleSwitch} disabled={switching} className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
+            {switching ? "Switching..." : "Switch to weekly plan"}
+          </button>
+        </div>
+      )}
 
       {money.arrangement && (
         <div>

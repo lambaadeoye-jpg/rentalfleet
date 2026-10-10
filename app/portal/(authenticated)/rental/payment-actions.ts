@@ -3,6 +3,8 @@
 import { owned } from "./owned";
 import { createPaymentRequest, payLinkUrl } from "@/lib/payment-request";
 import { buildSigningLink } from "@/lib/signing-link";
+import { loadWeeklyOffer, performWeeklySwitch, switchMessage, type WeeklyOffer } from "@/lib/weekly-switch";
+import { revalidatePath } from "next/cache";
 
 // Renter-facing "Pay now". The renter is authenticated, their own latest
 // rental is looked up under their login, and only then is the service client
@@ -41,4 +43,23 @@ export async function startMySigning(): Promise<{ success: boolean; url?: string
     return { success: false, error: res.error?.startsWith("The agreement can’t be created yet") ? "Your agreement isn’t ready yet. We’ll let you know when it is." : res.error };
   }
   return res;
+}
+
+// Day-3 offer: move from the daily plan to the weekly plan. Only the renter's own rental; the price, the consent
+// wording and every rule are worked out on the server (the browser only says "yes").
+export async function getMyWeeklyOffer(): Promise<WeeklyOffer> {
+  const c = await owned();
+  if (!c || !["active", "extended"].includes(c.status)) return { available: false };
+  return loadWeeklyOffer(c.admin, c.rentalId, { by: "renter" });
+}
+
+export async function switchMyPlanToWeekly(agreed: boolean): Promise<{ success: boolean; error?: string }> {
+  if (agreed !== true) return { success: false, error: "Please tick the box to confirm." };
+  const c = await owned();
+  if (!c) return { success: false, error: "Please sign in again." };
+  const res = await performWeeklySwitch(c.admin, c.rentalId, "renter", null);
+  if (res.outcome !== "switched") return { success: false, error: switchMessage(res.outcome) };
+  revalidatePath("/portal/rental");
+  revalidatePath("/portal/money");
+  return { success: true };
 }
