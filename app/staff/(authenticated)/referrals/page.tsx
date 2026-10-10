@@ -18,7 +18,7 @@ export default async function ReferralsPage() {
         <div className="card" style={{ marginBottom: 20, borderColor: "var(--warning, #f59e0b)" }}>
           <p style={{ fontSize: 14 }}>
             No referral bonus amount is approved yet — set one on{" "}
-            <a href="/staff/pricing" style={{ color: "var(--teal)" }}>
+            <a href="/staff/pricing" style={{ color: "var(--teal-dark)" }}>
               Pricing
             </a>{" "}
             before any referrals can be approved.

@@ -190,7 +190,7 @@ export default function Workspace({
             </p>
           ) : (
             <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, fontWeight: 700 }}>
                   <Mail size={16} color="var(--teal)" />
                   {initialEmail ? "Use this email to enable resuming later?" : "Want to continue from another device later?"}
@@ -474,7 +474,7 @@ export default function Workspace({
             {hasAdditionalDrivers &&
               additionalDrivers.map((driver, i) => (
                 <div key={i} className="card" style={{ marginBottom: 12 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginBottom: 8 }}>
                     <span style={{ fontSize: 13, fontWeight: 700 }}>Driver {i + 1}</span>
                     {additionalDrivers.length > 1 && (
                       <button
@@ -652,7 +652,7 @@ export default function Workspace({
         Stuck on something?{" "}
         {PHONE_IS_LIVE ? (
           <>
-            <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
+            <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal-dark)", fontWeight: 700 }}>
               <Phone size={13} style={{ verticalAlign: "-2px", marginRight: 3 }} />
               Call {PHONE_DISPLAY}
             </a>{" "}
@@ -661,7 +661,7 @@ export default function Workspace({
         ) : (
           <>
             Email{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>{SUPPORT_EMAIL}</a>{" "}
+            <a href={`mailto:${SUPPORT_EMAIL}`} style={{ color: "var(--teal-dark)", fontWeight: 700 }}>{SUPPORT_EMAIL}</a>{" "}
             and we&rsquo;ll walk you through it.
           </>
         )}

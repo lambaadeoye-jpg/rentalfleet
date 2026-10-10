@@ -50,7 +50,7 @@ export default async function ApplicationDetailPage({
     return (
       <div className="page">
         <p className="error-text">Application not found.</p>
-        <Link href="/staff/applications" style={{ color: "var(--teal)" }}>
+        <Link href="/staff/applications" style={{ color: "var(--teal-dark)" }}>
           Back to applications
         </Link>
       </div>
@@ -113,7 +113,7 @@ export default async function ApplicationDetailPage({
 
   return (
     <div className="page" style={{ maxWidth: 900 }}>
-      <Link href="/staff/applications" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>
+      <Link href="/staff/applications" style={{ color: "var(--teal-dark)", fontSize: 13, fontWeight: 600 }}>
         ← Back to Applications
       </Link>
       <h1 style={{ fontSize: 24, margin: "8px 0 4px" }}>

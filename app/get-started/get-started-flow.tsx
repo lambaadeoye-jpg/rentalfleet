@@ -125,7 +125,7 @@ export default function GetStartedFlow() {
           </p>
 
           <div className="card" style={{ textAlign: "left" }}>
-            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--teal)", marginBottom: 16 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "var(--teal-dark)", marginBottom: 16 }}>
               What happens next
             </p>
             <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
@@ -179,7 +179,7 @@ export default function GetStartedFlow() {
               borrowing a competitor’s psychological device because it
               converts well for them. */}
           <span className="muted-text">STEP {stepIndex + 1} OF {STEPS.length}</span>
-          <span style={{ color: "var(--teal)" }}>{progress}%</span>
+          <span style={{ color: "var(--teal-dark)" }}>{progress}%</span>
         </div>
         <div style={{ height: 6, background: "var(--border)", borderRadius: 999, marginBottom: 20, overflow: "hidden" }}>
           <div style={{ height: "100%", width: `${progress}%`, background: "var(--teal)", transition: "width 0.3s" }} />
@@ -193,7 +193,7 @@ export default function GetStartedFlow() {
               gap: 6,
               fontSize: 12,
               fontWeight: 700,
-              color: "var(--teal)",
+              color: "var(--teal-dark)",
               background: "rgba(0,169,157,0.1)",
               borderRadius: 999,
               padding: "4px 12px",
@@ -207,7 +207,7 @@ export default function GetStartedFlow() {
             the benchmark — one stable frame the person sees throughout,
             only the question underneath changes. Not step-conditional. */}
         <h1 style={{ fontSize: 26, marginBottom: 8, textAlign: "center" }}>
-          You&rsquo;re one step from <em style={{ color: "var(--teal)", fontStyle: "italic" }}>the keys</em>.
+          You&rsquo;re one step from <em style={{ color: "var(--teal-dark)", fontStyle: "italic" }}>the keys</em>.
         </h1>
         <p className="muted-text" style={{ textAlign: "center", marginBottom: 28 }}>
           Answer a few quick questions and we&rsquo;ll get you moving fast — no credit check,

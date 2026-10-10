@@ -94,7 +94,7 @@ export default function IncidentList({
       </div>
 
       {initialIncidents.map((i) => (
-        <div key={i.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+        <div key={i.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
           <div>
             <div style={{ fontWeight: 700 }}>{i.incidentType}</div>
             <div className="muted-text" style={{ fontSize: 13 }}>

@@ -135,7 +135,7 @@ function JobCard({ job, limit, expanded, onToggle, onChanged }: { job: RunnerJob
 
   return (
     <div className="card" style={{ marginBottom: 10 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", cursor: isOpen ? "pointer" : "default" }} onClick={isOpen ? onToggle : undefined}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", cursor: isOpen ? "pointer" : "default" }} onClick={isOpen ? onToggle : undefined}>
         <div>
           <div style={{ fontWeight: 700 }}>{job.vehicle}</div>
           <div className="muted-text" style={{ fontSize: 13 }}>

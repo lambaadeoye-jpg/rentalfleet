@@ -75,7 +75,7 @@ export default function RecoveryList({
       {initialCases.map((c) => (
         <Link key={c.id} href={`/staff/recovery/${c.id}`} style={{ textDecoration: "none", color: "inherit" }}>
           <div className="card" style={{ marginBottom: 10, cursor: "pointer" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
               <strong>{c.customerName}</strong>
               <span>{sentenceCase(c.status.replace(/_/g, " "))}</span>
             </div>

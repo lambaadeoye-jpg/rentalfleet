@@ -71,11 +71,12 @@ h3,
 }
 
 .button-primary {
-  background: var(--teal);
+  /* teal-dark, not teal: white text on the lighter brand teal is only 2.9:1; this is 4.9:1 (the accessible minimum is 4.5:1). */
+  background: var(--teal-dark);
   color: white;
 }
 .button-primary:hover {
-  background: var(--teal-dark);
+  background: #066a64;
 }
 .button-primary:disabled {
   opacity: 0.6;
@@ -202,6 +203,10 @@ label.field > span:first-child {
   color: white;
   overflow: hidden;
 }
+
+/* The hero photo is absolutely positioned, so it paints over ordinary content that follows it. Lift the content above it
+   (the logo and nav links were showing dimmed through the photo). */
+.hero > .container { position: relative; z-index: 1; }
 
 .hero-bg-image {
   position: absolute;
@@ -393,7 +398,7 @@ label.field > span:first-child {
 }
 
 .step-number {
-  color: var(--teal);
+  color: var(--teal-dark);
   font-weight: 800;
   font-size: 14px;
   font-family: "Plus Jakarta Sans", sans-serif;
@@ -424,6 +429,8 @@ label.field > span:first-child {
 }
 .footer a {
   color: rgba(255, 255, 255, 0.8);
+  display: inline-block;
+  padding: 6px 2px; /* a finger-sized tap area; the text itself does not move */
 }
 
 .checkbox-grid {
@@ -441,6 +448,11 @@ label.field > span:first-child {
 }
 .checkbox-item input {
   width: auto;
+  flex-shrink: 0;
+}
+/* Finger-sized rows for checkboxes and radios on phones (the tap area is the whole row). */
+@media (max-width: 640px) {
+  .checkbox-item, .radio-option { min-height: 40px; }
 }
 
 .radio-option input {
@@ -505,7 +517,7 @@ label.field > span:first-child {
 }
 .mobile-cta-main {
   flex: 1;
-  background: var(--teal);
+  background: var(--teal-dark);
   color: white;
 }
 .mobile-cta-call {
@@ -580,6 +592,9 @@ h1 + p.muted-text {
    Use these instead of inline styles so spacing and type stay identical on every page. */
 .page {
   padding: 32px 40px;
+}
+@media (max-width: 859px) {
+  .page { padding: 20px 16px; }
 }
 .page-title {
   font-size: 24px;
@@ -686,3 +701,55 @@ h1 + p.muted-text {
 .runner-nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; display: flex; background: var(--midnight); border-top: 1px solid rgba(255,255,255,0.12); padding-bottom: env(safe-area-inset-bottom); }
 .runner-nav__link { flex: 1; text-align: center; padding: 14px 4px; color: rgba(255,255,255,0.72); font-size: 13px; font-weight: 600; text-decoration: none; }
 .runner-nav__link--active { color: #fff; box-shadow: inset 0 3px 0 var(--teal); }
+
+/* Staff shell. Wide screens: fixed sidebar. Phones and small tablets: top bar plus a slide-in drawer.
+   min-width: 0 lets the content column shrink instead of pushing the page wider than the screen. */
+.staff-shell { display: flex; min-height: 100vh; }
+.staff-main { flex: 1; min-width: 0; background: var(--cloud); min-height: 100vh; }
+.staff-topbar, .staff-scrim, .staff-nav__close { display: none; }
+@media (max-width: 859px) {
+  .staff-shell { display: block; }
+  .staff-topbar {
+    display: flex; align-items: center; gap: 10px; position: sticky; top: 0; z-index: 40;
+    background: var(--midnight); color: white; padding: 8px 12px; min-height: 52px;
+  }
+  .staff-topbar__menu { position: relative; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; background: none; border: none; color: white; border-radius: 8px; cursor: pointer; }
+  .staff-topbar__menu:hover { background: rgba(255, 255, 255, 0.08); }
+  .staff-topbar__name { font-weight: 700; font-size: 15px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .staff-scrim { display: block; position: fixed; inset: 0; z-index: 60; background: rgba(8, 15, 28, 0.55); }
+  .staff-nav {
+    position: fixed; top: 0; bottom: 0; left: 0; height: 100dvh; width: min(86vw, 300px); z-index: 70;
+    transform: translateX(-100%); transition: transform 0.2s ease; visibility: hidden;
+  }
+  .staff-nav--open { transform: none; visibility: visible; }
+  .staff-nav__close { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: none; border: none; color: rgba(255, 255, 255, 0.8); border-radius: 8px; cursor: pointer; }
+  .staff-nav__link { padding: 12px 12px; }
+  .nav-bell__panel { left: auto; right: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .staff-nav { transition: none; }
+}
+
+/* Customer portal bottom tabs. */
+.portal-tabs { position: fixed; bottom: 0; left: 0; right: 0; z-index: 50; display: flex; background: white; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
+.portal-tab { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; min-height: 56px; color: var(--text-secondary); text-decoration: none; font-size: 11px; font-weight: 600; }
+.portal-tab--active { color: var(--teal-dark); box-shadow: inset 0 3px 0 var(--teal); }
+
+/* Hero benefit strip: on phones drop the dot separators (they were left dangling at the end of a line) and use gaps. */
+@media (max-width: 560px) {
+  .benefit-strip { gap: 6px 16px; }
+  .benefit-strip > span:nth-child(even) { display: none; }
+}
+
+/* Inbox: list beside the conversation on wide screens; stacked on phones. */
+.inbox-grid { display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 20px; height: 70vh; }
+.inbox-list { overflow-y: auto; border-right: 1px solid var(--border); }
+@media (max-width: 859px) {
+  .inbox-grid { grid-template-columns: minmax(0, 1fr); height: auto; }
+  .inbox-list { max-height: 260px; border-right: none; border-bottom: 1px solid var(--border); }
+}
+code { overflow-wrap: anywhere; }
+
+/* Keyboard focus: a visible ring everywhere (lighter on dark backgrounds). */
+:focus-visible { outline: 2px solid var(--teal-dark); outline-offset: 2px; }
+.hero :focus-visible, .section-dark :focus-visible, .footer :focus-visible, .staff-nav :focus-visible, .staff-topbar :focus-visible, .runner-nav :focus-visible, .on-dark :focus-visible { outline-color: #5eead4; }

@@ -79,7 +79,7 @@ export default function RecoveryCaseDetailClient({ recoveryCase }: { recoveryCas
   return (
     <div style={{ maxWidth: 760 }}>
       <div className="card" style={{ marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginBottom: 8 }}>
           <strong>{sentenceCase(recoveryCase.status.replace(/_/g, " "))}</strong>
           <span>Balance due: ${recoveryCase.balanceDue.toFixed(2)}</span>
         </div>
@@ -132,7 +132,7 @@ export default function RecoveryCaseDetailClient({ recoveryCase }: { recoveryCas
       <h2 className="card-title">Expenses</h2>
       {!recoveryCase.expenses.length && <p className="muted-text" style={{ fontSize: 14 }}>No expenses logged yet.</p>}
       {recoveryCase.expenses.map((e) => (
-        <div key={e.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div key={e.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div>
             <span style={{ fontWeight: 700 }}>{sentenceCase(e.expenseType)}</span> — ${e.amount.toFixed(2)} —{" "}
             <span>{sentenceCase(e.responsibility)}</span> —{" "}

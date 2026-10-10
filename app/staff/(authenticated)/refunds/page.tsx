@@ -20,7 +20,7 @@ export default async function RefundsPage() {
           {due.map((d) => (
             <div key={d.rentalId} style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid rgba(128,128,128,0.25)" }}>
               <span>{d.customerName} · ${(d.refundableCents / 100).toFixed(2)} refundable{d.refundableCents < d.heldCents ? ` (of $${(d.heldCents / 100).toFixed(2)})` : ""}</span>
-              {d.applicationId ? <Link href={`/staff/applications/${d.applicationId}`} style={{ color: "var(--teal)" }}>Open</Link> : <span className="muted-text">No application on file</span>}
+              {d.applicationId ? <Link href={`/staff/applications/${d.applicationId}`} style={{ color: "var(--teal-dark)" }}>Open</Link> : <span className="muted-text">No application on file</span>}
             </div>
           ))}
         </div>

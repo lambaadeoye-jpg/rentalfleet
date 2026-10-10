@@ -47,8 +47,8 @@ export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: b
 
   if (sent) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div className="card" style={{ width: 360, textAlign: "center" }}>
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div className="card" style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
           <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
           <h1 className="page-title" style={{ marginBottom: 8 }}>Check your email</h1>
           <p className="muted-text">
@@ -60,8 +60,8 @@ export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: b
   }
 
   return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <form onSubmit={mode === "magic-link" ? handleMagicLink : handlePassword} className="card" style={{ width: 360 }}>
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+      <form onSubmit={mode === "magic-link" ? handleMagicLink : handlePassword} className="card" style={{ width: "100%", maxWidth: 360 }}>
         {mode === "magic-link" ? (
           <Mail size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
         ) : (
@@ -119,7 +119,7 @@ export default function StaffLoginForm({ inactiveTimeout }: { inactiveTimeout: b
             setMode(mode === "magic-link" ? "password" : "magic-link");
             setError(null);
           }}
-          style={{ background: "none", border: "none", color: "var(--teal)", fontSize: 13, cursor: "pointer", width: "100%" }}
+          style={{ background: "none", border: "none", color: "var(--teal-dark)", fontSize: 14, cursor: "pointer", width: "100%", padding: "12px 0" }}
         >
           {mode === "magic-link" ? "Sign in with a password instead" : "Send me a sign-in link instead"}
         </button>

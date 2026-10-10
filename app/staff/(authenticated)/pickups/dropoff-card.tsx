@@ -76,7 +76,7 @@ export default function DropoffCard({ item, isRunner = false, runners = [] }: { 
   return (
     <div className="card" style={{ marginBottom: 12 }}>
       <div
-        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+        style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
         onClick={() => setExpanded(!expanded)}
       >
         <div>

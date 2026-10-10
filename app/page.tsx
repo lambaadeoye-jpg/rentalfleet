@@ -487,7 +487,7 @@ export default async function Home() {
             {PHONE_IS_LIVE && (
               <>
                 {" "}Prefer to talk it through instead?{" "}
-                <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal)", fontWeight: 700 }}>
+                <a href={`tel:${PHONE_TEL}`} style={{ color: "var(--teal-dark)", fontWeight: 700 }}>
                   Call {PHONE_DISPLAY}
                 </a>
                 .

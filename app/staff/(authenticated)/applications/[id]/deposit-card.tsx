@@ -35,7 +35,7 @@ export default function DepositCard({ rentalId }: { rentalId: string }) {
         <h2 className="card-title card-title--tight">Deposit settled</h2>
         <p style={{ fontSize: 14 }}>{depositReturnSummary(done.d)}</p>
         {done.d.status === "pending_approval" && (
-          <p className="muted-text" style={{ fontSize: 13, marginTop: 6 }}>This is over the approval limit. An admin needs to approve it on the <Link href="/staff/refunds" style={{ color: "var(--teal)" }}>Refunds</Link> page.</p>
+          <p className="muted-text" style={{ fontSize: 13, marginTop: 6 }}>This is over the approval limit. An admin needs to approve it on the <Link href="/staff/refunds" style={{ color: "var(--teal-dark)" }}>Refunds</Link> page.</p>
         )}
         {done.d.manualCents > 0 && <p style={{ fontSize: 13, marginTop: 6 }}>${(done.d.manualCents / 100).toFixed(2)} was not paid by card and needs a manual refund (Refunds page).</p>}
         {done.sendNote && <p className="error-text" style={{ fontSize: 13, marginTop: 6 }}>{done.sendNote}</p>}

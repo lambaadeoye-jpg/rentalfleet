@@ -45,7 +45,7 @@ export default function CancelCard({ rentalId }: { rentalId: string }) {
       <div className="card" style={{ marginBottom: 24 }}>
         <h2 className="card-title card-title--tight">Rental cancelled</h2>
         <p style={{ fontSize: 14 }}>{settlementSummary(done.s)}</p>
-        {done.s.status === "pending_approval" && <p className="muted-text" style={{ fontSize: 13, marginTop: 6 }}>The refund is waiting for approval on the <Link href="/staff/refunds" style={{ color: "var(--teal)" }}>Refunds</Link> page.</p>}
+        {done.s.status === "pending_approval" && <p className="muted-text" style={{ fontSize: 13, marginTop: 6 }}>The refund is waiting for approval on the <Link href="/staff/refunds" style={{ color: "var(--teal-dark)" }}>Refunds</Link> page.</p>}
         {!done.s.vehicleReleased && <p className="error-text" style={{ fontSize: 13, marginTop: 6 }}>The vehicle is still marked reserved. Someone with fleet permission needs to set it back to available.</p>}
         {done.sendNote && <p className="error-text" style={{ fontSize: 13, marginTop: 6 }}>{done.sendNote}</p>}
       </div>

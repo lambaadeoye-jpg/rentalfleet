@@ -50,7 +50,7 @@ export default function CategoryList({ initialCategories }: { initialCategories:
       </div>
 
       {initialCategories.map((c) => (
-        <div key={c.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div key={c.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div>
             <div style={{ fontWeight: 700 }}>{c.name}</div>
             {c.description && <div className="muted-text" style={{ fontSize: 13 }}>{c.description}</div>}

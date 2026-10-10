@@ -66,7 +66,7 @@ export default function StartRentalForm({
       <div className="card" style={{ marginTop: 16 }}>
         <p className="muted-text" style={{ fontSize: 14 }}>
           No vehicles are currently available to assign. Add or free up a vehicle in{" "}
-          <a href="/staff/fleet" style={{ color: "var(--teal)" }}>
+          <a href="/staff/fleet" style={{ color: "var(--teal-dark)" }}>
             Fleet
           </a>{" "}
           first.

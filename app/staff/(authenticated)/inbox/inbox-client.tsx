@@ -68,8 +68,8 @@ export default function InboxClient({ initialConversations }: { initialConversat
   }
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 20, height: "70vh" }}>
-      <div style={{ overflowY: "auto", borderRight: "1px solid var(--border)" }}>
+    <div className="inbox-grid">
+      <div className="inbox-list">
         {conversations.length === 0 && (
           <p className="muted-text" style={{ fontSize: 14, padding: 12 }}>
             No messages yet.
@@ -120,7 +120,7 @@ export default function InboxClient({ initialConversations }: { initialConversat
                 {formatPhone(selected.phone)}
               </span>
               {selected.needsReply && (
-                <button type="button" onClick={handleMarkHandled} className="btn btn-secondary" style={{ float: "right", fontSize: 13, padding: "4px 10px" }}>
+                <button type="button" onClick={handleMarkHandled} className="button-secondary" style={{ float: "right", fontSize: 13, padding: "4px 10px" }}>
                   Mark as handled
                 </button>
               )}
@@ -134,7 +134,7 @@ export default function InboxClient({ initialConversations }: { initialConversat
                     style={{
                       maxWidth: "70%",
                       marginLeft: m.direction === "outbound" ? "auto" : 0,
-                      background: m.direction === "outbound" ? "var(--teal)" : "var(--cloud, #f7f9fc)",
+                      background: m.direction === "outbound" ? "var(--teal-dark)" : "var(--cloud, #f7f9fc)",
                       color: m.direction === "outbound" ? "white" : "var(--text)",
                       borderRadius: 10,
                       padding: "8px 12px",

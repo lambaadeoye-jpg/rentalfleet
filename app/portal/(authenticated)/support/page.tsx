@@ -17,7 +17,7 @@ export default async function PortalSupportPage() {
       <SupportTicketForm initialTickets={tickets ?? []} />
       <a
         href="/portal/profile"
-        style={{ display: "block", textAlign: "center", marginTop: 24, color: "var(--teal)", fontSize: 13, fontWeight: 600 }}
+        style={{ display: "block", textAlign: "center", marginTop: 24, color: "var(--teal-dark)", fontSize: 13, fontWeight: 600 }}
       >
         Edit profile
       </a>

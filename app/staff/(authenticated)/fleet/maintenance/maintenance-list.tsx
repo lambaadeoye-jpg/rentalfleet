@@ -104,7 +104,7 @@ export default function MaintenanceList({
 
       {initialWorkOrders.map((w) => (
         <div key={w.id} className="card" style={{ marginBottom: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <div style={{ fontWeight: 700 }}>{w.vehicleLabel}</div>
               <div className="muted-text" style={{ fontSize: 13 }}>

@@ -41,7 +41,7 @@ export default function ReferralApprovalList({
     <div>
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
       {referrals.map((r) => (
-        <div key={r.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div key={r.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div>
             <div style={{ fontWeight: 700 }}>{r.referrerName}</div>
             <div className="muted-text" style={{ fontSize: 13 }}>

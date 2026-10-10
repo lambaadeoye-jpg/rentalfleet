@@ -114,7 +114,7 @@ export default function RedFlagManager({
       <h2 className="card-title">Active entries</h2>
       {activeEntries.length === 0 && <p className="muted-text" style={{ fontSize: 14, marginBottom: 20 }}>None yet.</p>}
       {activeEntries.map((e) => (
-        <div key={e.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
+        <div key={e.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 }}>
           <div>
             <div style={{ fontWeight: 700 }}>
               {e.firstName} {e.lastName} {e.phone && `— ${formatPhone(e.phone)}`} {e.email && `— ${e.email}`}

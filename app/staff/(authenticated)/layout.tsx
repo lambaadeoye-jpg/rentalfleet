@@ -172,9 +172,9 @@ export default async function StaffLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh" }}>
+    <div className="staff-shell">
       <StaffNav tenantName={tenant?.name ?? "Staff portal"} userEmail={user.email ?? ""} roleName={role?.name} badgeCounts={badgeCounts} />
-      <main className="app-shell" style={{ flex: 1, background: "var(--cloud)", minHeight: "100vh" }}>{children}</main>
+      <main className="app-shell staff-main">{children}</main>
     </div>
   );
 }

@@ -49,7 +49,7 @@ function Row({ applicationId, doc }: { applicationId: string; doc: DocRow }) {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {doc.url ? (
-            <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>View</a>
+            <a href={doc.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal-dark)", fontSize: 13, fontWeight: 600 }}>View</a>
           ) : (
             <span className="muted-text" style={{ fontSize: 13 }}>Unavailable</span>
           )}

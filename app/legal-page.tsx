@@ -7,7 +7,7 @@ export default function LegalPage({ title, children }: { title: string; children
   return (
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "48px 20px 80px", lineHeight: 1.65 }}>
       <p style={{ marginBottom: 24 }}>
-        <a href="/" style={{ fontSize: 14 }}>← Zivo</a>
+        <a href="/" style={{ fontSize: 14, display: "inline-block", padding: "10px 0" }}>← Zivo</a>
       </p>
       <h1 style={{ fontSize: 30, marginBottom: 6 }}>{title}</h1>
       <p className="muted-text" style={{ fontSize: 14, marginBottom: 32 }}>Last updated {LEGAL_UPDATED}</p>

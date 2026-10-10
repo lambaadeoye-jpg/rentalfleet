@@ -97,7 +97,7 @@ export default function ChargesList({ initialCharges, rentals }: { initialCharge
       </div>
 
       {initialCharges.map((c) => (
-        <div key={c.id} className="card" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+        <div key={c.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
           <div>
             <div style={{ fontWeight: 700 }}>
               {c.customerName} — ${c.amount.toFixed(2)}

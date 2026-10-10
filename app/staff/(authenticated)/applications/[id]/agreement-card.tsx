@@ -33,7 +33,7 @@ export default function AgreementCard({ rentalId, status }: { rentalId: string; 
             Signed by {status.signed.signerName} on {new Date(status.signed.signedAt).toLocaleString()}
           </p>
           {status.signed.url && (
-            <a href={status.signed.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal)", fontSize: 13, fontWeight: 600 }}>
+            <a href={status.signed.url} target="_blank" rel="noopener noreferrer" style={{ color: "var(--teal-dark)", fontSize: 13, fontWeight: 600 }}>
               View signed copy (link expires in 10 min)
             </a>
           )}

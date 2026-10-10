@@ -102,7 +102,7 @@ export default function TeamList({ staff, invites, roles = [] }: { staff: StaffM
         <>
           <h2 className="card-title">Pending invites</h2>
           {invites.map((i) => (
-            <div key={i.id} className="card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+            <div key={i.id} className="card" style={{ display: "flex", flexWrap: "wrap", gap: 12, alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <Mail size={16} color="var(--teal)" />
                 <div>

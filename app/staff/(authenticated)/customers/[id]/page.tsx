@@ -122,7 +122,7 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
       </Section>
 
       <Section title="Referral credit">
-        <div style={{ padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ padding: "16px", display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <p className="muted-text" style={{ fontSize: 13 }}>Available balance</p>
             <p style={{ fontSize: 20, fontWeight: 800 }}>${referralCreditBalance.toFixed(2)}</p>

@@ -69,7 +69,7 @@ export default function PortalDriversManager({
         </p>
       )}
       {drivers.map((d, i) => (
-        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 14, marginBottom: 8 }}>
+        <div key={i} style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "center", fontSize: 14, marginBottom: 8 }}>
           <span>
             {d.firstName} {d.lastName}
           </span>

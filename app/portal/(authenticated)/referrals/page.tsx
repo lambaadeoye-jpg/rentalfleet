@@ -33,7 +33,7 @@ export default async function PortalReferralsPage() {
 
       <div className="card" style={{ marginBottom: 16, textAlign: "center" }}>
         <p className="muted-text" style={{ fontSize: 13, marginBottom: 4 }}>Referral credit balance</p>
-        <p style={{ fontSize: 32, fontWeight: 800, color: "var(--teal)" }}>${balance.toFixed(2)}</p>
+        <p style={{ fontSize: 32, fontWeight: 800, color: "var(--teal-dark)" }}>${balance.toFixed(2)}</p>
       </div>
 
       {customer?.referral_code && <ReferralLinkBox referralLink={referralLink} />}

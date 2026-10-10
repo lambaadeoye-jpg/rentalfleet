@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Settings, User,
   IdCard, Gift, Download, Receipt, AlertTriangle, MessageSquare, ShieldAlert, Undo2, Filter, CalendarClock,
-  Wrench, Bell, Map as MapIcon, Radar, FileSignature, Ticket,
+  Wrench, Bell, Map as MapIcon, Radar, FileSignature, Ticket, Menu, X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import SignOutButton from "./(authenticated)/dashboard/sign-out-button";
@@ -152,6 +152,15 @@ export default function StaffNav({
 }) {
   const pathname = usePathname();
   const current = activeHref(pathname);
+  // Phones: the sidebar becomes a drawer opened from a top bar. It closes on navigation and on Escape.
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  useEffect(() => { setDrawerOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawerOpen(false); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
   // Only "admin" exists beyond field staff today (field staff get their own
   // layout), so this hides nothing yet. It is here so a future role such as
   // "manager" doesn't see Pricing and Team without a deliberate decision.
@@ -161,12 +170,25 @@ export default function StaffNav({
     (i) => i.count > 0
   );
 
+  const attentionTotal = attention.reduce((sum, i) => sum + i.count, 0);
+
   return (
-    <nav className="staff-nav">
+    <>
+    <div className="staff-topbar">
+      <button type="button" className="staff-topbar__menu" aria-label="Open menu" aria-expanded={drawerOpen} aria-controls="staff-drawer" onClick={() => setDrawerOpen(true)}>
+        <Menu size={22} />
+        {attentionTotal > 0 && <span className="nav-bell__count">{attentionTotal > 99 ? "99+" : attentionTotal}</span>}
+      </button>
+      <Car size={18} color="var(--teal)" />
+      <span className="staff-topbar__name">{tenantName}</span>
+    </div>
+    {drawerOpen && <div className="staff-scrim" onClick={() => setDrawerOpen(false)} aria-hidden="true" />}
+    <nav id="staff-drawer" className={drawerOpen ? "staff-nav staff-nav--open" : "staff-nav"} aria-label="Main">
       <div className="staff-nav__brand">
         <Car size={20} color="var(--teal)" />
         <span className="staff-nav__name">{tenantName}</span>
         <NotificationsBell items={attention} />
+        <button type="button" className="staff-nav__close" aria-label="Close menu" onClick={() => setDrawerOpen(false)}><X size={20} /></button>
       </div>
 
       <GlobalSearchBar />
@@ -202,5 +224,6 @@ export default function StaffNav({
         <SignOutButton />
       </div>
     </nav>
+    </>
   );
 }

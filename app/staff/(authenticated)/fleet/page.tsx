@@ -24,12 +24,12 @@ export default async function FleetPage() {
 
   return (
     <div className="page">
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "space-between", alignItems: "flex-start", marginBottom: 4 }}>
         <div>
           <h1 className="page-title">Fleet</h1>
           <p className="muted-text">{vehiclesWithCategory.length} vehicles.</p>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           <a href="/staff/fleet/categories" className="button-secondary" style={{ color: "var(--text)", borderColor: "var(--border)" }}>
             Categories
           </a>
@@ -45,7 +45,9 @@ export default async function FleetPage() {
         </div>
       </div>
 
-      <AddVehicleForm categories={categories ?? []} />
+      <div style={{ marginTop: 16 }}>
+        <AddVehicleForm categories={categories ?? []} />
+      </div>
 
       <div style={{ marginTop: 24 }}>
         <FleetTable vehicles={vehiclesWithCategory} />

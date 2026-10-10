@@ -1,16 +1,7 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Home, Car, Wallet, FileText, LifeBuoy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import PortalSignOut from "./sign-out";
-
-const NAV_ITEMS = [
-  { href: "/portal", label: "Home", icon: Home },
-  { href: "/portal/rental", label: "Rental", icon: Car },
-  { href: "/portal/money", label: "Money", icon: Wallet },
-  { href: "/portal/documents", label: "Documents", icon: FileText },
-  { href: "/portal/support", label: "Support", icon: LifeBuoy },
-] as const;
+import PortalTabBar from "./tab-bar";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -25,7 +16,7 @@ export default async function PortalLayout({ children }: { children: React.React
   }
 
   return (
-    <div style={{ minHeight: "100vh", paddingBottom: 76, background: "var(--cloud)" }}>
+    <div style={{ minHeight: "100vh", paddingBottom: "calc(76px + env(safe-area-inset-bottom))", background: "var(--cloud)" }}>
       <header
         style={{
           background: "var(--midnight)",
@@ -44,46 +35,7 @@ export default async function PortalLayout({ children }: { children: React.React
 
       <main className="app-shell" style={{ maxWidth: 720, margin: "0 auto" }}>{children}</main>
 
-      {/* Mobile-first bottom tab bar -- the customer portal is explicitly
-          mobile-first per the design system spec, unlike the staff portal’s
-          desktop-first sidebar. */}
-      <nav
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          background: "white",
-          borderTop: "1px solid var(--border)",
-          display: "flex",
-          zIndex: 50,
-        }}
-      >
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              style={{
-                flex: 1,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 2,
-                padding: "10px 0",
-                color: "var(--text-secondary)",
-                textDecoration: "none",
-                fontSize: 11,
-                fontWeight: 600,
-              }}
-            >
-              <Icon size={20} />
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      <PortalTabBar />
     </div>
   );
 }
