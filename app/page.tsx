@@ -4,6 +4,7 @@ import MobileCtaBar from "./mobile-cta-bar";
 import CtaTracker from "./cta-tracker";
 import SiteFooter from "./site-footer";
 import { BrandLogo } from "./brand-logo";
+import { getDailyPricing, minimumRentalTotal, introLine } from "@/lib/landing-pricing";
 import { Suspense } from "react";
 import LeadForm from "./lead-form";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
@@ -28,24 +29,6 @@ import {
 
 export const dynamic = "force-dynamic"; // always fetch fresh categories/platforms/tenant name
 
-// Daily pricing shown on the page, read from the approved pricing policy so the page never drifts from what staff set.
-// Returns null (price lines are hidden) if daily pricing is not approved or can’t be read.
-type DailyPricing = { days: number; total: number; perDay: number };
-async function getDailyPricing(): Promise<DailyPricing | null> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) return null;
-  try {
-    const db = createClient(url, key);
-    const { data } = await db.from("policy_version").select("rules").eq("policy_type", "pricing_and_mileage").eq("immutable", false).maybeSingle();
-    const d = (data?.rules as { daily?: { approved?: boolean; first_tier_days?: number; first_tier_total_usd?: number; per_day_after_usd?: number } } | null)?.daily;
-    if (!d?.approved || !(d.first_tier_days! > 0) || !(d.first_tier_total_usd! > 0) || !(d.per_day_after_usd! > 0)) return null;
-    return { days: d.first_tier_days!, total: d.first_tier_total_usd!, perDay: d.per_day_after_usd! };
-  } catch {
-    return null;
-  }
-}
-
 // One repeated call to action, same words everywhere, with the reassurance right under it.
 function SectionCta({ name, label = "Find my car" }: { name: string; label?: string }) {
   return (
@@ -67,7 +50,7 @@ export default async function Home() {
   ]);
 
   const brandName = tenant?.name ?? "Fleet Rental";
-  const weekTotal = pricing ? Math.round((pricing.total + Math.max(0, 7 - pricing.days) * pricing.perDay) * 100) / 100 : 0;
+  const weekTotal = pricing ? minimumRentalTotal(pricing) : 0;
 
   // FAQ content lives in one list so the visible answers and the FAQPage structured data can never drift apart.
   const faqs: { q: string; a: string; schema?: boolean }[] = [
@@ -145,6 +128,7 @@ export default async function Home() {
             description:
               "Zivo offers gig, rideshare, and delivery car rentals throughout Greater Nashville, Tennessee, with pickup available in Nashville and Murfreesboro. One-week minimum rental, unlimited mileage included.",
             url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rentzivo.com",
+            ...(pricing ? { priceRange: `$${pricing.total} for the first ${pricing.days} days, then $${pricing.perDay}/day; 7-day minimum` } : {}),
             ...(PHONE_IS_LIVE ? { telephone: PHONE_TEL } : {}),
             areaServed: [
               { "@type": "AdministrativeArea", name: "Greater Nashville", containedInPlace: { "@type": "State", name: "Tennessee" } },
@@ -209,7 +193,7 @@ export default async function Home() {
               <h1>Car rentals for rideshare &amp; delivery drivers.</h1>
               <p className="hero-sub">
                 {pricing
-                  ? `$${pricing.total} for your first ${pricing.days} days, then $${pricing.perDay}/day.`
+                  ? introLine(pricing)
                   : "Reliable, fuel-efficient cars for working drivers."}
               </p>
               <p className="hero-keywords">

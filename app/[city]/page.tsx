@@ -6,6 +6,7 @@ import LeadForm from "../lead-form";
 import CtaTracker from "../cta-tracker";
 import SiteFooter from "../site-footer";
 import { BrandLogo } from "../brand-logo";
+import { getDailyPricing, introLine } from "@/lib/landing-pricing";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
 import { getCityBySlug, SERVICE_AREA_CITIES } from "@/lib/service-areas";
 import { ShieldCheck, Fuel, Zap, KeyRound } from "lucide-react";
@@ -46,9 +47,10 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
   if (!city) notFound();
 
   const supabase = createPublicClient();
-  const [{ data: categories }, { data: platforms }] = await Promise.all([
+  const [{ data: categories }, { data: platforms }, pricing] = await Promise.all([
     supabase.from("vehicle_category").select("id, name, description").eq("active", true),
     supabase.from("gig_platform").select("id, code, name").order("sort_order"),
+    getDailyPricing(),
   ]);
 
   // AutoRental + LocalBusiness structured data -- confirmed as the
@@ -85,6 +87,7 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
           <BrandLogo width={148} />
         </a>
         <h1 style={{ fontSize: 34, marginBottom: 12 }}>{city.heroLine}</h1>
+        {pricing && <p style={{ fontSize: 20, fontWeight: 700, color: "var(--teal-dark)", margin: "0 0 12px" }}>{introLine(pricing)}</p>}
         <p className="muted-text" style={{ fontSize: 17, maxWidth: 560, margin: "0 auto 20px" }}>
           Get a work-ready vehicle in {city.displayName} — no credit check, insurance if you need it,
           approved fast. Built for Uber, Lyft, and delivery drivers in {city.region}.

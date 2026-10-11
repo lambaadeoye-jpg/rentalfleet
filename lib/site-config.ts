@@ -17,7 +17,7 @@ export const SUPPORT_EMAIL = "support@rentzivo.com";
 // Do not mention monthly plans here or anywhere public (Google quotes this text back as the "rental terms").
 export const SITE_TITLE = "Gig, Rideshare & Delivery Car Rentals in Greater Nashville | Zivo";
 export const SITE_DESCRIPTION =
-  "Zivo offers gig, rideshare, and delivery car rentals throughout Greater Nashville, with pickup available in Nashville and Murfreesboro, Tennessee.";
+  "Zivo offers gig, rideshare, and delivery car rentals in Greater Nashville. $222 for your first 3 days, with pickup available in Nashville and Murfreesboro.";
 
 // Adopted from Kali's Luxury & Exotics (a direct Nashville rideshare-rental
 // competitor) during the competitive review -- a deliberate decision, not a

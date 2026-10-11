@@ -24,7 +24,7 @@ export const SERVICE_AREA_CITIES: CityData[] = [
     region: "Middle Tennessee",
     heroLine: "Rideshare & delivery car rentals in Nashville, TN.",
     metaDescription:
-      "Gig, rideshare and delivery car rentals across Greater Nashville, with pickup available in Nashville and Murfreesboro, TN. Unlimited mileage, no credit check.",
+      "Gig, rideshare and delivery car rentals across Greater Nashville. $222 for your first 3 days, with pickup available in Nashville and Murfreesboro, TN.",
     localBlurb:
       "Pickup is available in Nashville. We confirm the exact pickup location and time with you once you're approved.",
   },
@@ -34,7 +34,7 @@ export const SERVICE_AREA_CITIES: CityData[] = [
     region: "Middle Tennessee",
     heroLine: "Rideshare & delivery car rentals in Murfreesboro, TN.",
     metaDescription:
-      "Gig, rideshare and delivery car rentals across Greater Nashville, with pickup available in Murfreesboro and Nashville, TN. Unlimited mileage, no credit check.",
+      "Gig, rideshare and delivery car rentals across Greater Nashville. $222 for your first 3 days, with pickup available in Murfreesboro and Nashville, TN.",
     localBlurb:
       "Pickup is available in Murfreesboro. We confirm the exact pickup location and time with you once you're approved.",
     nearby: ["Smyrna", "La Vergne"],
