@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PRESET_DAYS, applicationAging, changePct, formatHours, inboxResponse, isoDay, medianDecisionHours, parseRange, pickupsByDay, type AppRow, type InboxEvent } from "@/lib/analytics";
+import { loadPeople } from "./people";
+import { CATEGORIES } from "@/lib/team-activity";
 import { BarList, ChartCard, ColumnChart, DataTable, Empty, RangeBar, Tile } from "../../charts";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +11,7 @@ function weekday(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric", timeZone: "UTC" });
 }
 
-export default async function WorkQueuePage({ searchParams }: { searchParams: Promise<{ days?: string; from?: string; to?: string }> }) {
+export default async function WorkQueuePage({ searchParams }: { searchParams: Promise<{ days?: string; from?: string; to?: string; person?: string }> }) {
   const sp = await searchParams;
   const supabase = await createClient();
   const {
@@ -47,6 +49,9 @@ export default async function WorkQueuePage({ searchParams }: { searchParams: Pr
   const unassigned = (scheduled.data ?? []).filter((r: any) => !r.assigned_runner_id).length;
   const followUps = (fuLeads.count ?? 0) + (fuApps.count ?? 0) + (fuRentals.count ?? 0);
   const toIncl = new Date(range.to.getTime() - 24 * 60 * 60 * 1000);
+  const isOwner = roles.includes("admin");
+  const people = isOwner ? await loadPeople(supabase, range, sp.person && /^[0-9a-f-]{36}$/i.test(sp.person) ? sp.person : null) : null;
+  const rangeQs = new URLSearchParams(range.key === "custom" ? { from: isoDay(range.from), to: isoDay(toIncl) } : { days: range.key }).toString();
 
   const compare = (cur: number | null, prev: number | null, lowerIsBetter = true): string => {
     if (cur === null || prev === null) return "nothing earlier to compare";
@@ -59,7 +64,7 @@ export default async function WorkQueuePage({ searchParams }: { searchParams: Pr
     <div className="page viz" style={{ maxWidth: 1040 }}>
       <h1 className="page-title">Work queue</h1>
       <p className="muted-text" style={{ marginBottom: 16 }}>Is the team keeping up? What is waiting, how fast things get answered, and what is coming this week.</p>
-      <RangeBar basePath="/staff/work-queue" activeKey={range.key} from={isoDay(range.from)} to={isoDay(toIncl)} presets={PRESET_DAYS} />
+      <RangeBar basePath="/staff/work-queue" activeKey={range.key} from={isoDay(range.from)} to={isoDay(toIncl)} presets={PRESET_DAYS} extra={people?.chosen ? { person: people.chosen } : undefined} />
       {failed > 0 && <p className="error-text" style={{ marginBottom: 12 }}>Some numbers couldn&rsquo;t be loaded. Refresh to try again.</p>}
 
       <div className="viz-tiles">
@@ -88,6 +93,45 @@ export default async function WorkQueuePage({ searchParams }: { searchParams: Pr
           />
         </ChartCard>
       </div>
+
+      {people && (
+        <ChartCard title="By person" subtitle="What each team member did in this period, from the activity log. Only you can see this. Not every action in the app is logged yet, so treat the counts as a minimum.">
+          {people.errors > 0 && <p className="error-text">Some numbers couldn&rsquo;t be loaded. Refresh to try again.</p>}
+          {people.truncated && <p className="muted-text">Very busy period: only the most recent 5,000 actions were counted. Pick a shorter range for exact numbers.</p>}
+          {people.rows.length === 0 ? (
+            <Empty>No team activity recorded in this period yet.</Empty>
+          ) : (
+            <>
+              <BarList
+                items={people.rows.map((p) => ({
+                  label: p.name,
+                  value: p.total,
+                  display: `${p.total} actions${p.medianHoursToDecide !== null ? ` · decides in ${formatHours(p.medianHoursToDecide)}` : ""}${p.medianMinutesToHandle !== null ? ` · handles messages in ${formatHours(p.medianMinutesToHandle / 60)}` : ""}`,
+                  href: `/staff/work-queue?${rangeQs}&person=${p.userId}`,
+                }))}
+                emptyText="No activity."
+              />
+              <DataTable
+                title="Activity by person"
+                headers={["Person", "Role", ...CATEGORIES, "Total", "Applications decided", "Median time to decide", "Last active"]}
+                rows={people.rows.map((p) => [p.name, p.role, ...CATEGORIES.map((c) => p.byCategory[c]), p.total, p.decided, formatHours(p.medianHoursToDecide), p.lastActive ? new Date(p.lastActive).toLocaleString("en-US", { timeZone: "America/Chicago" }) : "–"])}
+              />
+            </>
+          )}
+          {people.detail && people.chosen && (
+            <div style={{ marginTop: 16 }}>
+              <h3 style={{ fontSize: 15 }}>{people.rows.find((p) => p.userId === people.chosen)?.name}: week by week</h3>
+              <ColumnChart labels={people.detail.weekly.map((w) => w.start)} series={[{ name: "Actions", color: "var(--series-1)", values: people.detail.weekly.map((w) => w.count) }]} emptyText="No activity." tableTitle="Actions per week" />
+              <h3 style={{ marginTop: 12, fontSize: 15 }}>Most recent actions</h3>
+              <table className="viz-table" aria-label="Recent actions">
+                <thead><tr><th>What</th><th>When</th></tr></thead>
+                <tbody>{people.detail.recent.map((a, i) => <tr key={i}><td>{a.label}</td><td>{new Date(a.at).toLocaleString("en-US", { timeZone: "America/Chicago" })}</td></tr>)}</tbody>
+              </table>
+              <p style={{ fontSize: 14, marginTop: 8 }}><a href={`/staff/work-queue?${rangeQs}`}>Back to everyone</a></p>
+            </div>
+          )}
+        </ChartCard>
+      )}
 
       {followUps > 0 && (
         <ChartCard title="Open follow-ups" subtitle="Flagged by the AI assistants for a person to handle.">
