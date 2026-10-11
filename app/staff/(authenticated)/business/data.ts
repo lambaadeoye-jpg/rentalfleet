@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { channelRows, rankChannels, spendBySource, type SpendRow } from "@/lib/ad-spend";
 import { carProfit, type CarProfit, type CostRow } from "@/lib/car-profit";
 import {
   DAY_MS, cashSummary, callSummary, collections, depositsHeld, funnelRows, weeklyUtilization,
@@ -36,6 +37,18 @@ export async function loadCarProfit(supabase: Db, range: Range): Promise<{ rows:
     (wo.data ?? []) as any[], (tol.data ?? []) as any[], range.from, range.to,
   );
   return { rows, costs, costsReady, errors };
+}
+
+/** Ad spend for the funnel window and the cost-per-source ranking. `ready` is false until the ad_spend table exists. */
+export async function loadAdSpend(supabase: Db, funnel: ReturnType<typeof funnelRows>, funnelDays: number, now: Date = new Date()) {
+  const { data, error } = await supabase.from("ad_spend").select("id, month, source, amount").order("month", { ascending: false }).limit(300);
+  const rows = ((data ?? []) as { id: string; month: string; source: string; amount: unknown }[]);
+  const from = new Date(now.getTime() - funnelDays * DAY_MS);
+  const spend = spendBySource(rows as SpendRow[], from, now);
+  const ranked = rankChannels(channelRows(funnel, spend));
+  const sources = [...new Set([...funnel.map((f) => f.label), ...rows.map((r) => r.source), "meta_ads", "google_ads", "facebook_marketplace"])].filter((s) => !s.includes(" · ")).sort();
+  const entries = rows.map((r) => ({ id: r.id, month: r.month, source: r.source, amount: Number(r.amount) }));
+  return { ready: !error, ranked, sources, entries, anySpend: [...spend.values()].some((v) => v > 0) };
 }
 
 export async function loadBusiness(supabase: Db, range: Range, now: Date = new Date()) {

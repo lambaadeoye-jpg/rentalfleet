@@ -4,7 +4,9 @@ import { PRESET_DAYS, changePct, formatMoney, isoDay, parseRange, pct } from "@/
 import { BarList, ChartCard, ColumnChart, DataTable, DivergingBars, Empty, PercentLine, RangeBar, Tile } from "../../charts";
 import { carProfitTotals } from "@/lib/car-profit";
 import CostEditor, { type EditorCar } from "./cost-editor";
-import { isAdmin, loadBusiness, loadCarProfit } from "./data";
+import { isAdmin, loadAdSpend, loadBusiness, loadCarProfit } from "./data";
+import { VERDICT_TEXT } from "@/lib/ad-spend";
+import SpendEditor from "./spend-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
 
   const range = parseRange(sp);
   const [d, car] = await Promise.all([loadBusiness(supabase, range), loadCarProfit(supabase, range)]);
+  const ads = await loadAdSpend(supabase, d.funnel, d.funnelDays);
   const carTotals = carProfitTotals(car.rows);
   const costById = new Map(car.costs.map((c) => [c.vehicle_id, c]));
   const editorCars: EditorCar[] = car.rows
@@ -113,9 +116,29 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
               headers={["Source", "Leads", "Applied", "Approved", "Picked up", "Lead to picked up"]}
               rows={d.funnel.map((f) => [f.label, f.leads, f.applied, f.approved, f.pickedUp, pct(f.pickedUp, f.leads) === null ? "–" : `${pct(f.pickedUp, f.leads)}%`])}
             />
-            <p className="muted-text" style={{ fontSize: 12, marginTop: 8 }}>Spend per source (cost per lead and per picked-up renter) arrives with the ad-spend entry in Phase 3.</p>
           </>
         )}
+      </ChartCard>
+
+      <ChartCard title="Where to spend" subtitle={`Ad spend against results for the same ${d.funnelDays} days. Monthly spend is spread evenly across the days. Only judge a paid channel on ${20}+ leads.`}>
+        {!ads.ready && <p className="error-text">Ad spend isn&rsquo;t set up in the database yet.</p>}
+        {!ads.anySpend ? (
+          <Empty>No ad spend entered for this period. Add what you spent below to see cost per lead and per picked-up renter.</Empty>
+        ) : (
+          <DataTable
+            title="Cost per channel"
+            headers={["Channel", "Spent", "Leads", "Cost per lead", "Applied", "Cost per application", "Picked up", "Cost per renter", "Suggestion"]}
+            rows={ads.ranked.map(({ row, verdict }) => [row.label, formatMoney(row.spend), row.leads, row.costPerLead === null ? "–" : formatMoney(row.costPerLead), row.applied, row.costPerApplication === null ? "–" : formatMoney(row.costPerApplication), row.pickedUp, row.costPerPickup === null ? "–" : formatMoney(row.costPerPickup), VERDICT_TEXT[verdict]])}
+          />
+        )}
+        {ads.anySpend && (
+          <BarList
+            items={ads.ranked.filter(({ row }) => row.costPerPickup !== null).map(({ row, verdict }) => ({ label: row.label, value: row.costPerPickup as number, display: `${formatMoney(row.costPerPickup as number)} per renter · ${VERDICT_TEXT[verdict]}` }))}
+            emptyText="No paid channel has produced a picked-up renter yet."
+          />
+        )}
+        <h3 style={{ marginTop: 16, fontSize: 15 }}>Enter ad spend</h3>
+        {ads.ready ? <SpendEditor entries={ads.entries} sources={ads.sources} defaultMonth={new Date().toISOString().slice(0, 7)} /> : <p className="viz-empty">Available once the ad spend table is added to the database.</p>}
       </ChartCard>
 
       <ChartCard title="AI calls" subtitle="Calls reviewed in the period, and how many moved the caller forward (application finished, a time committed, or pickup confirmed).">
