@@ -581,9 +581,7 @@ export default function Workspace({
                   <>
                     <p style={{ fontWeight: 700, marginBottom: 4 }}>Application submitted</p>
                     <p className="muted-text" style={{ marginBottom: 4 }}>
-                      You&rsquo;ll get an automatic confirmation within minutes. From there, many
-                      applicants complete the full process in under 24 hours when everything&rsquo;s
-                      submitted promptly.
+                      We&rsquo;ll review your application and follow up with the next step.
                     </p>
                   </>
                 )}

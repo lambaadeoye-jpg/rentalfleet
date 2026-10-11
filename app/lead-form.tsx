@@ -148,7 +148,7 @@ export default function LeadForm({
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
         <h3 style={{ fontSize: 22, marginBottom: 8 }}>Thanks — we’ve got your request.</h3>
         <p className="muted-text" style={{ marginBottom: step2Note ? 8 : 20 }}>
-          Check your email for a confirmation. If you opted in to texts and calls, we may reach out within minutes (8am to 9pm Central). Otherwise we’ll follow up with the next step.
+          We’ll review your information and follow up with the next step.
         </p>
         {step2Note && <p className="muted-text" style={{ marginBottom: 20, fontSize: 13 }}>{step2Note}</p>}
         {/* Bridge to the real Application Workspace -- previously there was
