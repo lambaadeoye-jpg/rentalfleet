@@ -4,7 +4,7 @@ import { PRESET_DAYS, changePct, formatMoney, isoDay, parseRange, pct } from "@/
 import { BarList, ChartCard, ColumnChart, DataTable, DivergingBars, Empty, PercentLine, RangeBar, Tile } from "../../charts";
 import { carProfitTotals } from "@/lib/car-profit";
 import CostEditor, { type EditorCar } from "./cost-editor";
-import { isAdmin, loadAdSpend, loadBusiness, loadCarProfit } from "./data";
+import { isAdmin, loadAdSpend, loadTracking, loadBusiness, loadCarProfit } from "./data";
 import { VERDICT_TEXT } from "@/lib/ad-spend";
 import SpendEditor from "./spend-editor";
 
@@ -24,6 +24,9 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
 
   const range = parseRange(sp);
   const [d, car] = await Promise.all([loadBusiness(supabase, range), loadCarProfit(supabase, range)]);
+  const gps = await loadTracking(supabase, range, d.fleetSize);
+  const gpsMiles = Math.round(gps.weeks.reduce((a, w) => a + w.miles, 0));
+  const gpsTrips = gps.weeks.reduce((a, w) => a + w.trips, 0);
   const ads = await loadAdSpend(supabase, d.funnel, d.funnelDays);
   const carTotals = carProfitTotals(car.rows);
   const costById = new Map(car.costs.map((c) => [c.vehicle_id, c]));
@@ -139,6 +142,31 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
         )}
         <h3 style={{ marginTop: 16, fontSize: 15 }}>Enter ad spend</h3>
         {ads.ready ? <SpendEditor entries={ads.entries} sources={ads.sources} defaultMonth={new Date().toISOString().slice(0, 7)} /> : <p className="viz-empty">Available once the ad spend table is added to the database.</p>}
+      </ChartCard>
+
+      <ChartCard title="Fleet tracking" subtitle="Miles and trips from the GPS trackers, counted when a trip ends. Trips with a missing or implausible odometer count as trips but add no miles.">
+        {gps.errors > 0 && <p className="error-text">Some tracking numbers couldn&rsquo;t be loaded. Refresh to try again.</p>}
+        <div className="viz-tiles">
+          <Tile label="Miles tracked" value={gpsMiles.toLocaleString("en-US")} />
+          <Tile label="Trips" value={String(gpsTrips)} />
+          <Tile label="Trackers reporting now" value={`${gps.coverage.reporting} of ${gps.coverage.fleetSize}`} sub={gps.coverage.withTracker < gps.coverage.fleetSize ? `${gps.coverage.fleetSize - gps.coverage.withTracker} car(s) have no active tracker` : "heard from in the last 24 hours"} />
+        </div>
+        {gpsTrips === 0 ? (
+          <Empty>No trips recorded in this period yet. Charts appear once a tracker is installed and reporting.</Empty>
+        ) : (
+          <>
+            <ColumnChart labels={gps.weeks.map((w) => w.start)} series={[{ name: "Miles", color: "#2a78d6", values: gps.weeks.map((w) => w.miles) }]} valueSuffix=" mi" emptyText="No miles recorded yet." tableTitle="Miles tracked per week" />
+            <ColumnChart labels={gps.weeks.map((w) => w.start)} series={[{ name: "Trips", color: "#eb6834", values: gps.weeks.map((w) => w.trips) }]} emptyText="No trips yet." tableTitle="Trips per week" />
+            <h3 style={{ marginTop: 12, fontSize: 15 }}>Miles by car</h3>
+            <BarList items={gps.byCar.map((c) => ({ label: c.label, value: c.miles, display: `${Math.round(c.miles).toLocaleString("en-US")} mi · ${c.trips} trips` }))} emptyText="No miles recorded for any car yet." />
+          </>
+        )}
+        {gps.alerts.length > 0 && (
+          <>
+            <h3 style={{ marginTop: 12, fontSize: 15 }}>Tracker alerts</h3>
+            <BarList items={gps.alerts.map((a) => ({ label: a.label, value: a.count, display: String(a.count) }))} emptyText="No alerts." />
+          </>
+        )}
       </ChartCard>
 
       <ChartCard title="AI calls" subtitle="Calls reviewed in the period, and how many moved the caller forward (application finished, a time committed, or pickup confirmed).">

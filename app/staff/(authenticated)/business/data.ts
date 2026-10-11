@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { channelRows, rankChannels, spendBySource, type SpendRow } from "@/lib/ad-spend";
+import { alertsByType, milesByCar, pairTrips, trackerCoverage, weeklyTracking, type AlertRow, type DeviceRow, type TripEvent } from "@/lib/gps-analytics";
+import { carLabel } from "@/lib/car-profit";
 import { carProfit, type CarProfit, type CostRow } from "@/lib/car-profit";
 import {
   DAY_MS, cashSummary, callSummary, collections, depositsHeld, funnelRows, weeklyUtilization,
@@ -49,6 +51,27 @@ export async function loadAdSpend(supabase: Db, funnel: ReturnType<typeof funnel
   const sources = [...new Set([...funnel.map((f) => f.label), ...rows.map((r) => r.source), "meta_ads", "google_ads", "facebook_marketplace"])].filter((s) => !s.includes(" · ")).sort();
   const entries = rows.map((r) => ({ id: r.id, month: r.month, source: r.source, amount: Number(r.amount) }));
   return { ready: !error, ranked, sources, entries, anySpend: [...spend.values()].some((v) => v > 0) };
+}
+
+/** Miles, trips, alerts and tracker coverage from the GPS trackers. Empty (not an error) when no tracker has reported yet. */
+export async function loadTracking(supabase: Db, range: Range, fleetSize: number, now: Date = new Date()) {
+  const since = new Date(range.from.getTime() - 2 * DAY_MS).toISOString(); // a trip can start just before the range
+  const [ev, al, dev, veh] = await Promise.all([
+    supabase.from("telematics_event").select("vehicle_id, event_type, occurred_at, mileage").in("event_type", ["trip_start", "trip_end"]).gte("occurred_at", since).lt("occurred_at", range.to.toISOString()).order("occurred_at").limit(10000),
+    supabase.from("telematics_alert").select("alert_type, created_at").gte("created_at", range.from.toISOString()).lt("created_at", range.to.toISOString()).limit(5000),
+    supabase.from("telematics_device").select("vehicle_id, active, last_seen_at").limit(500),
+    supabase.from("vehicle").select("id, year, make, model, plate, status").limit(500),
+  ]);
+  const errors = [ev.error, al.error, dev.error, veh.error].filter(Boolean).length;
+  const names = new Map(((veh.data ?? []) as any[]).map((v) => [v.id as string, carLabel(v)]));
+  const trips = pairTrips((ev.data ?? []) as TripEvent[]);
+  return {
+    errors,
+    weeks: weeklyTracking(trips, range.from, range.to),
+    byCar: milesByCar(trips, names, range.from, range.to),
+    alerts: alertsByType((al.data ?? []) as AlertRow[], range.from, range.to),
+    coverage: trackerCoverage((dev.data ?? []) as DeviceRow[], fleetSize, now),
+  };
 }
 
 export async function loadBusiness(supabase: Db, range: Range, now: Date = new Date()) {
