@@ -284,8 +284,8 @@ export default async function Home() {
             </div>
             <div className="card benefit-card">
               <Wrench size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
-              <h3>Regular maintenance covered</h3>
-              <p>Routine maintenance is handled for you, so your vehicle stays road-ready.</p>
+              <h3>Scheduled maintenance handled</h3>
+              <p>We handle scheduled service so your vehicle stays road-ready.</p>
             </div>
             <div className="card benefit-card">
               <Layers size={24} color="var(--teal)" style={{ marginBottom: 10 }} />
