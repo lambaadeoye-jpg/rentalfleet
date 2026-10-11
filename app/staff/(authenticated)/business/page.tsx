@@ -4,7 +4,7 @@ import { PRESET_DAYS, changePct, formatMoney, isoDay, parseRange, pct } from "@/
 import { BarList, ChartCard, ColumnChart, DataTable, DivergingBars, Empty, PercentLine, RangeBar, Tile } from "../../charts";
 import { carProfitTotals } from "@/lib/car-profit";
 import CostEditor, { type EditorCar } from "./cost-editor";
-import { isAdmin, loadAdSpend, loadTracking, loadBusiness, loadCarProfit } from "./data";
+import { isAdmin, loadAdSpend, loadBilling, loadTracking, loadBusiness, loadCarProfit } from "./data";
 import { VERDICT_TEXT } from "@/lib/ad-spend";
 import SpendEditor from "./spend-editor";
 
@@ -24,6 +24,7 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
 
   const range = parseRange(sp);
   const [d, car] = await Promise.all([loadBusiness(supabase, range), loadCarProfit(supabase, range)]);
+  const billing = await loadBilling(supabase, range);
   const gps = await loadTracking(supabase, range, d.fleetSize);
   const gpsMiles = Math.round(gps.weeks.reduce((a, w) => a + w.miles, 0));
   const gpsTrips = gps.weeks.reduce((a, w) => a + w.trips, 0);
@@ -72,9 +73,26 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
           emptyText="No rent collected in this period yet. This fills in as renters pay."
           tableTitle="Rent collected and refunded by week"
         />
-        <p className="muted-text" style={{ fontSize: 12, marginTop: 8 }}>
-          Booked-versus-collected by week comes later, from the payment schedule. For now, what is owed but not yet collected is shown in the tiles above.
-        </p>
+      </ChartCard>
+
+      <ChartCard title="Weekly card billing: due and collected" subtitle="Automatic weekly card charges, by the week they were due. A charge counts as collected if any retry worked. The first payment and payments recorded by hand are not in here.">
+        {billing.errors > 0 && <p className="error-text">Some billing numbers couldn&rsquo;t be loaded. Refresh to try again.</p>}
+        <div className="viz-tiles">
+          <Tile label="Due in this period" value={formatMoney(billing.due)} />
+          <Tile label="Collected" value={formatMoney(billing.collected)} sub={billing.collectedPct === null ? "nothing due yet" : `${billing.collectedPct}% of what was due`} />
+          <Tile label="Still open" value={formatMoney(billing.open)} sub="failed or still retrying" />
+          <Tile label="Due in the next 14 days" value={formatMoney(billing.soon.amount)} sub={`${billing.soon.count} charge${billing.soon.count === 1 ? "" : "s"}`} />
+        </div>
+        <ColumnChart
+          labels={billing.weeks.map((w) => w.start)}
+          series={[
+            { name: "Due", color: "#2a78d6", values: billing.weeks.map((w) => w.due) },
+            { name: "Collected", color: "#1baf7a", values: billing.weeks.map((w) => w.collected) },
+          ]}
+          money
+          emptyText="No weekly card charges were due in this period. This fills in once renters are on weekly billing."
+          tableTitle="Weekly card charges due and collected"
+        />
       </ChartCard>
 
       <div className="viz-grid-2">

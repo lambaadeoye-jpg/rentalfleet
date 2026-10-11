@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { channelRows, rankChannels, spendBySource, type SpendRow } from "@/lib/ad-spend";
 import { alertsByType, milesByCar, pairTrips, trackerCoverage, weeklyTracking, type AlertRow, type DeviceRow, type TripEvent } from "@/lib/gps-analytics";
 import { carLabel } from "@/lib/car-profit";
+import { dueSoon, dueVsCollected, type AttemptRow, type ScheduleRow } from "@/lib/billing-analytics";
 import { carProfit, type CarProfit, type CostRow } from "@/lib/car-profit";
 import {
   DAY_MS, cashSummary, callSummary, collections, depositsHeld, funnelRows, weeklyUtilization,
@@ -71,6 +72,19 @@ export async function loadTracking(supabase: Db, range: Range, fleetSize: number
     byCar: milesByCar(trips, names, range.from, range.to),
     alerts: alertsByType((al.data ?? []) as AlertRow[], range.from, range.to),
     coverage: trackerCoverage((dev.data ?? []) as DeviceRow[], fleetSize, now),
+  };
+}
+
+/** Weekly card billing: due vs collected by week, and what is coming. Empty (not an error) before any card billing has run. */
+export async function loadBilling(supabase: Db, range: Range, now: Date = new Date()) {
+  const [att, sch] = await Promise.all([
+    supabase.from("billing_attempt").select("schedule_id, due_at, amount_cents, status").gte("due_at", range.from.toISOString()).lt("due_at", range.to.toISOString()).limit(10000),
+    supabase.from("payment_schedule").select("status, cadence, billing_paused, next_due_at, amount").eq("status", "active").limit(2000),
+  ]);
+  return {
+    errors: [att.error, sch.error].filter(Boolean).length,
+    ...dueVsCollected((att.data ?? []) as AttemptRow[], range.from, range.to),
+    soon: dueSoon((sch.data ?? []) as ScheduleRow[], now),
   };
 }
 
