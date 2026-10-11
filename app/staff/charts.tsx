@@ -196,3 +196,41 @@ export function RangeBar({ basePath, activeKey, from, to, presets, extra }: { ba
     </div>
   );
 }
+
+export type DivergingItem = { label: string; value: number; display: string };
+
+/** Horizontal bars either side of a zero line: gains blue, losses orange. Items are drawn in the order given. */
+export function DivergingBars({ items, emptyText }: { items: DivergingItem[]; emptyText: string }) {
+  const max = Math.max(0, ...items.map((i) => Math.abs(i.value)));
+  if (items.length === 0 || max === 0) return <Empty>{emptyText}</Empty>;
+  const hasNeg = items.some((i) => i.value < 0);
+  const hasPos = items.some((i) => i.value > 0);
+  const zero = hasNeg && hasPos ? 50 : hasNeg ? 100 : 0; // % from the left where zero sits
+  const span = hasNeg && hasPos ? 50 : 100;
+  return (
+    <div>
+      <div className="viz-legend">
+        <span style={{ ["--c" as string]: "#2a78d6" }}>Profit</span>
+        <span style={{ ["--c" as string]: "#eb6834" }}>Loss</span>
+      </div>
+      <div className="viz-barlist">
+        {items.map((i) => {
+          const w = Math.max(1, (Math.abs(i.value) / max) * span);
+          const neg = i.value < 0;
+          return (
+            <div className="viz-barlist__row" key={i.label}>
+              <span>{i.label}</span>
+              <div className="viz-barlist__track" title={`${i.label}: ${i.display}`} style={{ position: "relative" }}>
+                {i.value !== 0 && (
+                  <div className="viz-barlist__bar" style={{ position: "absolute", top: 0, bottom: 0, width: `${w}%`, left: neg ? `${zero - w}%` : `${zero}%`, background: neg ? "#eb6834" : "#2a78d6" }} />
+                )}
+                {hasNeg && hasPos && <div style={{ position: "absolute", top: 0, bottom: 0, left: "50%", width: 1, background: "#98a2b3" }} />}
+              </div>
+              <strong>{i.display}</strong>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

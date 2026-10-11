@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { PRESET_DAYS, changePct, formatMoney, isoDay, parseRange, pct } from "@/lib/analytics";
-import { BarList, ChartCard, ColumnChart, DataTable, Empty, PercentLine, RangeBar, Tile } from "../../charts";
-import { isAdmin, loadBusiness } from "./data";
+import { BarList, ChartCard, ColumnChart, DataTable, DivergingBars, Empty, PercentLine, RangeBar, Tile } from "../../charts";
+import { carProfitTotals } from "@/lib/car-profit";
+import CostEditor, { type EditorCar } from "./cost-editor";
+import { isAdmin, loadBusiness, loadCarProfit } from "./data";
 
 export const dynamic = "force-dynamic";
 
@@ -19,7 +21,16 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
   if (!(await isAdmin(supabase))) redirect("/staff/dashboard");
 
   const range = parseRange(sp);
-  const d = await loadBusiness(supabase, range);
+  const [d, car] = await Promise.all([loadBusiness(supabase, range), loadCarProfit(supabase, range)]);
+  const carTotals = carProfitTotals(car.rows);
+  const costById = new Map(car.costs.map((c) => [c.vehicle_id, c]));
+  const editorCars: EditorCar[] = car.rows
+    .map((r) => {
+      const c = costById.get(r.id);
+      const v = (x: unknown) => (x === null || x === undefined || Number(x) === 0 ? "" : String(Number(x)));
+      return { id: r.id, label: r.label, entered: !!c, purchasePrice: v(c?.purchase_price), purchasedOn: c?.purchased_on ?? "", monthlyLoan: v(c?.monthly_loan), monthlyInsurance: v(c?.monthly_insurance), monthlyOther: v(c?.monthly_other), partnerSharePct: v(c?.partner_share_pct) };
+    })
+    .sort((a, b) => a.label.localeCompare(b.label));
   const toIncl = new Date(range.to.getTime() - 24 * 60 * 60 * 1000);
   const exportQs = new URLSearchParams(range.key === "custom" ? { from: isoDay(range.from), to: isoDay(toIncl) } : { days: range.key }).toString();
 
@@ -56,7 +67,7 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
           tableTitle="Rent collected and refunded by week"
         />
         <p className="muted-text" style={{ fontSize: 12, marginTop: 8 }}>
-          Booked-versus-collected by week needs a due date on each payment; that comes with the per-car profit work. For now, what is owed but not yet collected is shown in the tiles above.
+          Booked-versus-collected by week comes later, from the payment schedule. For now, what is owed but not yet collected is shown in the tiles above.
         </p>
       </ChartCard>
 
@@ -129,10 +140,34 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
         )}
       </ChartCard>
 
-      <ChartCard title="Which cars are losing money" subtitle="Coming in Phase 2.">
-        <p className="viz-empty">
-          Needs each car&rsquo;s purchase price, loan, insurance and other recurring costs, which aren&rsquo;t entered anywhere yet. Profit will use real cash costs only, shown before and after any joint-venture partner&rsquo;s share.
-        </p>
+      <ChartCard title="Which cars are losing money" subtitle={`Profit per car for ${range.label.toLowerCase()}, worst first. Real cash costs only, no depreciation. Only you can see this.`}>
+        {!car.costsReady && <p className="error-text">Car costs aren&rsquo;t set up in the database yet, so only revenue is shown.</p>}
+        {car.errors > 0 && <p className="error-text">Some car numbers couldn&rsquo;t be loaded. Refresh to try again.</p>}
+        {car.rows.length > 0 && car.rows.some((r) => !r.hasCosts) && (
+          <p className="muted-text" style={{ marginBottom: 8 }}>
+            {car.rows.filter((r) => !r.hasCosts).length} car(s) have no costs entered, so their profit looks better than it is. Enter them below.
+          </p>
+        )}
+        <div className="viz-tiles">
+          <Tile label="Car revenue" value={formatMoney(carTotals.revenue)} />
+          <Tile label="Cash costs" value={formatMoney(carTotals.costs)} />
+          <Tile label="Profit before partner" value={formatMoney(carTotals.before)} />
+          <Tile label="Profit after partner" value={formatMoney(carTotals.after)} sub={carTotals.partnerShare > 0 ? `${formatMoney(carTotals.partnerShare)} to partners` : "no partner shares entered"} />
+          <Tile label="Cars losing money" value={String(carTotals.losing)} />
+        </div>
+        <DivergingBars
+          items={car.rows.map((r) => ({ label: r.label, value: r.before, display: `${formatMoney(r.before)}${r.partnerPct > 0 ? ` (${formatMoney(r.after)} after partner)` : ""}` }))}
+          emptyText="No cars yet, or nothing collected or spent on them in this period."
+        />
+        {car.rows.length > 0 && (
+          <DataTable
+            title="Profit per car"
+            headers={["Car", "Revenue", "Maintenance", "Tolls & tickets", "Loan", "Insurance", "Other", "Profit before partner", "Partner %", "Profit after partner"]}
+            rows={car.rows.map((r) => [r.label, formatMoney(r.revenue), formatMoney(r.maintenance), formatMoney(r.tolls), formatMoney(r.loan), formatMoney(r.insurance), formatMoney(r.other), formatMoney(r.before), `${r.partnerPct}%`, formatMoney(r.after)])}
+          />
+        )}
+        <h3 style={{ marginTop: 16, fontSize: 15 }}>Enter or change a car&rsquo;s costs</h3>
+        {car.costsReady ? <CostEditor cars={editorCars} /> : <p className="viz-empty">Available once the cost table is added to the database.</p>}
       </ChartCard>
 
       <p style={{ fontSize: 14 }}>
