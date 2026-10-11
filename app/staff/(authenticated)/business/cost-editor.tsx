@@ -11,6 +11,7 @@ export type EditorCar = {
   monthlyLoan: string;
   monthlyInsurance: string;
   monthlyOther: string;
+  managementFee: string;
   partnerSharePct: string;
   entered: boolean;
 };
@@ -29,6 +30,7 @@ function CarForm({ car }: { car: EditorCar }) {
       monthlyLoan: String(f.get("monthlyLoan") ?? ""),
       monthlyInsurance: String(f.get("monthlyInsurance") ?? ""),
       monthlyOther: String(f.get("monthlyOther") ?? ""),
+      managementFee: String(f.get("managementFee") ?? ""),
       partnerSharePct: String(f.get("partnerSharePct") ?? ""),
     });
     setState({ busy: false, ok: r.success, msg: r.success ? "Saved." : r.error ?? "Couldn’t save." });
@@ -44,7 +46,8 @@ function CarForm({ car }: { car: EditorCar }) {
         <label style={{ fontSize: 12 }}>Loan payment / month ($)<input name="monthlyLoan" inputMode="decimal" defaultValue={car.monthlyLoan} style={field} /></label>
         <label style={{ fontSize: 12 }}>Insurance / month ($)<input name="monthlyInsurance" inputMode="decimal" defaultValue={car.monthlyInsurance} style={field} /></label>
         <label style={{ fontSize: 12 }}>Registration &amp; other / month ($)<input name="monthlyOther" inputMode="decimal" defaultValue={car.monthlyOther} style={field} /></label>
-        <label style={{ fontSize: 12 }}>Partner&rsquo;s share of profit (%)<input name="partnerSharePct" inputMode="decimal" defaultValue={car.partnerSharePct} style={field} /></label>
+        <label style={{ fontSize: 12 }}>Management fee to Zivo / month ($, partner cars)<input name="managementFee" inputMode="decimal" defaultValue={car.managementFee} style={field} /></label>
+        <label style={{ fontSize: 12 }}>Vehicle owner&rsquo;s share of profit after fee (%)<input name="partnerSharePct" inputMode="decimal" defaultValue={car.partnerSharePct} style={field} /></label>
         <div style={{ alignSelf: "end" }}>
           <button type="submit" disabled={state.busy}>{state.busy ? "Saving…" : "Save"}</button>
           {state.msg ? <span className={state.ok ? "muted-text" : "error-text"} style={{ marginLeft: 8 }}>{state.msg}</span> : null}

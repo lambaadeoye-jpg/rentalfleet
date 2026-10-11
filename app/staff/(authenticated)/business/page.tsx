@@ -28,7 +28,7 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
     .map((r) => {
       const c = costById.get(r.id);
       const v = (x: unknown) => (x === null || x === undefined || Number(x) === 0 ? "" : String(Number(x)));
-      return { id: r.id, label: r.label, entered: !!c, purchasePrice: v(c?.purchase_price), purchasedOn: c?.purchased_on ?? "", monthlyLoan: v(c?.monthly_loan), monthlyInsurance: v(c?.monthly_insurance), monthlyOther: v(c?.monthly_other), partnerSharePct: v(c?.partner_share_pct) };
+      return { id: r.id, label: r.label, entered: !!c, purchasePrice: v(c?.purchase_price), purchasedOn: c?.purchased_on ?? "", monthlyLoan: v(c?.monthly_loan), monthlyInsurance: v(c?.monthly_insurance), monthlyOther: v(c?.monthly_other), managementFee: v(c?.management_fee_monthly), partnerSharePct: v(c?.partner_share_pct) };
     })
     .sort((a, b) => a.label.localeCompare(b.label));
   const toIncl = new Date(range.to.getTime() - 24 * 60 * 60 * 1000);
@@ -151,19 +151,19 @@ export default async function BusinessPage({ searchParams }: { searchParams: Pro
         <div className="viz-tiles">
           <Tile label="Car revenue" value={formatMoney(carTotals.revenue)} />
           <Tile label="Cash costs" value={formatMoney(carTotals.costs)} />
-          <Tile label="Profit before partner" value={formatMoney(carTotals.before)} />
-          <Tile label="Profit after partner" value={formatMoney(carTotals.after)} sub={carTotals.partnerShare > 0 ? `${formatMoney(carTotals.partnerShare)} to partners` : "no partner shares entered"} />
+          <Tile label="Profit before owner split" value={formatMoney(carTotals.before)} />
+          <Tile label="What Zivo keeps" value={formatMoney(carTotals.after)} sub={carTotals.partnerShare > 0 ? `${formatMoney(carTotals.partnerShare)} to vehicle owners` : "no owner shares entered"} />
           <Tile label="Cars losing money" value={String(carTotals.losing)} />
         </div>
         <DivergingBars
-          items={car.rows.map((r) => ({ label: r.label, value: r.before, display: `${formatMoney(r.before)}${r.partnerPct > 0 ? ` (${formatMoney(r.after)} after partner)` : ""}` }))}
+          items={car.rows.map((r) => ({ label: r.label, value: r.before, display: `${formatMoney(r.before)}${r.partnerPct > 0 ? ` (Zivo keeps ${formatMoney(r.after)})` : ""}` }))}
           emptyText="No cars yet, or nothing collected or spent on them in this period."
         />
         {car.rows.length > 0 && (
           <DataTable
             title="Profit per car"
-            headers={["Car", "Revenue", "Maintenance", "Tolls & tickets", "Loan", "Insurance", "Other", "Profit before partner", "Partner %", "Profit after partner"]}
-            rows={car.rows.map((r) => [r.label, formatMoney(r.revenue), formatMoney(r.maintenance), formatMoney(r.tolls), formatMoney(r.loan), formatMoney(r.insurance), formatMoney(r.other), formatMoney(r.before), `${r.partnerPct}%`, formatMoney(r.after)])}
+            headers={["Car", "Revenue", "Maintenance", "Tolls & tickets", "Loan", "Insurance", "Other", "Profit before owner split", "Mgmt fee", "Owner %", "Owner gets", "Zivo keeps"]}
+            rows={car.rows.map((r) => [r.label, formatMoney(r.revenue), formatMoney(r.maintenance), formatMoney(r.tolls), formatMoney(r.loan), formatMoney(r.insurance), formatMoney(r.other), formatMoney(r.before), formatMoney(r.fee), `${r.partnerPct}%`, formatMoney(r.partnerShare), formatMoney(r.after)])}
           />
         )}
         <h3 style={{ marginTop: 16, fontSize: 15 }}>Enter or change a car&rsquo;s costs</h3>

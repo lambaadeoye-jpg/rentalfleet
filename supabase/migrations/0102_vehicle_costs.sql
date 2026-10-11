@@ -1,8 +1,9 @@
 -- Per-car cash costs (Phase 2 of the Business charts). ADMIN ONLY.
 --
 -- Kept in its own table, not on `vehicle`, because every office/field role can read `vehicle`.
--- Only real cash costs are stored (no depreciation). `partner_share_pct` is the share of a car's
--- profit that goes to a JV partner (0 = Zivo owns it outright); it drives the "after partner" view.
+-- Only real cash costs are stored (no depreciation). For a car owned by a JV partner (the vehicle owner):
+-- `management_fee_monthly` is the flat fee per month Zivo takes first, and `partner_share_pct` is the owner's share of the
+-- distributable profit left after that fee (0 = Zivo owns it outright). Together they drive the "after owner" view.
 -- Safe to run more than once.
 
 create or replace function app_is_admin() returns boolean
@@ -23,6 +24,7 @@ create table if not exists vehicle_cost (
   monthly_loan      numeric(10,2) not null default 0 check (monthly_loan >= 0),
   monthly_insurance numeric(10,2) not null default 0 check (monthly_insurance >= 0),
   monthly_other     numeric(10,2) not null default 0 check (monthly_other >= 0),
+  management_fee_monthly numeric(10,2) not null default 0 check (management_fee_monthly >= 0),
   partner_share_pct numeric(5,2)  not null default 0 check (partner_share_pct >= 0 and partner_share_pct <= 100),
   updated_at        timestamptz not null default now()
 );

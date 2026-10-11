@@ -11,6 +11,7 @@ export type CostInput = {
   monthlyLoan: string;
   monthlyInsurance: string;
   monthlyOther: string;
+  managementFee: string;
   partnerSharePct: string;
 };
 
@@ -32,8 +33,9 @@ export async function saveVehicleCost(input: CostInput): Promise<{ success: bool
   const loan = money(input.monthlyLoan, 100_000);
   const insurance = money(input.monthlyInsurance, 100_000);
   const other = money(input.monthlyOther, 100_000);
+  const fee = money(input.managementFee, 100_000);
   const share = money(input.partnerSharePct, 100);
-  if ((input.purchasePrice.trim() !== "" && price === null) || loan === null || insurance === null || other === null || share === null) {
+  if ((input.purchasePrice.trim() !== "" && price === null) || loan === null || insurance === null || other === null || fee === null || share === null) {
     return { success: false, error: "Enter amounts as plain numbers like 350 or 1200.50 (partner share is 0 to 100)." };
   }
   const date = input.purchasedOn.trim();
@@ -52,6 +54,7 @@ export async function saveVehicleCost(input: CostInput): Promise<{ success: bool
     monthly_loan: loan,
     monthly_insurance: insurance,
     monthly_other: other,
+    management_fee_monthly: fee,
     partner_share_pct: share,
     updated_at: new Date().toISOString(),
   });

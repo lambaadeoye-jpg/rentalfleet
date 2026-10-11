@@ -21,7 +21,7 @@ export async function isAdmin(supabase: Db): Promise<boolean> {
 export async function loadCarProfit(supabase: Db, range: Range): Promise<{ rows: CarProfit[]; costs: CostRow[]; costsReady: boolean; errors: number }> {
   const [veh, cst, seg, pay, ref, wo, tol] = await Promise.all([
     supabase.from("vehicle").select("id, year, make, model, plate, status").not("status", "in", "(sold,decommissioned)").limit(500),
-    supabase.from("vehicle_cost").select("vehicle_id, purchase_price, purchased_on, monthly_loan, monthly_insurance, monthly_other, partner_share_pct").limit(500),
+    supabase.from("vehicle_cost").select("vehicle_id, purchase_price, purchased_on, monthly_loan, monthly_insurance, monthly_other, management_fee_monthly, partner_share_pct").limit(500),
     supabase.from("rental_segment").select("rental_id, vehicle_id, starts_at").limit(10000),
     supabase.from("payment").select("rental_id, amount, kind, status, paid_at").eq("status", "paid").gte("paid_at", range.from.toISOString()).lt("paid_at", range.to.toISOString()).limit(5000),
     supabase.from("refund").select("rental_id, status, rent_refund_cents, completed_at").eq("status", "succeeded").gte("completed_at", range.from.toISOString()).lt("completed_at", range.to.toISOString()).limit(5000),

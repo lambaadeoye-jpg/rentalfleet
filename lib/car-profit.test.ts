@@ -5,7 +5,7 @@ const FROM = new Date("2026-09-01T00:00:00.000Z");
 const TO = new Date("2026-10-01T00:00:00.000Z"); // 30 days
 const car = (id: string, plate = id) => ({ id, year: 2021, make: "Toyota", model: "Camry", plate, status: "rented" });
 const cost = (vehicle_id: string, o: Record<string, unknown> = {}) => ({
-  vehicle_id, purchase_price: 15000, purchased_on: null, monthly_loan: 0, monthly_insurance: 0, monthly_other: 0, partner_share_pct: 0, ...o,
+  vehicle_id, purchase_price: 15000, purchased_on: null, monthly_loan: 0, monthly_insurance: 0, monthly_other: 0, management_fee_monthly: 0, partner_share_pct: 0, ...o,
 });
 const pay = (rental_id: string, amount: number, paid_at: string, o: Record<string, unknown> = {}) => ({ rental_id, amount, kind: "rent", status: "paid", paid_at, ...o });
 
@@ -80,22 +80,44 @@ describe("carProfit", () => {
     expect(half.loan).toBeCloseTo(180.0, 0);
   });
 
-  it("partner takes a share of a profit only; a loss stays with Zivo", () => {
-    const rows = carProfit(
-      [car("A"), car("B")],
-      [cost("A", { partner_share_pct: 40 }), cost("B", { partner_share_pct: 40, monthly_loan: 3043.75 })],
-      [{ rental_id: "r1", vehicle_id: "A", starts_at: "2026-08-20T00:00:00Z" }, { rental_id: "r2", vehicle_id: "B", starts_at: "2026-08-20T00:00:00Z" }],
-      [pay("r1", 1000, "2026-09-05T00:00:00Z"), pay("r2", 500, "2026-09-05T00:00:00Z")],
-      [], [], [], FROM, TO,
+  it("fee comes off first, then the owner gets their % of what is left; Zivo keeps the fee plus its split", () => {
+    // Revenue 1500 in a 30-day range; fee 152.19/month * (30/30.4375) = ~150; owner 40%.
+    const [a] = carProfit(
+      [car("A")], [cost("A", { management_fee_monthly: 152.1875, partner_share_pct: 40 })],
+      [{ rental_id: "r1", vehicle_id: "A", starts_at: "2026-08-20T00:00:00Z" }],
+      [pay("r1", 1500, "2026-09-05T00:00:00Z")], [], [], [], FROM, TO,
     );
-    const a = rows.find((r) => r.id === "A")!;
-    const b = rows.find((r) => r.id === "B")!;
-    expect(a.before).toBe(1000);
-    expect(a.partnerShare).toBe(400);
-    expect(a.after).toBe(600);
+    expect(a.before).toBe(1500);
+    expect(a.fee).toBe(150);
+    expect(a.distributable).toBe(1350);
+    expect(a.partnerShare).toBe(540);
+    expect(a.after).toBe(960); // 150 fee + 810 Zivo's 60%
+  });
+
+  it("owner share applies to profit only; a loss stays with Zivo and no fee is taken", () => {
+    const [b] = carProfit(
+      [car("B")], [cost("B", { management_fee_monthly: 100, partner_share_pct: 40, monthly_loan: 3043.75 })],
+      [{ rental_id: "r2", vehicle_id: "B", starts_at: "2026-08-20T00:00:00Z" }],
+      [pay("r2", 500, "2026-09-05T00:00:00Z")], [], [], [], FROM, TO,
+    );
     expect(b.before).toBeLessThan(0);
+    expect(b.fee).toBe(0);
     expect(b.partnerShare).toBe(0);
     expect(b.after).toBe(b.before);
+  });
+
+  it("fee is capped at the profit, and a Zivo-owned car has no split", () => {
+    const [a, z] = carProfit(
+      [car("A"), car("Z")], [cost("A", { management_fee_monthly: 1000, partner_share_pct: 50 }), cost("Z")],
+      [{ rental_id: "r1", vehicle_id: "A", starts_at: "2026-08-20T00:00:00Z" }, { rental_id: "r2", vehicle_id: "Z", starts_at: "2026-08-20T00:00:00Z" }],
+      [pay("r1", 200, "2026-09-05T00:00:00Z"), pay("r2", 200, "2026-09-05T00:00:00Z")], [], [], [], FROM, TO,
+    ).sort((x, y) => x.id.localeCompare(y.id));
+    expect(a.fee).toBe(200);
+    expect(a.distributable).toBe(0);
+    expect(a.partnerShare).toBe(0);
+    expect(a.after).toBe(200);
+    expect(z.partnerShare).toBe(0);
+    expect(z.after).toBe(200);
   });
 
   it("sorts worst first, flags cars with no costs entered, and totals", () => {

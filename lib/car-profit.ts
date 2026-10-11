@@ -5,7 +5,9 @@
 //   costs    = completed maintenance + tolls/tickets Zivo absorbed (waived) + loan + insurance + other recurring,
 //              the recurring ones pro-rated by days owned in the range (30.4375 days per month)
 //   before   = revenue - costs
-//   after    = before, less the JV partner's share. The partner takes a share of a profit only; a loss stays with Zivo.
+//   fee      = flat monthly management fee (pro-rated) Zivo takes first from a car's profit, capped at the profit
+//   distributable = before - fee. The vehicle owner gets partner_share_pct of it; Zivo keeps the rest
+//   after    = what Zivo keeps = before - owner's share (the fee plus Zivo's own split). Owners share profit only; a loss stays with Zivo.
 // A payment belongs to the car the renter was in when it was paid (the latest rental segment that had started),
 // or the first segment if it was paid before any started.
 
@@ -20,6 +22,7 @@ export type CostRow = {
   monthly_loan: unknown;
   monthly_insurance: unknown;
   monthly_other: unknown;
+  management_fee_monthly: unknown;
   partner_share_pct: unknown;
 };
 export type CarRow = { id: string; year: number | null; make: string | null; model: string | null; plate: string | null; status: string };
@@ -41,6 +44,8 @@ export type CarProfit = {
   other: number;
   costs: number;
   before: number;
+  fee: number;
+  distributable: number;
   partnerPct: number;
   partnerShare: number;
   after: number;
@@ -85,7 +90,7 @@ export function carProfit(
 
   const rows = new Map<string, CarProfit>();
   for (const c of cars) {
-    rows.set(c.id, { id: c.id, label: carLabel(c), hasCosts: costBy.has(c.id), revenue: 0, maintenance: 0, tolls: 0, loan: 0, insurance: 0, other: 0, costs: 0, before: 0, partnerPct: 0, partnerShare: 0, after: 0 });
+    rows.set(c.id, { id: c.id, label: carLabel(c), hasCosts: costBy.has(c.id), revenue: 0, maintenance: 0, tolls: 0, loan: 0, insurance: 0, other: 0, costs: 0, before: 0, fee: 0, distributable: 0, partnerPct: 0, partnerShare: 0, after: 0 });
   }
 
   for (const p of payments) {
@@ -114,11 +119,13 @@ export function carProfit(
   const out: CarProfit[] = [];
   for (const row of rows.values()) {
     const c = costBy.get(row.id);
+    let feeMonthly = 0;
     if (c) {
       const months = ownedDays(c.purchased_on, from, to) / DAYS_PER_MONTH;
       row.loan = num(c.monthly_loan) * months;
       row.insurance = num(c.monthly_insurance) * months;
       row.other = num(c.monthly_other) * months;
+      feeMonthly = num(c.management_fee_monthly) * months;
       row.partnerPct = Math.min(100, Math.max(0, num(c.partner_share_pct)));
     }
     row.revenue = round2(row.revenue);
@@ -129,7 +136,9 @@ export function carProfit(
     row.other = round2(row.other);
     row.costs = round2(row.maintenance + row.tolls + row.loan + row.insurance + row.other);
     row.before = round2(row.revenue - row.costs);
-    row.partnerShare = row.before > 0 ? round2((row.before * row.partnerPct) / 100) : 0;
+    row.fee = row.before > 0 ? round2(Math.min(feeMonthly, row.before)) : 0;
+    row.distributable = row.before > 0 ? round2(row.before - row.fee) : 0;
+    row.partnerShare = round2((row.distributable * row.partnerPct) / 100);
     row.after = round2(row.before - row.partnerShare);
     out.push(row);
   }
