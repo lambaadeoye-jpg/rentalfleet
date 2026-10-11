@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { failureTarget, safeNext } from "@/lib/safe-next";
 import { originFor, portalForRoles, subdomainsEnabled } from "@/lib/hosts";
+import { parseSignInLink } from "@/lib/sign-in-link";
 
 // Supabase’s magic link redirects here with a `code` query param. Exchanging
 // it for a session is what actually logs the applicant in -- without this
@@ -9,13 +10,17 @@ import { originFor, portalForRoles, subdomainsEnabled } from "@/lib/hosts";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
+  const link = parseSignInLink(searchParams);
   const next = safeNext(searchParams.get("next"));
   let destination = origin;
 
-  if (code) {
+  if (link) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    // A code only works in the browser that asked for the link. A token hash works anywhere (needed for invites, and for
+    // sign-in links opened from a phone's mail app). The email template decides which one the link carries.
+    const { error } = link.kind === "code"
+      ? await supabase.auth.exchangeCodeForSession(link.code)
+      : await supabase.auth.verifyOtp({ type: link.type, token_hash: link.tokenHash });
     if (error) {
       // Most often the link was opened in a different browser than the one that asked for it, or it expired.
       return NextResponse.redirect(`${origin}${failureTarget(next)}?link=expired`);
