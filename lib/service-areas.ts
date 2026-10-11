@@ -24,9 +24,9 @@ export const SERVICE_AREA_CITIES: CityData[] = [
     region: "Middle Tennessee",
     heroLine: "Rideshare & delivery car rentals in Nashville, TN.",
     metaDescription:
-      "Weekly and daily car rentals for Uber, Lyft, and delivery drivers in Nashville, TN. No credit check, insurance if you need it, approved fast.",
+      "Gig, rideshare and delivery car rentals across Greater Nashville, with pickup available in Nashville and Murfreesboro, TN. Unlimited mileage, no credit check.",
     localBlurb:
-      "Pickup is in the Nashville area. We confirm the exact pickup location and time with you once you're approved.",
+      "Pickup is available in Nashville. We confirm the exact pickup location and time with you once you're approved.",
   },
   {
     slug: "murfreesboro",
@@ -34,9 +34,9 @@ export const SERVICE_AREA_CITIES: CityData[] = [
     region: "Middle Tennessee",
     heroLine: "Rideshare & delivery car rentals in Murfreesboro, TN.",
     metaDescription:
-      "Weekly and daily car rentals for Uber, Lyft, and delivery drivers in Murfreesboro, TN. No credit check, insurance if you need it, approved fast.",
+      "Gig, rideshare and delivery car rentals across Greater Nashville, with pickup available in Murfreesboro and Nashville, TN. Unlimited mileage, no credit check.",
     localBlurb:
-      "Pickup is in the Murfreesboro area. We confirm the exact pickup location and time with you once you're approved.",
+      "Pickup is available in Murfreesboro. We confirm the exact pickup location and time with you once you're approved.",
     nearby: ["Smyrna", "La Vergne"],
   },
 ];

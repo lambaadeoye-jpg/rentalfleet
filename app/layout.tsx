@@ -9,11 +9,11 @@ import "@fontsource/plus-jakarta-sans/600.css";
 import "@fontsource/plus-jakarta-sans/700.css";
 import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
+import { SITE_TITLE, SITE_DESCRIPTION } from "@/lib/site-config";
 
 const SITE_URL = "https://rentzivo.com";
-const TITLE = "Gig Driver & Rideshare Car Rentals in Nashville | Zivo";
-const DESCRIPTION =
-  "Weekly and daily vehicle rentals for rideshare, delivery, courier, and independent driving work throughout Greater Nashville. No credit check, insurance included if you don’t have your own.";
+const TITLE = SITE_TITLE;
+const DESCRIPTION = SITE_DESCRIPTION;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

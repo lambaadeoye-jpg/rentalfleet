@@ -71,7 +71,6 @@ export default async function Home() {
 
   // FAQ content lives in one list so the visible answers and the FAQPage structured data can never drift apart.
   const faqs: { q: string; a: string; schema?: boolean }[] = [
-    { q: "Do you offer monthly rentals?", a: "No. We do not offer a monthly rental plan." },
     { q: "What’s the minimum rental period?", a: "The minimum rental period is one week, so every rental is a weekly rental or longer." },
     {
       q: "How does pricing work?",
@@ -96,8 +95,12 @@ export default async function Home() {
       a: "We don’t use a traditional credit check as part of our rental process. Other eligibility, identity, driving, insurance, payment, and screening requirements may apply.",
     },
     {
+      q: "Where do you serve?",
+      a: "Zivo offers gig, rideshare, and delivery car rentals throughout Greater Nashville, Tennessee, with pickup available in Nashville and Murfreesboro.",
+    },
+    {
       q: "Where do I pick up the car?",
-      a: "Pickup is in Nashville and Murfreesboro. We confirm the exact location and time with you once you’re approved.",
+      a: "Pickup is available in Nashville and Murfreesboro. We confirm the exact location and time with you once you’re approved.",
     },
     { q: "Do I pick the exact car?", a: "You select a vehicle category. We assign an available vehicle within that category." },
     {
@@ -140,14 +143,17 @@ export default async function Home() {
             "@type": "AutoRental",
             name: brandName,
             description:
-              "Weekly and daily car rentals for rideshare, delivery, courier, and independent-driving work in Nashville, Tennessee.",
+              "Zivo offers gig, rideshare, and delivery car rentals throughout Greater Nashville, Tennessee, with pickup available in Nashville and Murfreesboro. One-week minimum rental, unlimited mileage included.",
             url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://rentzivo.com",
             ...(PHONE_IS_LIVE ? { telephone: PHONE_TEL } : {}),
-            areaServed: ["Nashville", "Murfreesboro"].map((name) => ({
-              "@type": "City",
-              name,
-              containedInPlace: { "@type": "State", name: "Tennessee" },
-            })),
+            areaServed: [
+              { "@type": "AdministrativeArea", name: "Greater Nashville", containedInPlace: { "@type": "State", name: "Tennessee" } },
+              ...["Nashville", "Murfreesboro"].map((name) => ({
+                "@type": "City",
+                name,
+                containedInPlace: { "@type": "State", name: "Tennessee" },
+              })),
+            ],
           }),
         }}
       />
@@ -389,7 +395,7 @@ export default async function Home() {
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
             Unlimited mileage included on every rental. Rentals start at one week. After that you can keep going day by day or switch to a weekly rate with automatic billing to a card on file.
-            Insurance is included if you don&rsquo;t have your own. We do not offer a monthly rental plan.
+            Insurance is included if you don&rsquo;t have your own.
           </p>
           <SectionCta name="after_pricing" label="Check availability" />
         </div>

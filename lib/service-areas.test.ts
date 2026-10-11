@@ -19,3 +19,18 @@ describe("service areas", () => {
     expect(getCityBySlug("atlantis")).toBeUndefined();
   });
 });
+
+import { SITE_TITLE, SITE_DESCRIPTION } from "./site-config";
+
+describe("search copy", () => {
+  it("focuses on Greater Nashville with pickup in Nashville and Murfreesboro, fits a snippet, and never mentions monthly plans", () => {
+    expect(SITE_DESCRIPTION).toContain("Greater Nashville");
+    expect(SITE_DESCRIPTION).toContain("pickup available in Nashville and Murfreesboro");
+    expect(SITE_DESCRIPTION.length).toBeLessThanOrEqual(160);
+    expect(SITE_TITLE.length).toBeLessThanOrEqual(70);
+    for (const c of SERVICE_AREA_CITIES) {
+      expect(`${SITE_TITLE} ${SITE_DESCRIPTION} ${c.metaDescription} ${c.localBlurb}`.toLowerCase()).not.toContain("monthly");
+      expect(c.metaDescription).toContain("Greater Nashville");
+    }
+  });
+});

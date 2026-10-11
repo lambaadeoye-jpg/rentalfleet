@@ -13,6 +13,12 @@ export const PHONE_IS_LIVE = PHONE_DISPLAY !== "(615) 555-0100";
 // Renter-facing inbox: Reply-To on renter emails, privacy requests, HELP text. Mail still sends from noreply.
 export const SUPPORT_EMAIL = "support@rentzivo.com";
 
+// Search and sharing copy. Focus is Greater Nashville; pickup is available in Nashville and Murfreesboro.
+// Do not mention monthly plans here or anywhere public (Google quotes this text back as the "rental terms").
+export const SITE_TITLE = "Gig, Rideshare & Delivery Car Rentals in Greater Nashville | Zivo";
+export const SITE_DESCRIPTION =
+  "Zivo offers gig, rideshare, and delivery car rentals throughout Greater Nashville, with pickup available in Nashville and Murfreesboro, Tennessee.";
+
 // Adopted from Kali's Luxury & Exotics (a direct Nashville rideshare-rental
 // competitor) during the competitive review -- a deliberate decision, not a
 // placeholder. Revisit if your own insurance underwriting requires
