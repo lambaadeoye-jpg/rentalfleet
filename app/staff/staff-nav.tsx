@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard, Users, ClipboardList, Car, ShieldCheck, UserCog, DollarSign, KeyRound, Settings, User,
   IdCard, Gift, Download, Receipt, AlertTriangle, MessageSquare, ShieldAlert, Undo2, Filter, CalendarClock,
-  Wrench, Bell, Map as MapIcon, Radar, FileSignature, Ticket, Menu, X,
+  Wrench, Bell, Map as MapIcon, Radar, FileSignature, Ticket, Menu, X, BarChart3, ListChecks,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import SignOutButton from "./(authenticated)/dashboard/sign-out-button";
@@ -24,6 +24,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/staff/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { href: "/staff/inbox", label: "Inbox", icon: MessageSquare },
+      { href: "/staff/work-queue", label: "Work queue", icon: ListChecks },
     ],
   },
   {
@@ -63,6 +64,7 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Admin",
     adminOnly: true,
     items: [
+      { href: "/staff/business", label: "Business", icon: BarChart3 },
       { href: "/staff/team", label: "Team", icon: UserCog },
       { href: "/staff/pricing", label: "Pricing", icon: DollarSign },
       { href: "/staff/settings", label: "Settings", icon: Settings },

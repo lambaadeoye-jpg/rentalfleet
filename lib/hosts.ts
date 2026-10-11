@@ -105,7 +105,7 @@ export function hostAction(portal: Portal, pathname: string): HostAction {
 }
 
 /** Pages only the owner/admin may open. A manager who types one in is sent to the dashboard. */
-const ADMIN_ONLY = ["/staff/team", "/staff/pricing", "/staff/settings", "/staff/export"];
+const ADMIN_ONLY = ["/staff/team", "/staff/pricing", "/staff/settings", "/staff/export", "/staff/business"];
 export function isAdminOnlyPath(pathname: string): boolean {
   return ADMIN_ONLY.some((p) => under(pathname, p));
 }

@@ -1,0 +1,146 @@
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+import { PRESET_DAYS, changePct, formatMoney, isoDay, parseRange, pct } from "@/lib/analytics";
+import { BarList, ChartCard, ColumnChart, DataTable, Empty, PercentLine, RangeBar, Tile } from "../../charts";
+import { isAdmin, loadBusiness } from "./data";
+
+export const dynamic = "force-dynamic";
+
+const ASSISTANT_LABEL: Record<string, string> = { new_lead: "New lead", nudge: "Application nudge", front_desk: "Front desk", pickup: "Pickup reminder" };
+
+function delta(current: number, previous: number): string | undefined {
+  const c = changePct(current, previous);
+  return c === null ? "nothing earlier to compare" : `${c >= 0 ? "+" : ""}${c}% vs the previous period`;
+}
+
+export default async function BusinessPage({ searchParams }: { searchParams: Promise<{ days?: string; from?: string; to?: string }> }) {
+  const sp = await searchParams;
+  const supabase = await createClient();
+  if (!(await isAdmin(supabase))) redirect("/staff/dashboard");
+
+  const range = parseRange(sp);
+  const d = await loadBusiness(supabase, range);
+  const toIncl = new Date(range.to.getTime() - 24 * 60 * 60 * 1000);
+  const exportQs = new URLSearchParams(range.key === "custom" ? { from: isoDay(range.from), to: isoDay(toIncl) } : { days: range.key }).toString();
+
+  const weeks = d.cash.weeks;
+  const anyFunnel = d.funnel.some((f) => f.leads > 0);
+
+  return (
+    <div className="page viz" style={{ maxWidth: 1040 }}>
+      <h1 className="page-title">Business</h1>
+      <p className="muted-text" style={{ marginBottom: 16 }}>
+        Money, fleet use, lead sources and AI calls for {range.label.toLowerCase()}. Weeks start on Monday. Only you can see this page.
+      </p>
+      <RangeBar basePath="/staff/business" activeKey={range.key} from={isoDay(range.from)} to={isoDay(toIncl)} presets={PRESET_DAYS} />
+      {d.errors > 0 && <p className="error-text" style={{ marginBottom: 12 }}>Some numbers couldn&rsquo;t be loaded. Refresh to try again.</p>}
+
+      <div className="viz-tiles">
+        <Tile label="Rent collected" value={formatMoney(d.cash.rent)} sub={delta(d.cash.rent, d.prevCash.rent)} />
+        <Tile label="Refunded (rent)" value={formatMoney(d.cash.refunds)} sub={delta(d.cash.refunds, d.prevCash.refunds)} />
+        <Tile label="Net after refunds" value={formatMoney(d.cash.net)} sub={delta(d.cash.net, d.prevCash.net)} />
+        <Tile label="Late or failing rent" value={formatMoney(d.collections.atRisk)} sub={`${d.collections.atRiskCount} payment${d.collections.atRiskCount === 1 ? "" : "s"}`} />
+        <Tile label="Rent coming up" value={formatMoney(d.collections.upcoming)} sub="scheduled or processing" />
+        <Tile label="Deposits held" value={formatMoney(d.depositsHeld)} sub="not income; owed back to renters" />
+      </div>
+
+      <ChartCard title="Rent collected and refunded by week" subtitle="Cash actually received for rent, against rent refunded. Deposits are not counted as income.">
+        <ColumnChart
+          labels={weeks.map((w) => w.start)}
+          series={[
+            { name: "Rent collected", color: "var(--series-1)", values: weeks.map((w) => w.rent) },
+            { name: "Rent refunded", color: "var(--series-2)", values: weeks.map((w) => w.refunds) },
+          ]}
+          money
+          emptyText="No rent collected in this period yet. This fills in as renters pay."
+          tableTitle="Rent collected and refunded by week"
+        />
+        <p className="muted-text" style={{ fontSize: 12, marginTop: 8 }}>
+          Booked-versus-collected by week needs a due date on each payment; that comes with the per-car profit work. For now, what is owed but not yet collected is shown in the tiles above.
+        </p>
+      </ChartCard>
+
+      <div className="viz-grid-2">
+        <ChartCard title="Fleet utilization" subtitle={`Share of car-days out on rent, per week (${d.fleetSize} car${d.fleetSize === 1 ? "" : "s"} in the fleet today).`}>
+          <PercentLine
+            labels={d.utilization.map((u) => u.start)}
+            values={d.utilization.map((u) => u.pct)}
+            color="var(--series-1)"
+            emptyText="No rentals have been picked up in this period yet."
+            tableTitle="Fleet utilization by week"
+          />
+        </ChartCard>
+
+        <ChartCard title="Collections" subtitle="Rent payments right now.">
+          <BarList
+            items={[
+              { label: "Collected this period", value: d.collections.paidThisPeriod, display: formatMoney(d.collections.paidThisPeriod), color: "var(--series-1)" },
+              { label: "Coming up", value: d.collections.upcoming, display: formatMoney(d.collections.upcoming), color: "var(--series-3)" },
+              { label: "Late or failing", value: d.collections.atRisk, display: formatMoney(d.collections.atRisk), color: "var(--series-2)" },
+            ]}
+            emptyText="No rent payments yet."
+          />
+        </ChartCard>
+      </div>
+
+      <ChartCard title="Which lead sources turn into renters" subtitle={`Leads created in the last ${d.funnelDays} days (since the start of your range), by where they came from. Judge a source on at least 20 to 30 leads.`}>
+        {!anyFunnel ? (
+          <Empty>No leads in this period yet.</Empty>
+        ) : (
+          <>
+            <BarList
+              items={d.funnel.map((f) => ({
+                label: f.label,
+                value: f.pickedUp,
+                display: `${f.pickedUp} of ${f.leads} picked up${pct(f.pickedUp, f.leads) !== null ? ` (${pct(f.pickedUp, f.leads)}%)` : ""}`,
+                href: `/staff/funnel?days=${Math.min(90, Math.max(7, d.funnelDays))}`,
+              }))}
+              emptyText="No renter has picked up a car from these leads yet. The table below shows where leads are getting stuck."
+            />
+            <DataTable
+              title="Lead sources"
+              headers={["Source", "Leads", "Applied", "Approved", "Picked up", "Lead to picked up"]}
+              rows={d.funnel.map((f) => [f.label, f.leads, f.applied, f.approved, f.pickedUp, pct(f.pickedUp, f.leads) === null ? "–" : `${pct(f.pickedUp, f.leads)}%`])}
+            />
+            <p className="muted-text" style={{ fontSize: 12, marginTop: 8 }}>Spend per source (cost per lead and per picked-up renter) arrives with the ad-spend entry in Phase 3.</p>
+          </>
+        )}
+      </ChartCard>
+
+      <ChartCard title="AI calls" subtitle="Calls reviewed in the period, and how many moved the caller forward (application finished, a time committed, or pickup confirmed).">
+        {d.calls.total === 0 ? (
+          <Empty>No calls recorded in this period yet.</Empty>
+        ) : (
+          <>
+            <BarList
+              items={d.calls.byAssistant.map((a) => ({
+                label: ASSISTANT_LABEL[a.assistant] ?? a.assistant,
+                value: a.calls,
+                display: `${a.calls} calls · ${a.positive} moved forward${a.needsHuman ? ` · ${a.needsHuman} need a person` : ""}`,
+              }))}
+              emptyText="No calls yet."
+            />
+            <DataTable
+              title="AI calls by assistant"
+              headers={["Assistant", "Calls", "Moved forward", "Need a person"]}
+              rows={d.calls.byAssistant.map((a) => [ASSISTANT_LABEL[a.assistant] ?? a.assistant, a.calls, a.positive, a.needsHuman])}
+            />
+          </>
+        )}
+      </ChartCard>
+
+      <ChartCard title="Which cars are losing money" subtitle="Coming in Phase 2.">
+        <p className="viz-empty">
+          Needs each car&rsquo;s purchase price, loan, insurance and other recurring costs, which aren&rsquo;t entered anywhere yet. Profit will use real cash costs only, shown before and after any joint-venture partner&rsquo;s share.
+        </p>
+      </ChartCard>
+
+      <p style={{ fontSize: 14 }}>
+        Download as spreadsheet:{" "}
+        <a href={`/staff/business/export?kind=cash&${exportQs}`}>weekly money</a> ·{" "}
+        <a href={`/staff/business/export?kind=funnel&${exportQs}`}>lead sources</a> ·{" "}
+        <a href={`/staff/business/export?kind=calls&${exportQs}`}>AI calls</a>
+      </p>
+    </div>
+  );
+}
