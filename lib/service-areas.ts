@@ -21,7 +21,7 @@ export const SERVICE_AREA_CITIES: CityData[] = [
   {
     slug: "nashville",
     displayName: "Nashville",
-    region: "Middle Tennessee",
+    region: "Greater Nashville",
     heroLine: "Rideshare & delivery car rentals in Nashville, TN.",
     metaDescription:
       "Gig, rideshare and delivery car rentals across Greater Nashville. $222 for your first 3 days, with pickup available in Nashville and Murfreesboro, TN.",
@@ -31,7 +31,7 @@ export const SERVICE_AREA_CITIES: CityData[] = [
   {
     slug: "murfreesboro",
     displayName: "Murfreesboro",
-    region: "Middle Tennessee",
+    region: "Greater Nashville",
     heroLine: "Rideshare & delivery car rentals in Murfreesboro, TN.",
     metaDescription:
       "Gig, rideshare and delivery car rentals across Greater Nashville. $222 for your first 3 days, with pickup available in Murfreesboro and Nashville, TN.",

@@ -59,7 +59,7 @@ export default async function Home() {
       q: "How does pricing work?",
       a:
         (pricing && weekTotal > 0
-          ? `It’s $${pricing.total} for the first ${pricing.days} days, then $${pricing.perDay}/day after that${pricing.days < 7 ? ` (a 7-day rental comes to $${weekTotal})` : ""}. `
+          ? `It’s $${pricing.total} for the first ${pricing.days} days, then $${pricing.perDay}/day after that. `
           : "Pricing is shown during rental selection. ") +
         "A one-week minimum rental applies.",
     },
@@ -189,7 +189,7 @@ export default async function Home() {
 
           <div className="hero-content hero-grid">
             <div className="hero-copy">
-              <div className="eyebrow">Gig, rideshare &amp; delivery car rentals in Nashville</div>
+              <div className="eyebrow">Gig, rideshare &amp; delivery car rentals in Greater Nashville</div>
               <h1>Car rentals for rideshare &amp; delivery drivers.</h1>
               <p className="hero-sub">
                 {pricing
@@ -198,7 +198,7 @@ export default async function Home() {
               </p>
               <p className="hero-keywords">
                 Car rentals for Uber, Lyft, DoorDash, Instacart and Amazon Flex
-                drivers in Nashville, TN.
+                drivers in Greater Nashville, TN.
               </p>
               <div className="benefit-strip">
                 <span>Unlimited mileage</span>
@@ -364,7 +364,7 @@ export default async function Home() {
                 <>
                   <div className="price">${pricing.total}</div>
                   <p style={{ color: "rgba(255,255,255,0.7)", fontSize: 14, margin: 0 }}>
-                    for your first {pricing.days} days, then ${pricing.perDay}/day after. 1-week minimum rental applies{pricing.days < 7 ? <>, so a 7-day rental comes to <strong>${weekTotal}</strong></> : null}. Once you&rsquo;re driving, you can move to a lower weekly rate.
+                    for your first {pricing.days} days, then ${pricing.perDay}/day after. 1-week minimum rental applies. Once you&rsquo;re driving, you can move to a lower weekly rate.
                   </p>
                 </>
               ) : (

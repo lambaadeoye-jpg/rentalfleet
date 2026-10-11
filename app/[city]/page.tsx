@@ -163,7 +163,7 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
               </span>
             ))}
             {" · "}
-            <a href="/">All of Middle Tennessee</a>
+            <a href="/">All of Greater Nashville</a>
           </p>
         </div>
       </section>
