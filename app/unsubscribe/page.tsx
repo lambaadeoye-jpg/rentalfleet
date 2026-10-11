@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { verifyUnsubscribeToken, maskEmail } from "@/lib/unsubscribe";
 import { SUPPORT_EMAIL } from "@/lib/site-config";
+import { BrandLogo } from "../brand-logo";
 
 export const metadata: Metadata = { title: "Unsubscribe", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -8,11 +9,13 @@ export const dynamic = "force-dynamic";
 export default async function UnsubscribePage({ searchParams }: { searchParams: Promise<{ t?: string; done?: string }> }) {
   const { t, done } = await searchParams;
   const email = t ? verifyUnsubscribeToken(t) : null;
+  const logo = <div style={{ display: "flex", justifyContent: "center", marginBottom: 24 }}><BrandLogo width={132} /></div>;
   const box = { maxWidth: 460, margin: "80px auto", padding: "0 24px", textAlign: "center", lineHeight: 1.6 } as const;
 
   if (done) {
     return (
       <main style={box}>
+        {logo}
         <h1 style={{ fontSize: 24, marginBottom: 8 }}>You&rsquo;re unsubscribed</h1>
         <p className="muted-text">We won&rsquo;t send you marketing emails anymore. Messages about an active application or rental can still be sent.</p>
         <p style={{ marginTop: 20 }}><a href="/">Back to Zivo</a></p>
@@ -22,6 +25,7 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
   if (!email) {
     return (
       <main style={box}>
+        {logo}
         <h1 style={{ fontSize: 24, marginBottom: 8 }}>This link isn&rsquo;t valid</h1>
         <p className="muted-text">Email <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> and we&rsquo;ll take you off the list.</p>
       </main>
@@ -29,6 +33,7 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
   }
   return (
     <main style={box}>
+        {logo}
       <h1 style={{ fontSize: 24, marginBottom: 8 }}>Unsubscribe</h1>
       <p className="muted-text" style={{ marginBottom: 20 }}>Stop marketing emails to {maskEmail(email)}?</p>
       <form action="/api/unsubscribe" method="post">

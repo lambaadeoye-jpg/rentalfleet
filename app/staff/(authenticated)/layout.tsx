@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { BrandLogo } from "@/app/brand-logo";
 import { createClient } from "@/lib/supabase/server";
 import StaffNav from "../staff-nav";
 import SignOutButton from "./dashboard/sign-out-button";
@@ -162,7 +163,7 @@ export default async function StaffLayout({ children }: { children: React.ReactN
             zIndex: 40,
           }}
         >
-          <span style={{ fontWeight: 700, fontSize: 15 }}>{tenant?.name ?? "Fleet Rental"}</span>
+          <BrandLogo variant="white" width={120} />
           <SignOutButton />
         </header>
         <main className="app-shell" style={{ paddingBottom: 88 }}>{children}</main>

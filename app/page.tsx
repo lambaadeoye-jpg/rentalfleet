@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import MobileCtaBar from "./mobile-cta-bar";
 import CtaTracker from "./cta-tracker";
 import SiteFooter from "./site-footer";
+import { BrandLogo } from "./brand-logo";
 import { Suspense } from "react";
 import LeadForm from "./lead-form";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
@@ -16,7 +17,6 @@ import {
   LifeBuoy,
   Wrench,
   Layers,
-  Car,
   FileText,
   ClipboardCheck,
   BadgeCheck,
@@ -177,10 +177,9 @@ export default async function Home() {
         />
         <div className="container">
           <nav className="nav-bar">
-            <span className="nav-logo" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Car size={20} color="var(--teal)" />
-              {brandName}
-            </span>
+            <a href="/" className="nav-logo" aria-label={`${brandName} home`} style={{ display: "flex", alignItems: "center" }}>
+              <BrandLogo variant="white" width={132} />
+            </a>
             <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
               <a href="#fleet" className="nav-jump-link">Fleet</a>
               <a href="#how-it-works" className="nav-jump-link">How it works</a>

@@ -2,6 +2,7 @@
 // "needs your attention" rules are unit tested. Everything printed is escaped.
 
 import { DAY_MS, changePct, formatMoney, weekStart, type Range } from "./analytics";
+import { EMAIL_LOGO_HTML } from "./brand-assets";
 
 /** The last complete Monday-to-Sunday week (UTC) before `now`, and the week before it. */
 export function lastFullWeek(now: Date): Range {
@@ -82,6 +83,7 @@ export function buildWeeklySummary(i: SummaryInput): { subject: string; text: st
   ].join("\n");
 
   const html = `<div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;color:#101828">
+${EMAIL_LOGO_HTML}
 <h2 style="margin:0 0 4px">Zivo weekly summary</h2>
 <p style="margin:0 0 16px;color:#667085">${esc(i.weekLabel)}</p>
 <h3 style="margin:0 0 6px">${attention.length ? "Needs you" : "All quiet"}</h3>

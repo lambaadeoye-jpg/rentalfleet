@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import PortalSignOut from "./sign-out";
 import PortalTabBar from "./tab-bar";
+import { BrandLogo } from "@/app/brand-logo";
 
 export default async function PortalLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -28,7 +29,7 @@ export default async function PortalLayout({ children }: { children: React.React
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 720, margin: "0 auto" }}>
-          <span style={{ fontWeight: 700, fontSize: 15 }}>My account</span>
+          <a href="/portal" aria-label="Zivo — my account" style={{ display: "flex" }}><BrandLogo variant="white" width={120} /></a>
           <PortalSignOut />
         </div>
       </header>

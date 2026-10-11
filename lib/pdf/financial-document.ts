@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { drawBrandLogo } from "./brand";
 
 // Shared PDF generation for receipts, invoices, and (later) damage
 // reports -- one file since all three share the same header/footer
@@ -30,13 +31,10 @@ export async function generateFinancialDocumentPdf(params: {
   let y = 740;
 
   // --- Header ---
-  // LOGO SLOT: once a real logo asset exists, embed it here with
-  // pdfDoc.embedPng()/embedJpg() and page.drawImage() before the
-  // business name, e.g.:
-  //   const logoBytes = await fetch(logoUrl).then(r => r.arrayBuffer());
-  //   const logoImage = await pdfDoc.embedPng(logoBytes);
-  //   page.drawImage(logoImage, { x: 50, y: y - 10, width: 40, height: 40 });
-  page.drawText(params.businessName, { x: 50, y, size: 20, font: boldFont, color: midnight });
+  // One-color logo (the guide's variant for invoices and receipts), then the business name.
+  y -= await drawBrandLogo(pdfDoc, page, 50, y + 14, 120);
+  y -= 8;
+  page.drawText(params.businessName, { x: 50, y, size: 10, font: boldFont, color: muted });
   y -= 18;
   page.drawText(params.documentLabel, { x: 50, y, size: 11, font: boldFont, color: teal });
   y -= 40;
@@ -99,7 +97,9 @@ export async function generateDamageReportPdf(params: {
   let page = pdfDoc.addPage([612, 792]);
   let y = 740;
 
-  page.drawText(params.businessName, { x: 50, y, size: 20, font: boldFont, color: midnight });
+  y -= await drawBrandLogo(pdfDoc, page, 50, y + 14, 120);
+  y -= 8;
+  page.drawText(params.businessName, { x: 50, y, size: 10, font: boldFont, color: muted });
   y -= 18;
   page.drawText("DAMAGE REPORT", { x: 50, y, size: 11, font: boldFont, color: teal });
   y -= 40;

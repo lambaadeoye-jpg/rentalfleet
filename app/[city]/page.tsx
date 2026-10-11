@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import LeadForm from "../lead-form";
 import CtaTracker from "../cta-tracker";
 import SiteFooter from "../site-footer";
+import { BrandLogo } from "../brand-logo";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
 import { getCityBySlug, SERVICE_AREA_CITIES } from "@/lib/service-areas";
 import { ShieldCheck, Fuel, Zap, KeyRound } from "lucide-react";
@@ -79,7 +80,10 @@ export default async function CityLandingPage({ params }: { params: Promise<{ ci
       {/* eslint-disable-next-line react/no-danger */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      <section style={{ padding: "60px 20px 40px", textAlign: "center" }}>
+      <section style={{ padding: "32px 20px 40px", textAlign: "center" }}>
+        <a href="/" aria-label="Zivo home" style={{ display: "inline-flex", marginBottom: 28 }}>
+          <BrandLogo width={148} />
+        </a>
         <h1 style={{ fontSize: 34, marginBottom: 12 }}>{city.heroLine}</h1>
         <p className="muted-text" style={{ fontSize: 17, maxWidth: 560, margin: "0 auto 20px" }}>
           Get a work-ready vehicle in {city.displayName} — no credit check, insurance if you need it,

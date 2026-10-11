@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { BrandLogo } from "./brand-logo";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, SUPPORT_EMAIL } from "@/lib/site-config";
 
 export const LEGAL_UPDATED = "October 7, 2026";
@@ -6,9 +7,9 @@ export const LEGAL_UPDATED = "October 7, 2026";
 export default function LegalPage({ title, children }: { title: string; children: ReactNode }) {
   return (
     <main style={{ maxWidth: 760, margin: "0 auto", padding: "48px 20px 80px", lineHeight: 1.65 }}>
-      <p style={{ marginBottom: 24 }}>
-        <a href="/" style={{ fontSize: 14, display: "inline-block", padding: "10px 0" }}>← Zivo</a>
-      </p>
+      <a href="/" aria-label="Zivo home" style={{ display: "inline-block", padding: "10px 0", marginBottom: 20 }}>
+        <BrandLogo width={132} />
+      </a>
       <h1 style={{ fontSize: 30, marginBottom: 6 }}>{title}</h1>
       <p className="muted-text" style={{ fontSize: 14, marginBottom: 32 }}>Last updated {LEGAL_UPDATED}</p>
       {children}

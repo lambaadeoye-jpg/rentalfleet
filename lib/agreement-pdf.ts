@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
+import { drawBrandLogo } from "./pdf/brand";
 import type { RenderedAgreement } from "./agreement";
 
 // Built-in PDF fonts only draw basic Latin characters; anything else would make
@@ -69,7 +70,9 @@ export async function buildSignedAgreementPdf(agreement: RenderedAgreement, ev: 
     y -= opts.gap ?? 0;
   };
 
-  write("Zivo Mobility LLC", { size: 16, bold: true });
+  y -= await drawBrandLogo(pdf, page, M, y, 120);
+  y -= 12;
+  write("Zivo Mobility LLC", { size: 12, bold: true });
   write("Vehicle Rental Agreement", { size: 11, bold: true, color: muted, gap: 10 });
   write(agreement.intro, { gap: 8 });
   for (const c of agreement.clauses) {

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { Mail, CheckCircle2 } from "lucide-react";
 import { sendPortalMagicLink } from "../actions";
 import LegalLinks from "@/app/legal-links";
+import { BrandLogo } from "@/app/brand-logo";
 
 export default function PortalLoginForm({ inactiveTimeout }: { inactiveTimeout: boolean }) {
   const [email, setEmail] = useState("");
@@ -27,6 +28,8 @@ export default function PortalLoginForm({ inactiveTimeout }: { inactiveTimeout: 
   if (sent) {
     return (
       <div className="card" style={{ maxWidth: 420, margin: "80px auto", textAlign: "center", padding: 40 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}><BrandLogo width={132} /></div>
+
         <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
         <h1 className="page-title" style={{ marginBottom: 8 }}>Check your email</h1>
         <p className="muted-text">
@@ -39,6 +42,8 @@ export default function PortalLoginForm({ inactiveTimeout }: { inactiveTimeout: 
   return (
     <div style={{ maxWidth: 420, margin: "80px auto", padding: "0 24px" }}>
       <form onSubmit={handleSubmit} className="card">
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}><BrandLogo width={132} /></div>
+
         <Mail size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
         <h1 className="page-title">Sign in to your account</h1>
         {inactiveTimeout && (

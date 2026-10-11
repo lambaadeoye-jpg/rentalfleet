@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BrandLogo } from "@/app/brand-logo";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashUploadToken } from "@/lib/upload-token";
 import { UPLOAD_TOKEN_RE } from "@/lib/upload-validation";
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main style={{ maxWidth: 640, margin: "0 auto", padding: "32px 16px" }}>
-      <p style={{ fontWeight: 800, fontSize: 18, marginBottom: 16 }}>Zivo</p>
+      <div style={{ marginBottom: 16 }}><BrandLogo width={132} /></div>
       {children}
     </main>
   );

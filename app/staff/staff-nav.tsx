@@ -12,6 +12,7 @@ import type { LucideIcon } from "lucide-react";
 import SignOutButton from "./(authenticated)/dashboard/sign-out-button";
 import GlobalSearchBar from "./global-search-bar";
 import { sentenceCase } from "@/lib/format-label";
+import { BrandLogo } from "@/app/brand-logo";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 type NavGroup = { title: string | null; adminOnly?: boolean; items: NavItem[] };
@@ -181,14 +182,16 @@ export default function StaffNav({
         <Menu size={22} />
         {attentionTotal > 0 && <span className="nav-bell__count">{attentionTotal > 99 ? "99+" : attentionTotal}</span>}
       </button>
-      <Car size={18} color="var(--teal)" />
-      <span className="staff-topbar__name">{tenantName}</span>
+      <Link href="/staff/dashboard" className="staff-topbar__name" aria-label={`${tenantName} dashboard`} style={{ display: "flex" }}>
+        <BrandLogo variant="white" width={120} />
+      </Link>
     </div>
     {drawerOpen && <div className="staff-scrim" onClick={() => setDrawerOpen(false)} aria-hidden="true" />}
     <nav id="staff-drawer" className={drawerOpen ? "staff-nav staff-nav--open" : "staff-nav"} aria-label="Main">
       <div className="staff-nav__brand">
-        <Car size={20} color="var(--teal)" />
-        <span className="staff-nav__name">{tenantName}</span>
+        <Link href="/staff/dashboard" className="staff-nav__name" aria-label={`${tenantName} dashboard`} style={{ display: "flex" }}>
+          <BrandLogo variant="white" width={120} />
+        </Link>
         <NotificationsBell items={attention} />
         <button type="button" className="staff-nav__close" aria-label="Close menu" onClick={() => setDrawerOpen(false)}><X size={20} /></button>
       </div>

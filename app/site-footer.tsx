@@ -1,5 +1,6 @@
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, SUPPORT_EMAIL } from "@/lib/site-config";
 import { SERVICE_AREA_CITIES } from "@/lib/service-areas";
+import { BrandLogo } from "./brand-logo";
 
 // Shared footer for the public pages: contact, service areas, legal links, copyright.
 export default function SiteFooter({ brandName = "Zivo", showTagline = true }: { brandName?: string; showTagline?: boolean }) {
@@ -7,6 +8,9 @@ export default function SiteFooter({ brandName = "Zivo", showTagline = true }: {
   return (
     <footer className="footer">
       <div className="container">
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+          <BrandLogo variant="white" width={132} />
+        </div>
         {showTagline && (
           <p style={{ margin: "0 0 8px" }}>
             {brandName} — Get a car. Get to work. Get moving. A car that works as hard as you do.

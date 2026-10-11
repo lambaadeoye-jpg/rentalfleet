@@ -54,6 +54,9 @@ describe("buildWeeklySummary", () => {
     expect(s.text).toContain("Leads → applied → picked up: 12 → 5 → 2");
     expect(s.html).toContain("https://admin.rentzivo.com/staff/business");
   });
+  it("opens the email with the Zivo logo", () => {
+    expect(buildWeeklySummary(base).html).toContain('src="https://rentzivo.com/brand/logo.png"');
+  });
   it("escapes anything that could break the html", () => {
     const s = buildWeeklySummary({ ...base, carsLosing: ["<script>x</script> & Co"] });
     expect(s.html).not.toContain("<script>");

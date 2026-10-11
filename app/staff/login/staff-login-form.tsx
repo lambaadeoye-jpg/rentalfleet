@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Mail, CheckCircle2, KeyRound } from "lucide-react";
 import { sendStaffMagicLink, signInWithPassword } from "../actions";
+import { BrandLogo } from "@/app/brand-logo";
 
 export default function StaffLoginForm({ inactiveTimeout, wrongPortal = false }: { inactiveTimeout: boolean; wrongPortal?: boolean }) {
   const router = useRouter();
@@ -49,6 +50,8 @@ export default function StaffLoginForm({ inactiveTimeout, wrongPortal = false }:
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
         <div className="card" style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}><BrandLogo width={132} /></div>
+
           <CheckCircle2 size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
           <h1 className="page-title" style={{ marginBottom: 8 }}>Check your email</h1>
           <p className="muted-text">
@@ -62,6 +65,8 @@ export default function StaffLoginForm({ inactiveTimeout, wrongPortal = false }:
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
       <form onSubmit={mode === "magic-link" ? handleMagicLink : handlePassword} className="card" style={{ width: "100%", maxWidth: 360 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}><BrandLogo width={132} /></div>
+
         {mode === "magic-link" ? (
           <Mail size={28} color="var(--teal)" style={{ marginBottom: 12 }} />
         ) : (

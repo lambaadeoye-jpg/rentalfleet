@@ -5,6 +5,7 @@ import { User, IdCard, Briefcase, ShieldCheck, ClipboardCheck, Check, Phone, Mai
 import DocumentUpload from "./document-upload";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, SUPPORT_EMAIL } from "@/lib/site-config";
 import LegalLinks from "@/app/legal-links";
+import { BrandLogo } from "@/app/brand-logo";
 import {
   type ApplicationData,
   savePersonalStep,
@@ -170,6 +171,9 @@ export default function Workspace({
 
   return (
     <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 20px 120px" }}>
+      <a href="/" aria-label="Zivo home" style={{ display: "inline-flex", marginBottom: 20 }}>
+        <BrandLogo width={132} />
+      </a>
       <h1 style={{ fontSize: 24, marginBottom: 4 }}>Let&rsquo;s get you approved.</h1>
       <p className="muted-text" style={{ marginBottom: 8 }}>
         We just need a few more details to determine your eligibility. Your progress is saved
