@@ -780,4 +780,14 @@ code { overflow-wrap: anywhere; }
 .viz-barlist__row { display: grid; grid-template-columns: minmax(90px, 200px) 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
 .viz-barlist__track { height: 14px; background: #f2f4f7; border-radius: 4px; }
 .viz-barlist__bar { height: 14px; border-radius: 0 4px 4px 0; background: var(--series-1); min-width: 2px; }
-.viz-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.viz-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 20px; }
+/* Charts draw twice: wide for desktop, compact for phones, so axis text stays readable. Bar lists stack label over bar. */
+.viz-narrow { display: none; }
+@media (max-width: 560px) {
+  .viz-wide { display: none; }
+  .viz-narrow { display: block; }
+  .viz-barlist__row { grid-template-columns: 1fr auto; row-gap: 4px; }
+  .viz-barlist__row > span { grid-column: 1 / -1; overflow-wrap: anywhere; }
+  /* Wide tables scroll on their own, not the whole card (the edit forms below must stay put). */
+  .viz-table { display: block; overflow-x: auto; }
+}

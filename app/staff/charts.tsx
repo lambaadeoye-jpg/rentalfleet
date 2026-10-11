@@ -40,6 +40,61 @@ function shortDate(iso: string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
+type ColumnProps = {
+  labels: string[]; series: Series[]; money: boolean; valueSuffix: string; top: number;
+  formatLabel: (l: string) => string; tableTitle: string;
+  W: number; H: number; fs: number; maxLabels: number;
+};
+
+// One drawing of the column chart at a given width. Two are rendered (wide for desktop, compact for phones) and CSS
+// shows one, so axis text stays readable on a phone instead of shrinking with the whole drawing.
+function ColumnPlot({ labels, series, money, valueSuffix, top, formatLabel, tableTitle, W, H, fs, maxLabels }: ColumnProps) {
+  const L = W < 500 ? 44 : 48, R = 8, T = 10, B = 28;
+  const innerW = W - L - R, innerH = H - T - B;
+  const slot = innerW / labels.length;
+  const barW = Math.min(24, Math.max(4, (slot - 8) / series.length - 2));
+  const groupW = series.length * barW + (series.length - 1) * 2;
+  const y = (v: number) => T + innerH - (v / top) * innerH;
+  const ticks = [0, top / 2, top];
+  const every = Math.ceil(labels.length / maxLabels);
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tableTitle}>
+      {ticks.map((t) => (
+        <g key={t}>
+          <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--grid)" strokeWidth={1} />
+          <text x={L - 6} y={y(t) + 4} textAnchor="end" fontSize={fs} fill="#667085">{compact(t, money)}{valueSuffix}</text>
+        </g>
+      ))}
+      {labels.map((l, i) => {
+        const x0 = L + i * slot + (slot - groupW) / 2;
+        return (
+          <g key={l}>
+            {series.map((s, k) => {
+              const v = s.values[i] ?? 0;
+              const h = Math.max(0, innerH - (y(v) - T));
+              const x = x0 + k * (barW + 2);
+              if (!v) return null;
+              const r = Math.min(4, h / 2, barW / 2);
+              // Rounded at the top, square on the baseline.
+              const d = `M${x},${T + innerH} V${y(v) + r} Q${x},${y(v)} ${x + r},${y(v)} H${x + barW - r} Q${x + barW},${y(v)} ${x + barW},${y(v) + r} V${T + innerH} Z`;
+              return (
+                <path key={s.name} d={d} fill={s.color}>
+                  <title>{`${formatLabel(l)}: ${s.name} ${money ? "$" : ""}${v.toLocaleString("en-US", { maximumFractionDigits: 2 })}${valueSuffix}`}</title>
+                </path>
+              );
+            })}
+            {i % every === 0 && (
+              <text x={L + i * slot + slot / 2} y={H - 8} textAnchor="middle" fontSize={fs} fill="#667085">{formatLabel(l)}</text>
+            )}
+          </g>
+        );
+      })}
+      <line x1={L} x2={W - R} y1={T + innerH} y2={T + innerH} stroke="#d0d5dd" strokeWidth={1} />
+    </svg>
+  );
+}
+
 /** Columns grouped by label (for example by week). Bars are capped at 24px with a 2px gap between them. */
 export function ColumnChart({ labels, series, money = false, valueSuffix = "", max, emptyText, formatLabel = shortDate, tableTitle }: {
   labels: string[];
@@ -53,16 +108,8 @@ export function ColumnChart({ labels, series, money = false, valueSuffix = "", m
 }) {
   const all = series.flatMap((s) => s.values);
   if (labels.length === 0 || all.every((v) => !v)) return <Empty>{emptyText}</Empty>;
-
-  const W = 640, H = 240, L = 48, R = 8, T = 10, B = 28;
   const top = max ?? niceMax(Math.max(...all));
-  const innerW = W - L - R, innerH = H - T - B;
-  const slot = innerW / labels.length;
-  const barW = Math.min(24, Math.max(4, (slot - 8) / series.length - 2));
-  const groupW = series.length * barW + (series.length - 1) * 2;
-  const y = (v: number) => T + innerH - (v / top) * innerH;
-  const ticks = [0, top / 2, top];
-  const every = Math.ceil(labels.length / 8);
+  const common = { labels, series, money, valueSuffix, top, formatLabel, tableTitle };
 
   return (
     <div>
@@ -73,72 +120,48 @@ export function ColumnChart({ labels, series, money = false, valueSuffix = "", m
           ))}
         </div>
       )}
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tableTitle}>
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--grid)" strokeWidth={1} />
-            <text x={L - 6} y={y(t) + 4} textAnchor="end" fontSize={11} fill="#667085">{compact(t, money)}{valueSuffix}</text>
-          </g>
-        ))}
-        {labels.map((l, i) => {
-          const x0 = L + i * slot + (slot - groupW) / 2;
-          return (
-            <g key={l}>
-              {series.map((s, k) => {
-                const v = s.values[i] ?? 0;
-                const h = Math.max(0, innerH - (y(v) - T));
-                const x = x0 + k * (barW + 2);
-                if (!v) return null;
-                const r = Math.min(4, h / 2, barW / 2);
-                // Rounded at the top, square on the baseline.
-                const d = `M${x},${T + innerH} V${y(v) + r} Q${x},${y(v)} ${x + r},${y(v)} H${x + barW - r} Q${x + barW},${y(v)} ${x + barW},${y(v) + r} V${T + innerH} Z`;
-                return (
-                  <path key={s.name} d={d} fill={s.color}>
-                    <title>{`${formatLabel(l)}: ${s.name} ${money ? "$" : ""}${v.toLocaleString("en-US", { maximumFractionDigits: 2 })}${valueSuffix}`}</title>
-                  </path>
-                );
-              })}
-              {i % every === 0 && (
-                <text x={L + i * slot + slot / 2} y={H - 8} textAnchor="middle" fontSize={11} fill="#667085">{formatLabel(l)}</text>
-              )}
-            </g>
-          );
-        })}
-        <line x1={L} x2={W - R} y1={T + innerH} y2={T + innerH} stroke="#d0d5dd" strokeWidth={1} />
-      </svg>
+      <div className="viz-wide"><ColumnPlot {...common} W={640} H={240} fs={11} maxLabels={8} /></div>
+      <div className="viz-narrow"><ColumnPlot {...common} W={360} H={230} fs={12} maxLabels={4} /></div>
       <DataTable title={tableTitle} headers={["Week of", ...series.map((s) => s.name)]} rows={labels.map((l, i) => [formatLabel(l), ...series.map((s) => `${money ? "$" : ""}${(s.values[i] ?? 0).toLocaleString("en-US", { maximumFractionDigits: 2 })}${valueSuffix}`)])} />
     </div>
+  );
+}
+
+function PercentPlot({ labels, values, color, tableTitle, W, H, fs, maxLabels }: { labels: string[]; values: number[]; color: string; tableTitle: string; W: number; H: number; fs: number; maxLabels: number }) {
+  const L = W < 500 ? 40 : 48, R = 16, T = 10, B = 28;
+  const innerW = W - L - R, innerH = H - T - B;
+  const x = (i: number) => L + (labels.length === 1 ? innerW / 2 : (i / (labels.length - 1)) * innerW);
+  const y = (v: number) => T + innerH - (Math.min(100, v) / 100) * innerH;
+  const pts = values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
+  const every = Math.ceil(labels.length / maxLabels);
+  const last = values.length - 1;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tableTitle}>
+      {[0, 50, 100].map((t) => (
+        <g key={t}>
+          <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--grid)" strokeWidth={1} />
+          <text x={L - 6} y={y(t) + 4} textAnchor="end" fontSize={fs} fill="#667085">{t}%</text>
+        </g>
+      ))}
+      <polyline points={pts} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      {values.map((v, i) => (
+        <circle key={labels[i]} cx={x(i)} cy={y(v)} r={4} fill={color} stroke="white" strokeWidth={2}>
+          <title>{`Week of ${shortDate(labels[i])}: ${v}% of car-days rented`}</title>
+        </circle>
+      ))}
+      <text x={x(last)} y={y(values[last]) - 10} textAnchor="end" fontSize={fs + 1} fontWeight={700} fill="#101828">{values[last]}%</text>
+      {labels.map((l, i) => (i % every === 0 ? <text key={l} x={x(i)} y={H - 8} textAnchor="middle" fontSize={fs} fill="#667085">{shortDate(l)}</text> : null))}
+    </svg>
   );
 }
 
 /** One line over weeks, 0 to 100 percent. */
 export function PercentLine({ labels, values, color, emptyText, tableTitle }: { labels: string[]; values: number[]; color: string; emptyText: string; tableTitle: string }) {
   if (labels.length === 0 || values.every((v) => !v)) return <Empty>{emptyText}</Empty>;
-  const W = 640, H = 220, L = 48, R = 16, T = 10, B = 28;
-  const innerW = W - L - R, innerH = H - T - B;
-  const x = (i: number) => L + (labels.length === 1 ? innerW / 2 : (i / (labels.length - 1)) * innerW);
-  const y = (v: number) => T + innerH - (Math.min(100, v) / 100) * innerH;
-  const pts = values.map((v, i) => `${x(i)},${y(v)}`).join(" ");
-  const every = Math.ceil(labels.length / 8);
-  const last = values.length - 1;
   return (
     <div>
-      <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label={tableTitle}>
-        {[0, 50, 100].map((t) => (
-          <g key={t}>
-            <line x1={L} x2={W - R} y1={y(t)} y2={y(t)} stroke="var(--grid)" strokeWidth={1} />
-            <text x={L - 6} y={y(t) + 4} textAnchor="end" fontSize={11} fill="#667085">{t}%</text>
-          </g>
-        ))}
-        <polyline points={pts} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        {values.map((v, i) => (
-          <circle key={labels[i]} cx={x(i)} cy={y(v)} r={4} fill={color} stroke="white" strokeWidth={2}>
-            <title>{`Week of ${shortDate(labels[i])}: ${v}% of car-days rented`}</title>
-          </circle>
-        ))}
-        <text x={x(last)} y={y(values[last]) - 10} textAnchor="end" fontSize={12} fontWeight={700} fill="#101828">{values[last]}%</text>
-        {labels.map((l, i) => (i % every === 0 ? <text key={l} x={x(i)} y={H - 8} textAnchor="middle" fontSize={11} fill="#667085">{shortDate(l)}</text> : null))}
-      </svg>
+      <div className="viz-wide"><PercentPlot labels={labels} values={values} color={color} tableTitle={tableTitle} W={640} H={220} fs={11} maxLabels={8} /></div>
+      <div className="viz-narrow"><PercentPlot labels={labels} values={values} color={color} tableTitle={tableTitle} W={360} H={210} fs={12} maxLabels={4} /></div>
       <DataTable title={tableTitle} headers={["Week of", "Utilization"]} rows={labels.map((l, i) => [shortDate(l), `${values[i]}%`])} />
     </div>
   );

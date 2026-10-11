@@ -35,7 +35,7 @@ export default function SpendEditor({ entries, sources, defaultMonth }: { entrie
           <datalist id="spend-sources">{sources.map((s) => <option key={s} value={s} />)}</datalist>
         </label>
         <label style={{ fontSize: 12 }}>Spent ($)<input name="amount" inputMode="decimal" placeholder="250" required style={{ display: "block" }} /></label>
-        <button type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+        <button type="submit" className="button-primary" style={{ padding: "10px 20px", fontSize: 14 }} disabled={busy}>{busy ? "Saving…" : "Save"}</button>
         {msg ? <span className={msg.ok ? "muted-text" : "error-text"}>{msg.text}</span> : null}
       </form>
       <p className="muted-text" style={{ fontSize: 12, marginTop: 6 }}>Use the channel names shown in the lead sources table so spend lines up with leads. Saving the same channel and month again replaces it.</p>
@@ -48,7 +48,7 @@ export default function SpendEditor({ entries, sources, defaultMonth }: { entrie
                 <td>{e.month.slice(0, 7)}</td>
                 <td>{e.source}</td>
                 <td>{e.amount.toLocaleString("en-US", { style: "currency", currency: "USD" })}</td>
-                <td><button type="button" className="button-secondary" onClick={() => remove(e.id)}>Delete</button></td>
+                <td><button type="button" className="button-secondary" style={{ padding: "6px 12px", fontSize: 13 }} onClick={() => remove(e.id)}>Delete</button></td>
               </tr>
             ))}
           </tbody>

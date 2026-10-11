@@ -49,7 +49,7 @@ function CarForm({ car }: { car: EditorCar }) {
         <label style={{ fontSize: 12 }}>Management fee to Zivo / month ($, partner cars)<input name="managementFee" inputMode="decimal" defaultValue={car.managementFee} style={field} /></label>
         <label style={{ fontSize: 12 }}>Vehicle owner&rsquo;s share of profit after fee (%)<input name="partnerSharePct" inputMode="decimal" defaultValue={car.partnerSharePct} style={field} /></label>
         <div style={{ alignSelf: "end" }}>
-          <button type="submit" disabled={state.busy}>{state.busy ? "Saving…" : "Save"}</button>
+          <button type="submit" className="button-primary" style={{ padding: "10px 20px", fontSize: 14 }} disabled={state.busy}>{state.busy ? "Saving…" : "Save"}</button>
           {state.msg ? <span className={state.ok ? "muted-text" : "error-text"} style={{ marginLeft: 8 }}>{state.msg}</span> : null}
         </div>
       </form>
