@@ -359,7 +359,7 @@ export default async function Home() {
           <h2 className="section-title">Simple pricing for working drivers.</h2>
           <div className="price-grid">
             <div className="card price-card" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.12)" }}>
-              <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>DAILY</div>
+              <div style={{ color: "var(--teal)", fontWeight: 700, fontSize: 13 }}>INTRO OFFER</div>
               {pricing ? (
                 <>
                   <div className="price">${pricing.total}</div>
@@ -379,7 +379,7 @@ export default async function Home() {
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
             Unlimited mileage included on every rental. Rentals start at one week. After that you can keep going day by day or switch to a weekly rate with automatic billing to a card on file.
-            Insurance is included if you don&rsquo;t have your own.
+            Need coverage? We&rsquo;ll help you get it sorted.
           </p>
           <SectionCta name="after_pricing" label="Check availability" />
         </div>
