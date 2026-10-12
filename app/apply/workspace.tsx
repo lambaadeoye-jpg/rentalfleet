@@ -6,6 +6,8 @@ import DocumentUpload from "./document-upload";
 import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, SUPPORT_EMAIL } from "@/lib/site-config";
 import LegalLinks from "@/app/legal-links";
 import { BrandLogo } from "@/app/brand-logo";
+import SubmittedView from "./submitted-view";
+import { insuranceSummary, maskLicense } from "@/lib/application-next-steps";
 import {
   type ApplicationData,
   savePersonalStep,
@@ -167,6 +169,35 @@ export default function Workspace({
     } finally {
       setBusy(false);
     }
+  }
+
+  if (submitted) {
+    const platformNames = platforms.filter((p) => gigPlatformIds.includes(p.id)).map((p) => p.name).join(", ");
+    const driverNames = hasAdditionalDrivers
+      ? additionalDrivers.map((d) => `${d.firstName} ${d.lastName}`.trim()).filter(Boolean).join(", ")
+      : "";
+    const summary = [
+      { label: "Name", value: `${firstName} ${lastName}`.trim() },
+      { label: "Mobile", value: formatPhone(phone) },
+      { label: "Driver’s license", value: [licenseState, maskLicense(licenseNumberRef)].filter(Boolean).join(" ") || "On file" },
+      { label: "Apps you drive for", value: platformNames || "None selected" },
+      { label: "Insurance", value: insuranceSummary(hasOwnInsurance, insuranceProvider) },
+      { label: "Additional drivers", value: driverNames || "None" },
+    ];
+    return (
+      <div style={{ maxWidth: 640, margin: "0 auto", padding: "32px 20px 96px" }}>
+        <a href="/" aria-label="Zivo home" style={{ display: "inline-flex", marginBottom: 20 }}>
+          <BrandLogo width={132} />
+        </a>
+        <SubmittedView
+          firstName={firstName}
+          status={data.applicationStatus === "draft" ? "submitted" : data.applicationStatus}
+          summary={summary}
+          hasEmail={Boolean(data.email) || emailStatus === "sent"}
+          initialEmail={initialEmail ?? ""}
+        />
+      </div>
+    );
   }
 
   return (
@@ -559,34 +590,6 @@ export default function Workspace({
         {step === "review" && (
           <>
             <h2 style={{ fontSize: 16, marginBottom: 16 }}>Review &amp; submit</h2>
-            {submitted ? (
-              <div style={{ textAlign: "center", padding: "20px 0" }}>
-                <Check size={40} color="var(--teal)" style={{ marginBottom: 12 }} />
-                {data.applicationStatus === "approved" || data.applicationStatus === "conditionally_approved" ? (
-                  <>
-                    <p style={{ fontWeight: 700, marginBottom: 4 }}>You’re approved</p>
-                    <p className="muted-text" style={{ marginBottom: 4 }}>
-                      We’ll text you the next steps to sign your agreement and set up your pickup. Check your
-                      messages, or sign in to your portal.
-                    </p>
-                  </>
-                ) : data.applicationStatus === "declined" ? (
-                  <>
-                    <p style={{ fontWeight: 700, marginBottom: 4 }}>We couldn’t approve this application</p>
-                    <p className="muted-text" style={{ marginBottom: 4 }}>
-                      If you think this is a mistake, contact us and we’ll take another look.
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ fontWeight: 700, marginBottom: 4 }}>Application submitted</p>
-                    <p className="muted-text" style={{ marginBottom: 4 }}>
-                      We&rsquo;ll review your application and follow up with the next step.
-                    </p>
-                  </>
-                )}
-              </div>
-            ) : (
               <>
                 <ul style={{ paddingLeft: 18, color: "var(--text-secondary)", fontSize: 14, marginBottom: 12 }}>
                   <li>
@@ -604,12 +607,7 @@ export default function Workspace({
                       .join(", ") || "(none selected)"}
                   </li>
                   <li>
-                    Insurance:{" "}
-                    {hasOwnInsurance === true
-                      ? insuranceProvider || "(provider not yet provided)"
-                      : hasOwnInsurance === false
-                        ? "Will get set up through Zivo"
-                        : "(not yet answered)"}
+                    Insurance: {insuranceSummary(hasOwnInsurance, insuranceProvider)}
                   </li>
                   <li>
                     Additional drivers:{" "}
@@ -627,7 +625,6 @@ export default function Workspace({
                   {busy ? "Submitting…" : "Submit application"}
                 </button>
               </>
-            )}
           </>
         )}
 
