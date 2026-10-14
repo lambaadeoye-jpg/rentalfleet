@@ -6,6 +6,7 @@ import { hashUploadToken } from "@/lib/upload-token";
 import { UPLOAD_TOKEN_RE } from "@/lib/upload-validation";
 import { createCheckoutSession, stripeConfigured } from "@/lib/stripe";
 import { buildSetupSessionBody } from "@/lib/card-update";
+import { paymentMethodTypes } from "@/lib/payment-methods";
 
 const GENERIC = "We couldn’t open the card page. Please try again.";
 
@@ -40,12 +41,18 @@ export async function startCardUpdate(token: string, authorized: boolean): Promi
     successUrl: `${base}/card/${token}?status=success`,
     cancelUrl: `${base}/card/${token}?status=cancelled`,
     nowSeconds,
+    methodTypes: paymentMethodTypes() as string[],
   };
   // Same 5-minute bucket => a double tap reuses one Stripe session instead of creating two.
   const key = `card:${r.request_id}:${Math.floor(nowSeconds / 300)}`;
   let res = await createCheckoutSession(buildSetupSessionBody({ ...params, includeEmail: true }), key);
   // Stripe sometimes rejects an email prefill; the email is optional, so retry once without it.
   if (!res.ok) res = await createCheckoutSession(buildSetupSessionBody({ ...params, includeEmail: false }), `${key}:b`);
+  // If Stripe refuses the Cash App option (for example it is not enabled on the account yet), fall back to card only so the renter can still update.
+  if (!res.ok && params.methodTypes.length > 1) {
+    console.error("[card] Stripe refused the Cash App option; retrying with card only");
+    res = await createCheckoutSession(buildSetupSessionBody({ ...params, includeEmail: false, methodTypes: ["card"] }), `${key}:c`);
+  }
   if (!res.ok) return { success: false, error: GENERIC };
 
   await admin.rpc("attach_card_update_session", {

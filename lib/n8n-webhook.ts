@@ -41,6 +41,8 @@ export const N8N_WEBHOOK_PATHS = {
   telematicsAlert: "fleet-rental-telematics-alert",
   // Emails a renter their agreement-signing link. Fired from Contracts when staff choose "Email link".
   agreementEmail: "fleet-rental-agreement-email",
+  // A Stripe dispute (chargeback) or a failed refund that staff must act on. Receiver in n8n is optional.
+  paymentAlert: "fleet-rental-payment-alert",
 } as const;
 
 /** True when the app knows where n8n lives and has the shared secret, so a webhook can actually be delivered. */

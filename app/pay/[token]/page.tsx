@@ -5,6 +5,7 @@ import { hashUploadToken } from "@/lib/upload-token";
 import { UPLOAD_TOKEN_RE } from "@/lib/upload-validation";
 import { money } from "@/lib/agreement";
 import PayForm from "./pay-form";
+import { CASH_APP_IS_LIVE } from "@/lib/site-config";
 import AutoRefresh from "./auto-refresh";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
     return (
       <Shell>
         <h1 style={{ fontSize: 24, marginBottom: 8 }}>Payment received. Thank you!</h1>
-        <p className="muted-text">You&rsquo;re all set. We&rsquo;ll send your pickup details. Keep your photo ID and the card you paid with.</p>
+        <p className="muted-text">You&rsquo;re all set. We&rsquo;ll send your pickup details. Keep your photo ID and the {CASH_APP_IS_LIVE ? "card or Cash App account" : "card"} you paid with.</p>
       </Shell>
     );
   }
@@ -86,7 +87,7 @@ export default async function PayPage({ params, searchParams }: { params: Promis
           <span>Total today</span><span>{money(total)}</span>
         </p>
       </div>
-      <PayForm token={token} terms={Array.isArray(req.terms_lines) ? (req.terms_lines as string[]) : []} totalLabel={money(total)} />
+      <PayForm token={token} terms={Array.isArray(req.terms_lines) ? (req.terms_lines as string[]) : []} totalLabel={money(total)} cashApp={CASH_APP_IS_LIVE} />
     </Shell>
   );
 }

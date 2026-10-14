@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chargeSavedCard, stripeConfigured } from "./stripe";
+import { CASH_APP_PAYMENT_METHOD, escapeLike, methodTypeForBrand } from "./payment-methods";
 
 // Charges the renter's saved card for each week of rent as it comes due.
 // The database (migration 0080) decides WHAT is due and WHEN; this only moves the money and records the result.
@@ -19,12 +20,17 @@ export async function processBilling(db: SupabaseClient, opts?: { customerId?: s
 
   for (const r of rows) {
     try {
-      const res = await chargeSavedCard(r.stripe_customer_id, r.stripe_payment_method_id, r.amount_cents, `bill_${r.attempt_id}`, r.attempt_id, r.rental_id);
+      // The saved method decides how it is charged: a card is charged as a card, a Cash App account as Cash App.
+      const { data: pm } = await db.from("customer_payment_method").select("brand")
+        .eq("tenant_id", r.tenant_id).eq("stripe_payment_method_id", r.stripe_payment_method_id).limit(1).maybeSingle();
+      const methodType = methodTypeForBrand((pm?.brand as string | null | undefined) ?? null);
+      const res = await chargeSavedCard(r.stripe_customer_id, r.stripe_payment_method_id, r.amount_cents, `bill_${r.attempt_id}`, r.attempt_id, r.rental_id, methodType);
       if (res.ok === "pending") { pending++; continue; } // stays claimed; picked up again after 15 minutes with the same Stripe key
       const { error: fe } = await db.rpc("finish_billing_attempt", {
         p_attempt_id: r.attempt_id, p_ok: res.ok === true, p_payment_intent: res.ok === true ? res.id : null, p_error: res.ok === true ? null : res.error,
       });
       if (fe) console.error("[billing] finish failed:", r.attempt_id, fe.message);
+      else if (res.ok === true && methodType === "cashapp") await labelCashAppPayments(db, res.id);
       if (res.ok === true) succeeded++; else failed++;
     } catch (e) {
       console.error("[billing] exception:", r.attempt_id, (e as Error).message);
@@ -32,6 +38,16 @@ export async function processBilling(db: SupabaseClient, opts?: { customerId?: s
     }
   }
   return { claimed: rows.length, succeeded, failed, pending };
+}
+
+/** Payments are recorded as "card" by the database. For Cash App money, correct the label. Best effort: never blocks recording. */
+export async function labelCashAppPayments(db: SupabaseClient, paymentIntentId: string): Promise<void> {
+  try {
+    const { error } = await db.from("payment").update({ method_type: CASH_APP_PAYMENT_METHOD }).like("provider_payment_id", `${escapeLike(paymentIntentId)}#%`);
+    if (error) console.error("[billing] could not label Cash App payment:", paymentIntentId, error.message);
+  } catch (e) {
+    console.error("[billing] label exception:", paymentIntentId, (e as Error).message);
+  }
 }
 
 /** Friendly text for a failed-charge reason, shown to staff. */

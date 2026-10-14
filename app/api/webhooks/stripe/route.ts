@@ -4,7 +4,10 @@ import { parseCheckoutEvent, verifyStripeSignature } from "@/lib/checkout";
 import { fetchCardInfo, fetchSetupIntentCard } from "@/lib/stripe";
 import { parseSetupEvent } from "@/lib/card-update";
 import { nameMatches } from "@/lib/agreement";
-import { processBilling } from "@/lib/billing";
+import { processBilling, labelCashAppPayments } from "@/lib/billing";
+import { parsePaymentAlert, describePaymentAlert } from "@/lib/payment-events";
+import { escapeLike, isCashAppBrand } from "@/lib/payment-methods";
+import { fireN8nWebhook, N8N_WEBHOOK_PATHS } from "@/lib/n8n-webhook";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +24,42 @@ export async function POST(req: Request) {
 
   let raw: unknown;
   try { raw = JSON.parse(payload); } catch { return NextResponse.json({ error: "bad_json" }, { status: 400 }); }
+  // A dispute (chargeback) or a refund that failed after Stripe accepted it: record it and alert staff. Nothing else changes.
+  const alert = parsePaymentAlert(raw);
+  if (alert) {
+    const adminAlert = createAdminClient();
+    if (!adminAlert) return NextResponse.json({ error: "db_unavailable" }, { status: 500 });
+    // Handle each Stripe event once (Stripe retries). A duplicate key means we already did.
+    const { error: dupErr } = await adminAlert.from("stripe_event").insert({ id: alert.eventId });
+    if (dupErr) {
+      if (dupErr.code === "23505") return NextResponse.json({ ok: true, duplicate: true });
+      console.error("[stripe webhook] alert dedupe failed:", dupErr.message);
+      return NextResponse.json({ error: "db" }, { status: 500 });
+    }
+    const message = describePaymentAlert(alert);
+    console.error("[stripe webhook] PAYMENT ALERT:", alert.kind, alert.paymentIntentId ?? alert.chargeId, message);
+    type Found = { tenant_id: string; rental_id: string | null; customer_id: string | null };
+    let found = null as Found | null;
+    if (alert.paymentIntentId) {
+      const { data: rows } = await adminAlert.from("payment").select("tenant_id, rental_id, customer_id")
+        .like("provider_payment_id", `${escapeLike(alert.paymentIntentId)}%`).limit(1);
+      found = (rows?.[0] as Found | undefined) ?? null;
+    }
+    if (found) {
+      const { error: auditErr } = await adminAlert.from("audit_event").insert({
+        tenant_id: found.tenant_id, actor_user_id: null, action: `payment_${alert.kind}`, entity_type: "payment", entity_id: null,
+        before_data: null, after_data: { rental_id: found.rental_id, customer_id: found.customer_id, payment_intent: alert.paymentIntentId, charge: alert.chargeId, amount_cents: alert.amountCents, reason: alert.reason, status: alert.status, note: message },
+        source: "stripe_webhook",
+      });
+      if (auditErr) console.error("[stripe webhook] audit insert failed:", auditErr.message);
+    }
+    await fireN8nWebhook(N8N_WEBHOOK_PATHS.paymentAlert, {
+      kind: alert.kind, message, paymentIntentId: alert.paymentIntentId, chargeId: alert.chargeId, amountCents: alert.amountCents,
+      reason: alert.reason, status: alert.status, rentalId: found?.rental_id ?? null, customerId: found?.customer_id ?? null,
+    });
+    return NextResponse.json({ ok: true, alert: alert.kind });
+  }
+
   // A renter saved a new card through an update-card link (setup mode: nothing was charged).
   const setup = parseSetupEvent(raw);
   if (setup) {
@@ -64,7 +103,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  // completed but not paid (delayed methods aren't enabled; card only): nothing to record.
+  // completed but not paid: nothing to record. (Cards and Cash App Pay confirm at once; no delayed methods are enabled.)
   if (!ev.paid || !ev.payRequestId || !ev.paymentIntentId || ev.amountTotalCents == null) {
     return NextResponse.json({ ok: true, ignored: true });
   }
@@ -98,6 +137,9 @@ export async function POST(req: Request) {
   if (outcome === "not_found") { console.error("[stripe webhook] no matching pay request for", ev.sessionId); return NextResponse.json({ error: "not_found" }, { status: 500 }); }
   if (outcome === "paid_after_cancel") console.error("[stripe webhook] PAYMENT ON A CANCELLED/REVOKED LINK for pay request", ev.payRequestId, "- held for staff review, refund or honour it");
   if (outcome === "amount_mismatch") console.error("[stripe webhook] AMOUNT MISMATCH for pay request", ev.payRequestId, "- staff review needed");
+
+  // The database records every Stripe payment as "card"; correct the label when the renter paid with Cash App.
+  if (outcome === "paid" && isCashAppBrand(card.brand)) await labelCashAppPayments(admin, ev.paymentIntentId);
 
   if (outcome === "paid" && card) {
     const { error: pmError } = await admin.rpc("save_payment_method", {

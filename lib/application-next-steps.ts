@@ -31,7 +31,7 @@ export function submittedViewFor(status: string): SubmittedView {
 
 const TIPS = [
   "Keep your phone nearby. We’ll use the phone number and email you gave us.",
-  "Pay with a card in your own name. We don’t accept cash.",
+  "Pay from a card or account in your own name.",
   "Have your driver’s license with you at pickup.",
 ];
 

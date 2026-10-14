@@ -5,6 +5,7 @@
 
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { money } from "./agreement";
+import { CASH_APP_IS_LIVE } from "./site-config";
 
 export const MIN_CHARGE_CENTS = 50; // Stripe's minimum for USD
 export const CHECKOUT_MINUTES = 60;
@@ -45,15 +46,20 @@ export type RefundRules = {
 };
 
 /** Plain-language terms from the approved cancellation policy. Returns null until the policy is approved and complete. */
-export function refundTermsLines(r: RefundRules | null | undefined): string[] | null {
+export function refundTermsLines(r: RefundRules | null | undefined, cashApp: boolean = CASH_APP_IS_LIVE): string[] | null {
   if (!r || r.approved !== true) return null;
+  // Wording that depends on whether Cash App is accepted. DRAFT: counsel approves before Cash App goes live.
+  const ownAccount = cashApp ? "a card or Cash App account in your own name" : "a card in your own name";
+  const refundTo = cashApp
+    ? "Refunds go back to the original card or Cash App account only, and Cash App refunds can take longer to appear."
+    : "Refunds go to the original card only.";
   if (r.no_refund === true) {
     return [
-      "Rent is not refunded if you cancel after reserving, don't arrive for pickup, or can't meet a stated requirement at pickup (valid license, a card in your own name, required documents).",
+      `Rent is not refunded if you cancel after reserving, don't arrive for pickup, or can't meet a stated requirement at pickup (valid license, ${ownAccount}, required documents).`,
       "If Zivo cancels or can't provide the vehicle, or a payment turns out not to have been made by you, you get a full refund of what you paid for it.",
       "Your security deposit is returned in full if you cancel before pickup. After pickup it covers damage and charges, and you lose all of it for a late return, any damage or smoking in the car, as the rental agreement says.",
       "If the vehicle breaks down during your rental, we extend the rental to make up the lost time. If your negligence caused it, we may cancel the rest of the rental without a refund.",
-      "Rent already paid for a started week is not prorated or refunded after pickup. Refunds go to the original card only.",
+      `Rent already paid for a started week is not prorated or refunded after pickup. ${refundTo}`,
     ];
   }
   const need = [r.late_fee_usd, r.early_fee_usd, r.free_cancellations_per_90d, r.late_window_hours, r.noshow_grace_hours, r.rebook_days];
@@ -61,10 +67,10 @@ export function refundTermsLines(r: RefundRules | null | undefined): string[] | 
   return [
     `Cancel more than ${r.late_window_hours} hours before pickup: full refund of rent paid. You get ${r.free_cancellations_per_90d} free cancellations in any 90 days; after that we keep ${money(r.early_fee_usd as number)}.`,
     `Cancel within ${r.late_window_hours} hours of pickup, or arrive more than ${r.noshow_grace_hours} hours late: we keep ${money(r.late_fee_usd as number)} from the rent paid (never more than you paid). You can rebook within ${r.rebook_days} days.`,
-    `If you can't meet a stated requirement at pickup (valid license, a card in your own name, required documents): we keep ${money(r.late_fee_usd as number)} once and refund the rest.`,
+    `If you can't meet a stated requirement at pickup (valid license, ${ownAccount}, required documents): we keep ${money(r.late_fee_usd as number)} once and refund the rest.`,
     "If Zivo cancels or can't provide the vehicle, you pay no fee and get a full refund.",
     "The refundable deposit is always returned in full if you cancel before pickup.",
-    "Rent already paid for a started week is not prorated or refunded after pickup. Refunds go to the original card only.",
+    `Rent already paid for a started week is not prorated or refunded after pickup. ${refundTo}`,
   ];
 }
 
@@ -79,9 +85,11 @@ export type CheckoutParams = {
   successUrl: string;
   cancelUrl: string;
   nowSeconds: number;
+  /** Stripe payment method types to offer. Defaults to card only; callers pass paymentMethodTypes(). */
+  methodTypes?: string[];
 };
 
-/** Form-encoded body for POST /v1/checkout/sessions. Card only; the card is saved for later charges. */
+/** Form-encoded body for POST /v1/checkout/sessions. Card by default (Cash App when passed); the method is saved for later charges. */
 export function buildCheckoutBody(p: CheckoutParams): URLSearchParams {
   const b = new URLSearchParams();
   b.set("mode", "payment");
@@ -90,7 +98,7 @@ export function buildCheckoutBody(p: CheckoutParams): URLSearchParams {
   b.set("client_reference_id", p.payRequestId);
   b.set("customer_creation", "always");
   if (p.customerEmail) b.set("customer_email", p.customerEmail);
-  b.set("payment_method_types[0]", "card");
+  (p.methodTypes?.length ? p.methodTypes : ["card"]).forEach((t, n) => b.set(`payment_method_types[${n}]`, t));
   b.set("payment_intent_data[setup_future_usage]", "off_session");
   b.set("payment_intent_data[description]", "Zivo vehicle rental");
   b.set("payment_intent_data[metadata][pay_request_id]", p.payRequestId);

@@ -3,7 +3,8 @@ import { BrandLogo } from "@/app/brand-logo";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { hashUploadToken } from "@/lib/upload-token";
 import { UPLOAD_TOKEN_RE } from "@/lib/upload-validation";
-import { CARD_AUTHORIZATION_TEXT } from "@/lib/card-update";
+import { cardAuthorizationText } from "@/lib/card-update";
+import { CASH_APP_IS_LIVE } from "@/lib/site-config";
 import CardForm from "./card-form";
 import AutoRefresh from "./auto-refresh";
 
@@ -67,9 +68,11 @@ export default async function CardPage({ params, searchParams }: { params: Promi
       <h1 style={{ fontSize: 24, marginBottom: 6 }}>{req.first_name ? `${req.first_name}, ` : ""}update your card</h1>
       {status === "cancelled" && <p className="muted-text" style={{ marginBottom: 12 }}>Your card wasn&rsquo;t saved. You can try again below.</p>}
       <p className="muted-text" style={{ marginBottom: 16 }}>
-        Add a new card for your weekly rent. We use your newest card for your next charge. Nothing is charged today.
+        {CASH_APP_IS_LIVE
+          ? "Add a new card or Cash App account for your weekly rent. We use the newest one for your next charge. Nothing is charged today."
+          : "Add a new card for your weekly rent. We use your newest card for your next charge. Nothing is charged today."}
       </p>
-      <CardForm token={token} authorization={CARD_AUTHORIZATION_TEXT} />
+      <CardForm token={token} authorization={cardAuthorizationText(CASH_APP_IS_LIVE)} cashApp={CASH_APP_IS_LIVE} />
     </Shell>
   );
 }

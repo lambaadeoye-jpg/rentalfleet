@@ -18,7 +18,7 @@ describe("allocateRefund", () => {
 
 describe("settlement wording", () => {
   const base = { feeCents: 0, feeKind: "none" as const, rentRefundCents: 30000, depositRefundCents: 20000, totalRefundCents: 50000, manualCents: 0, status: "pending_approval", needsAdmin: true, vehicleReleased: true, refundId: null };
-  it("full refund", () => expect(settlementSummary(base)).toBe("No fee applies. $500.00 goes back to the original card, including the $200.00 deposit in full."));
+  it("full refund", () => expect(settlementSummary(base)).toBe("No fee applies. $500.00 goes back to the original payment method, including the $200.00 deposit in full."));
   it("late fee", () => expect(settlementSummary({ ...base, feeCents: 6500, feeKind: "late", rentRefundCents: 23500, totalRefundCents: 43500 })).toContain("$65.00 late-cancellation fee"));
   it("early fee", () => expect(settlementSummary({ ...base, feeCents: 2500, feeKind: "early", totalRefundCents: 47500 })).toContain("$25.00 cancellation fee"));
   it("nothing paid", () => expect(settlementSummary({ ...base, rentRefundCents: 0, depositRefundCents: 0, totalRefundCents: 0 })).toMatch(/nothing to refund/));

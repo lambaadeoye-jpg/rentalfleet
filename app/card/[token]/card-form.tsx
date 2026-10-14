@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { startCardUpdate } from "./actions";
 
-export default function CardForm({ token, authorization }: { token: string; authorization: string }) {
+export default function CardForm({ token, authorization, cashApp }: { token: string; authorization: string; cashApp: boolean }) {
   const [ok, setOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,10 +30,10 @@ export default function CardForm({ token, authorization }: { token: string; auth
       </label>
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
       <button type="button" className="button-primary" disabled={busy} onClick={save} style={{ width: "100%" }}>
-        {busy ? "Opening secure page..." : "Add my new card"}
+        {busy ? "Opening secure page..." : cashApp ? "Add a card or Cash App account" : "Add my new card"}
       </button>
       <p className="muted-text" style={{ textAlign: "center", marginTop: 10, fontSize: 13 }}>
-        Cards are handled by Stripe. Zivo never sees your card number.
+        {cashApp ? "Cards and Cash App are handled by Stripe. Zivo never sees your card number." : "Cards are handled by Stripe. Zivo never sees your card number."}
       </p>
     </>
   );

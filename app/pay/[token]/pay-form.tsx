@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { startCheckout } from "./actions";
+import { payButtonLabel, payNote } from "@/lib/payment-methods";
 
-export default function PayForm({ token, terms, totalLabel }: { token: string; terms: string[]; totalLabel: string }) {
+export default function PayForm({ token, terms, totalLabel, cashApp }: { token: string; terms: string[]; totalLabel: string; cashApp: boolean }) {
   const [ok, setOk] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,10 +37,10 @@ export default function PayForm({ token, terms, totalLabel }: { token: string; t
       </label>
       {error && <p className="error-text" style={{ marginBottom: 12 }}>{error}</p>}
       <button type="button" className="button-primary" disabled={busy} onClick={pay} style={{ width: "100%" }}>
-        {busy ? "Opening secure payment..." : `Pay ${totalLabel} by card`}
+        {busy ? "Opening secure payment..." : payButtonLabel(totalLabel, cashApp)}
       </button>
       <p className="muted-text" style={{ textAlign: "center", marginTop: 10, fontSize: 13 }}>
-        Card payments are processed by Stripe. Your card is saved for your weekly rent charges. Zivo never sees your card number.
+        {payNote(cashApp)}
       </p>
     </>
   );

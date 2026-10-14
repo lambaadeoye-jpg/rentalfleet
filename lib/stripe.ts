@@ -2,6 +2,7 @@
 // Needs STRIPE_SECRET_KEY (and STRIPE_WEBHOOK_SECRET for the webhook route).
 
 import { extractSetupCard, type SetupCard } from "./card-update";
+import { extractSavedMethod, type MethodType } from "./payment-methods";
 
 const API = "https://api.stripe.com/v1";
 
@@ -42,17 +43,13 @@ export type CardInfo = {
   billingName: string | null;
 };
 
-/** Reads the saved-card details out of a PaymentIntent fetched with expand[]=latest_charge. */
+/** Reads the saved-method details (card or Cash App) out of a PaymentIntent fetched with expand[]=latest_charge. */
 export function extractCardInfo(pi: any): CardInfo {
   const charge = pi?.latest_charge && typeof pi.latest_charge === "object" ? pi.latest_charge : null;
-  const card = charge?.payment_method_details?.card;
+  const chargeName = typeof charge?.billing_details?.name === "string" ? charge.billing_details.name : null;
   return {
     paymentMethodId: typeof pi?.payment_method === "string" ? pi.payment_method : null,
-    brand: typeof card?.brand === "string" ? card.brand : null,
-    last4: typeof card?.last4 === "string" ? card.last4 : null,
-    expMonth: Number.isInteger(card?.exp_month) ? card.exp_month : null,
-    expYear: Number.isInteger(card?.exp_year) ? card.exp_year : null,
-    billingName: typeof charge?.billing_details?.name === "string" ? charge.billing_details.name : null,
+    ...extractSavedMethod(charge?.payment_method_details, chargeName),
   };
 }
 
@@ -85,7 +82,7 @@ export async function fetchSetupIntentCard(setupIntentId: string): Promise<Setup
 /** One refund against one PaymentIntent. The idempotency key makes a retry return the same refund instead of refunding twice. */
 export async function createRefund(
   paymentIntentId: string, amountCents: number, idempotencyKey: string, refundId: string
-): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
+): Promise<{ ok: true; id: string; status: string | null } | { ok: false; error: string }> {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return { ok: false, error: "not_configured" };
   if (!/^pi_[A-Za-z0-9_]+$/.test(paymentIntentId) || !Number.isInteger(amountCents) || amountCents <= 0) return { ok: false, error: "bad_request" };
@@ -102,7 +99,8 @@ export async function createRefund(
       console.error("[stripe] refund failed:", res.status, json?.error?.type, json?.error?.code, json?.error?.message);
       return { ok: false, error: `stripe_${json?.error?.code ?? res.status}`.slice(0, 120) };
     }
-    return { ok: true, id: json.id };
+    // Card refunds are usually "succeeded" at once. Cash App refunds come back "pending" and can still fail later (webhook alert).
+    return { ok: true, id: json.id, status: typeof json.status === "string" ? json.status : null };
   } catch (e) {
     console.error("[stripe] refund network error:", (e as Error).message);
     return { ok: false, error: "network" };
@@ -116,17 +114,14 @@ export type ChargeResult = { ok: true; id: string } | { ok: false; error: string
  * crashed attempt returns the same PaymentIntent instead of charging twice.
  */
 export async function chargeSavedCard(
-  stripeCustomerId: string, paymentMethodId: string, amountCents: number, idempotencyKey: string, attemptId: string, rentalId: string
+  stripeCustomerId: string, paymentMethodId: string, amountCents: number, idempotencyKey: string, attemptId: string, rentalId: string,
+  methodType: MethodType = "card"
 ): Promise<ChargeResult> {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) return { ok: false, error: "not_configured" };
   if (!/^cus_[A-Za-z0-9_]+$/.test(stripeCustomerId) || !/^pm_[A-Za-z0-9_]+$/.test(paymentMethodId)
       || !Number.isInteger(amountCents) || amountCents < 50 || amountCents > 500000) return { ok: false, error: "bad_request" };
-  const body = new URLSearchParams({
-    amount: String(amountCents), currency: "usd", customer: stripeCustomerId, payment_method: paymentMethodId,
-    off_session: "true", confirm: "true", "payment_method_types[]": "card",
-    description: "Weekly rent", "metadata[billing_attempt_id]": attemptId, "metadata[rental_id]": rentalId,
-  });
+  const body = buildChargeBody(stripeCustomerId, paymentMethodId, amountCents, attemptId, rentalId, methodType);
   try {
     const res = await fetch(`${API}/payment_intents`, {
       method: "POST",
@@ -140,6 +135,17 @@ export async function chargeSavedCard(
     console.error("[stripe] charge network error:", (e as Error).message);
     return { ok: "pending", id: "" }; // unknown outcome: leave the attempt claimed; the idempotency key makes the retry safe
   }
+}
+
+/** Form body for one off-session charge. The payment method type must match the saved method (card or Cash App). */
+export function buildChargeBody(
+  stripeCustomerId: string, paymentMethodId: string, amountCents: number, attemptId: string, rentalId: string, methodType: MethodType
+): URLSearchParams {
+  return new URLSearchParams({
+    amount: String(amountCents), currency: "usd", customer: stripeCustomerId, payment_method: paymentMethodId,
+    off_session: "true", confirm: "true", "payment_method_types[]": methodType,
+    description: "Weekly rent", "metadata[billing_attempt_id]": attemptId, "metadata[rental_id]": rentalId,
+  });
 }
 
 /** Pure mapping from Stripe's response to what billing should do. */

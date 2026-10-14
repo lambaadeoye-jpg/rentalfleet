@@ -46,10 +46,10 @@ describe("nextStepsFor", () => {
     }
   });
 
-  it("states cards and cash as decided", () => {
+  it("states the own-name payment rule without a cash line", () => {
     const text = allCopy(nextStepsFor("submitted", "Sam"));
     expect(text).toMatch(/own name/);
-    expect(text).toMatch(/cash/);
+    expect(text).not.toMatch(/cash/i);
   });
 });
 

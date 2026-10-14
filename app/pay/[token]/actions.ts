@@ -6,6 +6,7 @@ import { hashUploadToken } from "@/lib/upload-token";
 import { UPLOAD_TOKEN_RE } from "@/lib/upload-validation";
 import { buildCheckoutBody } from "@/lib/checkout";
 import { createCheckoutSession, stripeConfigured } from "@/lib/stripe";
+import { paymentMethodTypes } from "@/lib/payment-methods";
 
 const GENERIC = "We couldn’t start the payment. Please try again.";
 
@@ -13,7 +14,7 @@ const GENERIC = "We couldn’t start the payment. Please try again.";
 export async function startCheckout(token: string, termsAccepted: boolean): Promise<{ success: true; url: string } | { success: false; error: string }> {
   if (!UPLOAD_TOKEN_RE.test(token)) return { success: false, error: "This link isn’t active. Ask us for a new one." };
   if (!termsAccepted) return { success: false, error: "Please tick the box to confirm you’ve read the cancellation and refund terms." };
-  if (!stripeConfigured()) return { success: false, error: "Card payments aren’t available right now. Please contact us." };
+  if (!stripeConfigured()) return { success: false, error: "Payments aren’t available right now. Please contact us." };
   const admin = createAdminClient();
   if (!admin) return { success: false, error: GENERIC };
 
@@ -34,7 +35,8 @@ export async function startCheckout(token: string, termsAccepted: boolean): Prom
 
   const base = (process.env.NEXT_PUBLIC_SITE_URL || "https://rentzivo.com").replace(/\/$/, "");
   const nowSeconds = Math.floor(Date.now() / 1000);
-  const body = buildCheckoutBody({
+  const methodTypes: string[] = paymentMethodTypes();
+  const bodyFor = (types: string[]) => buildCheckoutBody({
     payRequestId: r.request_id,
     rentalId: r.rental_id,
     rentCents: r.rent_cents,
@@ -43,9 +45,16 @@ export async function startCheckout(token: string, termsAccepted: boolean): Prom
     successUrl: `${base}/pay/${token}?status=success`,
     cancelUrl: `${base}/pay/${token}?status=cancelled`,
     nowSeconds,
+    methodTypes: types,
   });
   // Same 5-minute bucket => a double tap reuses one Stripe session instead of creating two.
-  const res = await createCheckoutSession(body, `${r.request_id}:${Math.floor(nowSeconds / 300)}`);
+  const key = `${r.request_id}:${Math.floor(nowSeconds / 300)}`;
+  let res = await createCheckoutSession(bodyFor(methodTypes), key);
+  // If Stripe refuses the Cash App option (for example it is not enabled on the account yet), fall back to card only so a renter can still pay.
+  if (!res.ok && methodTypes.length > 1) {
+    console.error("[pay] Stripe refused the Cash App option; retrying with card only");
+    res = await createCheckoutSession(bodyFor(["card"]), `${key}:card`);
+  }
   if (!res.ok) return { success: false, error: GENERIC };
 
   // The webhook finds the payment by this session id, so it must be saved before the renter goes to pay.
