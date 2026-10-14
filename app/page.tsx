@@ -7,7 +7,7 @@ import { BrandLogo } from "./brand-logo";
 import { getDailyPricing, minimumRentalTotal, introLine } from "@/lib/landing-pricing";
 import { Suspense } from "react";
 import LeadForm from "./lead-form";
-import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE } from "@/lib/site-config";
+import { PHONE_DISPLAY, PHONE_TEL, PHONE_IS_LIVE, MINIMUM_AGE, CASH_APP_IS_LIVE } from "@/lib/site-config";
 import { SERVICE_AREA_CITIES } from "@/lib/service-areas";
 import {
   Gauge,
@@ -51,6 +51,8 @@ export default async function Home() {
 
   const brandName = tenant?.name ?? "Fleet Rental";
   const weekTotal = pricing ? minimumRentalTotal(pricing) : 0;
+  // Payment wording is one place so the FAQ and the pricing note can never disagree. Cash App only once it is live.
+  const paymentOnFile = CASH_APP_IS_LIVE ? "your card or Cash App account on file" : "a card on file";
 
   // FAQ content lives in one list so the visible answers and the FAQPage structured data can never drift apart.
   const faqs: { q: string; a: string; schema?: boolean }[] = [
@@ -58,14 +60,19 @@ export default async function Home() {
     {
       q: "How does pricing work?",
       a:
-        (pricing && weekTotal > 0
-          ? `It’s $${pricing.total} for the first ${pricing.days} days, then $${pricing.perDay}/day after that. `
-          : "Pricing is shown during rental selection. ") +
-        "A one-week minimum rental applies.",
+        pricing && weekTotal > 0
+          ? `It’s $${pricing.total} for the first ${pricing.days} days, then $${pricing.perDay}/day after that.`
+          : "Pricing is shown during rental selection.",
     },
     {
       q: "Can I switch to a weekly rate?",
-      a: "Yes. Once you’re driving, you can move to a lower weekly rate that’s charged automatically each week to a card on file. The week you already paid stays paid, and your deposit stays the same.",
+      a: `Yes. Once you’re driving, you can move to a lower weekly rate that’s charged automatically each week to ${paymentOnFile}. The week you already paid stays paid, and your deposit stays the same.`,
+    },
+    {
+      q: "How do I pay?",
+      a: CASH_APP_IS_LIVE
+        ? "Pay with your own debit or credit card, or your own Cash App account."
+        : "Pay with a debit or credit card in your own name.",
     },
     {
       q: "Do I need my own insurance?",
@@ -378,7 +385,7 @@ export default async function Home() {
             </div>
           </div>
           <p style={{ marginTop: 24, color: "rgba(255,255,255,0.6)", fontSize: 14 }}>
-            Unlimited mileage included on every rental. Rentals start at one week. After that you can keep going day by day or switch to a weekly rate with automatic billing to a card on file.
+            Unlimited mileage included on every rental. You can keep going day by day or switch to a weekly rate with automatic billing to {paymentOnFile}.
             Need coverage? We&rsquo;ll help you get it sorted.
           </p>
           <SectionCta name="after_pricing" label="Check availability" />
@@ -403,7 +410,7 @@ export default async function Home() {
               <div className="step-number">02</div>
               <h3 style={{ fontSize: 16, margin: "8px 0" }}>Complete requirements</h3>
               <p className="muted-text" style={{ fontSize: 14 }}>
-                Provide required information and documentation.
+                Provide required information.
               </p>
             </div>
             <div>

@@ -10,6 +10,10 @@ export const PHONE_TEL = "+16155550100";
 // Call buttons (nav, footer, forms) only appear once a real number replaces the placeholder above. The mobile sticky bar follows the same rule (it used to show Call regardless, which dialled the placeholder).
 export const PHONE_IS_LIVE = PHONE_DISPLAY !== "(615) 555-0100";
 
+// Cash App copy on the public site (pricing note, payment FAQ, weekly-billing FAQ) only appears once Cash App Pay
+// is actually live in checkout. Flip to true in the same release that enables it; never advertise it before.
+export const CASH_APP_IS_LIVE = false;
+
 // Renter-facing inbox: Reply-To on renter emails, privacy requests, HELP text. Mail still sends from noreply.
 export const SUPPORT_EMAIL = "support@rentzivo.com";
 
